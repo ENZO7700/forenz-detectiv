@@ -1,0 +1,131 @@
+{
+  "name": "Contradiction",
+  "type": "object",
+  "properties": {
+    "claim_a_id": {
+      "type": "string",
+      "description": "ID prv\u00e9ho tvrdenia (ForensicClaim)"
+    },
+    "claim_b_id": {
+      "type": "string",
+      "description": "ID druh\u00e9ho tvrdenia (ForensicClaim)"
+    },
+    "document_a_id": {
+      "type": "string",
+      "description": "ID dokumentu prv\u00e9ho tvrdenia"
+    },
+    "document_b_id": {
+      "type": "string",
+      "description": "ID dokumentu druh\u00e9ho tvrdenia"
+    },
+    "entity_ref": {
+      "type": "string",
+      "description": "Subjekt/osoba, ktor\u00e9ho sa rozpor t\u00fdka"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "time_conflict",
+        "location_conflict",
+        "location_time_conflict",
+        "factual_conflict",
+        "identity_conflict",
+        "event_participation_conflict"
+      ],
+      "description": "Typ rozporu"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "medium"
+    },
+    "confidence": {
+      "type": "number",
+      "default": 0.5,
+      "description": "Sp\u00f4sobilos\u0165 detekcie 0.0\u20131.0"
+    },
+    "explanation": {
+      "type": "string",
+      "description": "Kr\u00e1tke vysvetlenie rozporu s odkazmi na oba dokumenty"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "possible",
+        "confirmed",
+        "dismissed"
+      ],
+      "default": "possible",
+      "description": "Stav: possible (auto-detected, neist\u00fd), confirmed (Human-in-the-loop potvrden\u00fd), dismissed (zamietnut\u00fd)"
+    },
+    "document_id": {
+      "type": "string",
+      "description": "ID dokumentu, ktor\u00e9ho anal\u00fdza rozpor vytvorila (pre idempotenciu)"
+    },
+    "document_title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "claim_a_id",
+    "claim_b_id",
+    "document_a_id",
+    "document_b_id",
+    "type",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

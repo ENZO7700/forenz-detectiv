@@ -1,0 +1,54 @@
+{
+  "name": "Vehicle",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string",
+      "description": "ID v\u00fdpovede, z ktorej vozidlo poch\u00e1dza"
+    },
+    "document_title": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "description": "Typ vozidla (auto, motorka, dod\u00e1vka...)"
+    },
+    "brand_model": {
+      "type": "string",
+      "description": "Zna\u010dka/model, ak je uveden\u00e9"
+    },
+    "color": {
+      "type": "string"
+    },
+    "license_plate": {
+      "type": "string",
+      "description": "Eviden\u010dn\u00e9 \u010d\u00edslo, ak je uveden\u00e9"
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Majite\u013e/spr\u00e1vca, ak je uveden\u00e9"
+    },
+    "source_quote": {
+      "type": "string",
+      "description": "Presn\u00fd doslovn\u00fd cit\u00e1t zo zdrojovej v\u00fdpovede"
+    },
+    "confidence": {
+      "type": "number",
+      "default": 0.5
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

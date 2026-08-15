@@ -1,0 +1,117 @@
+{
+  "name": "Event",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string",
+      "description": "ID v\u00fdpovede, z ktorej udalos\u0165 poch\u00e1dza"
+    },
+    "document_title": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "description": "N\u00e1zov/ozna\u010denie udalosti"
+    },
+    "type": {
+      "type": "string",
+      "description": "Typ udalosti (napr. stretnutie, cesta, konflikt)"
+    },
+    "persons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Z\u00fa\u010dastnen\u00e9 osoby (men\u00e1)"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "D\u00e1tum udalosti (YYYY-MM-DD) alebo pr\u00e1zdne"
+    },
+    "time": {
+      "type": "string",
+      "description": "\u010cas vo form\u00e1te HH:MM alebo pr\u00e1zdne"
+    },
+    "approximate_time": {
+      "type": "boolean",
+      "default": false,
+      "description": "true ak \u010das je pribli\u017en\u00fd"
+    },
+    "time_start": {
+      "type": "string",
+      "description": "Za\u010diatok \u010dasov\u00e9ho okna HH:MM"
+    },
+    "time_end": {
+      "type": "string",
+      "description": "Koniec \u010dasov\u00e9ho okna HH:MM"
+    },
+    "location": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "source_quote": {
+      "type": "string",
+      "description": "Presn\u00fd doslovn\u00fd cit\u00e1t zo zdrojovej v\u00fdpovede"
+    },
+    "confidence": {
+      "type": "number",
+      "default": 0.5
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

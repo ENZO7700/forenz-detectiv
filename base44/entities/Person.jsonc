@@ -1,0 +1,46 @@
+{
+  "name": "Person",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string",
+      "description": "ID v\u00fdpovede, z ktorej osoba poch\u00e1dza"
+    },
+    "document_title": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Meno osoby"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "podozriv\u00fd",
+        "svedok",
+        "obe\u0165",
+        "alibi"
+      ],
+      "default": "svedok"
+    },
+    "details": {
+      "type": "string",
+      "description": "Kr\u00e1tky profil / kontext osoby z v\u00fdpovede"
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "RateLimit",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Identifik\u00e1tor obmedzenia (analyze, chat)"
+    },
+    "window": {
+      "type": "string",
+      "description": "ISO timestamp za\u010diatku fixn\u00e9ho okna"
+    },
+    "count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "key",
+    "window"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

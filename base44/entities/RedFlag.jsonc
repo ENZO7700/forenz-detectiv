@@ -1,0 +1,41 @@
+{
+  "name": "RedFlag",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string"
+    },
+    "document_title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "description": "Identifikovan\u00fd probl\u00e9m / nezrovnalos\u0165"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "\u010dasov\u00e1_nes\u00falad",
+        "ch\u00fdbaj\u00face_info",
+        "lingvistika",
+        "rozpor",
+        "in\u00e9"
+      ],
+      "default": "in\u00e9"
+    }
+  },
+  "required": [
+    "description"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

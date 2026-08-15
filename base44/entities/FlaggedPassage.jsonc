@@ -1,0 +1,45 @@
+{
+  "name": "FlaggedPassage",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string",
+      "description": "ID v\u00fdpovede, z ktorej pas\u00e1\u017e poch\u00e1dza"
+    },
+    "document_title": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string",
+      "description": "Presn\u00fd doslovn\u00fd cit\u00e1t pas\u00e1\u017ee z v\u00fdpovede, ktor\u00e1 vykazuje znaky neistoty alebo rozporu"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "neistota",
+        "rozpor"
+      ],
+      "default": "neistota",
+      "description": "neistota = v\u00e1hanie/neur\u010dit\u00e9 v\u00fdrazy/zmeny \u010dasu; rozpor = v rozpore s inou \u010das\u0165ou alebo svedkom"
+    },
+    "explanation": {
+      "type": "string",
+      "description": "Kr\u00e1tke vysvetlenie, pre\u010do pas\u00e1\u017e signalizuje neistotu alebo rozpor"
+    }
+  },
+  "required": [
+    "text",
+    "category"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

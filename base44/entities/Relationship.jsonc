@@ -1,0 +1,48 @@
+{
+  "name": "Relationship",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string"
+    },
+    "document_title": {
+      "type": "string"
+    },
+    "source_name": {
+      "type": "string",
+      "description": "Meno zdrojovej osoby"
+    },
+    "target_name": {
+      "type": "string",
+      "description": "Meno cie\u013eovej osoby"
+    },
+    "label": {
+      "type": "string",
+      "description": "Typ vz\u0165ahu (napr. Vizu\u00e1lny kontakt)"
+    },
+    "time": {
+      "type": "string",
+      "description": "\u010casov\u00fd \u00fadaj vo form\u00e1te HH:MM"
+    },
+    "description": {
+      "type": "string",
+      "description": "Cit\u00e1t / opis z v\u00fdpovede"
+    }
+  },
+  "required": [
+    "source_name",
+    "target_name",
+    "label"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

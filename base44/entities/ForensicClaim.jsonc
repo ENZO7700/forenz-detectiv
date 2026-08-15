@@ -1,0 +1,75 @@
+{
+  "name": "ForensicClaim",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string",
+      "description": "ID v\u00fdpovede, z ktorej tvrdenie poch\u00e1dza"
+    },
+    "document_title": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Subjekt tvrdenia (osoba alebo objekt, napr. 'Marek Nov\u00e1k')"
+    },
+    "predicate": {
+      "type": "string",
+      "description": "Vz\u0165ah/akcia (napr. 'was_at', 'saw', 'owns', 'had')"
+    },
+    "object": {
+      "type": "string",
+      "description": "Objekt tvrdenia (napr. 'Bratislava', 'modr\u00e9 auto')"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date",
+      "description": "D\u00e1tum udalosti (YYYY-MM-DD) alebo pr\u00e1zdne, ak nie je uveden\u00fd"
+    },
+    "event_time": {
+      "type": "string",
+      "description": "\u010cas vo form\u00e1te HH:MM alebo pr\u00e1zdne, ak nie je uveden\u00fd"
+    },
+    "approximate_time": {
+      "type": "boolean",
+      "default": false,
+      "description": "true ak \u010das je pribli\u017en\u00fd (okolo, pribli\u017ene, asi)"
+    },
+    "time_start": {
+      "type": "string",
+      "description": "Za\u010diatok \u010dasov\u00e9ho okna HH:MM, ak je uveden\u00fd interval"
+    },
+    "time_end": {
+      "type": "string",
+      "description": "Koniec \u010dasov\u00e9ho okna HH:MM, ak je uveden\u00fd interval"
+    },
+    "location": {
+      "type": "string",
+      "description": "Miesto, na ktor\u00e9 sa tvrdenie vz\u0165ahuje, ak je relevantn\u00e9"
+    },
+    "confidence": {
+      "type": "number",
+      "default": 0.5,
+      "description": "Sp\u00f4sobahlivos\u0165 extrakcie 0.0\u20131.0"
+    },
+    "source_quote": {
+      "type": "string",
+      "description": "Presn\u00fd doslovn\u00fd cit\u00e1t zo zdrojovej v\u00fdpovede, z ktor\u00e9ho tvrdenie vych\u00e1dza"
+    }
+  },
+  "required": [
+    "subject",
+    "predicate"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

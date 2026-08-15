@@ -1,0 +1,50 @@
+{
+  "name": "SharedCase",
+  "type": "object",
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "Kryptograficky n\u00e1hodn\u00fd zdie\u013eac\u00ed token"
+    },
+    "document_id": {
+      "type": "string",
+      "description": "ID zdie\u013eanej v\u00fdpovede (pr\u00e1zdne = cel\u00fd pr\u00edpad pou\u017e\u00edvate\u013ea)"
+    },
+    "document_title": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO datetime expir\u00e1cie linku (default 7 dn\u00ed od vytvorenia)"
+    },
+    "revoked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO datetime zneplatnenia; null/pr\u00e1zdne = akt\u00edvny link"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "ID pou\u017e\u00edvate\u013ea, ktor\u00fd zdie\u013ea"
+    },
+    "created_by_name": {
+      "type": "string",
+      "description": "Meno pou\u017e\u00edvate\u013ea, ktor\u00fd zdie\u013ea"
+    }
+  },
+  "required": [
+    "token",
+    "created_by"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

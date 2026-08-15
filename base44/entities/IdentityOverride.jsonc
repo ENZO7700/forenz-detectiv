@@ -1,0 +1,43 @@
+{
+  "name": "IdentityOverride",
+  "type": "object",
+  "properties": {
+    "source_person_id": {
+      "type": "string",
+      "description": "ID zdrojovej osoby (zlu\u010dovanej / jednej z rozdelen\u00fdch)"
+    },
+    "target_person_id": {
+      "type": "string",
+      "description": "ID cie\u013eovej 'master' osoby (zlu\u010dovanej k nej / druhej z rozdelen\u00fdch)"
+    },
+    "override_type": {
+      "type": "string",
+      "enum": [
+        "merge",
+        "split"
+      ],
+      "default": "merge",
+      "description": "merge = zl\u00fa\u010di\u0165 zdroj do cie\u013ea; split = nerozlu\u010dova\u0165 tento p\u00e1r ani pri zhode mena"
+    },
+    "note": {
+      "type": "string",
+      "description": "D\u00f4vod manu\u00e1lnej korekcie"
+    }
+  },
+  "required": [
+    "source_person_id",
+    "target_person_id",
+    "override_type"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
