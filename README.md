@@ -26,14 +26,16 @@ Postavené na platforme **Base44** (backend-as-a-service: auth, databáza, integ
 
 - **Nahrávanie & spracovanie výpovedí** — jednotlivé aj hromadné (až 100 dokumentov naraz), s PWA prístupom ku kamere pre skenovanie.
 - **AI extrakcia** — z obrázku výpovede sa extrahujú osoby, vzťahy, tvrdenia (claims), udalosti, lokality, vozidlá, varovania a varovné pasáže — každé s presným citátom (`source_quote`).
-- **Interaktívny graf vzťahov** — vlastná SVG silová implementácia (force-directed) s podporou drag & drop, zoom, časová os a replay.
+- **Geospatiálna detekcia nemožného alibi** — GPS databáza slovenských miest a Haversine engine overuje fyzikálnu realizovateľnosť presunu medzi výpoveďami (napr. Bratislava $\leftrightarrow$ Košice za 40 minút).
+- **Interaktívny graf vzťahov & PageRank** — 2D Canvas silový graf s dynamickým výpočtom PageRank centrality pre detekciu kľúčových organizátorov a farebnou hierarchiou väzieb.
 - **Kartotéka (Digitálna kartotéka)** — detailný prehľad dokumentu so všetkými extrahovanými entitami.
 - **Cross-document rozpory** — algoritmus porovnáva tvrdenia naprieč dokumentmi a hľadá logické rozpory (čas, miesto, identita, faktá).
 - **Sherlock AI chat** — asistent, ktorý odpovedá na otázky nad dátami prípadu (RAG nad entitami).
-- **Dashboard** — vizualizácia štatistík pomocou Recharts.
-- **Zdieľanie prípadov** — kryptograficky zabezpečené linky s expiráciou a možnosťou zneplatnenia.
-- **PDF export** — report jedného prípadu aj komplexný archív všetkých prípadov (jsPDF).
-- **Mobilný dizajn** — Liquid Glass estetika, slide-out drawer, bottom nav, optimalizované pre 373px (iPhone SE).
+- **Zustand State Management & Offline IndexedDB** — centralizovaný reaktívny store s offline ukladaním prípadov v teréne.
+- **3x Uvítací sprievodca v slovenskej trikolóre** — interaktívny 3-krokový onboarding (100vh/100dvh) s vysvetlivkami a forenznými tipmi.
+- **Liquid Glass Design System** — moderná frosted glass estetika, 3D hĺbka, neon-glow indikátory a vstavaný Dark/Light theme toggle.
+- **Automatizovaná testovacia sada** — 21 integritných testov backendu (`npm test`) a 8 UI testov cez Vitest (`npm run test:vitest`).
+- **PDF export** — oficiálny vyšetrovací protokol s tabuľkou osôb, červenými vlajkami a grafom.
 
 ---
 
@@ -83,6 +85,22 @@ npm install
 ### Spustenie vývoja (Base44 — backend aj frontend naraz)
 ```bash
 base44 dev
+```
+
+### Spustenie testov & Kontrola kvality
+```bash
+# 1. Integritné testy backendu a logiky rozporov (21 testov, 7 sád)
+npm test
+
+# 2. UI & Komponentové testy (Vitest + Testing Library)
+npm run test:vitest
+
+# 3. Kontrola TypeScript typov & Lint
+npm run typecheck
+npm run lint
+
+# 4. Produkčný build
+npm run build
 ```
 
 ### API kľúč
