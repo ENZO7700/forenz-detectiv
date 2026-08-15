@@ -1,43 +1,7 @@
 import { evaluateTravelFeasibility } from './geospatialEngine.ts';
+import { removeDiacritics, levenshtein, parseTimeToMinutes, formatMinutes } from './forenzCore.ts';
+export { parseTimeToMinutes, formatMinutes, removeDiacritics, levenshtein };
 
-// Cross-document forensic contradiction engine.
-// Conservative, evidence-grounded: compares normalized ForensicClaims across
-// documents owned by the SAME user. Never compares data across users.
-// Distinguishes CONFIRMED_CONTRADICTION / POSSIBLE_CONTRADICTION / NO_CONTRADICTION.
-// Idempotent per-document: re-analysis invalidates only contradictions touching that doc.
-
-// ---- small utils (backend runtime; src/lib/forenzUtils.js is frontend-only) ----
-function removeDiacritics(s) {
-  return String(s || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-}
-function levenshtein(a, b) {
-  const m = a.length, n = b.length;
-  if (!m) return n;
-  if (!n) return m;
-  const dp = Array.from({ length: m + 1 }, (_, i) => i);
-  for (let j = 1; j <= n; j++) {
-    let prev = dp[0];
-    dp[0] = j;
-    for (let i = 1; i <= m; i++) {
-      const tmp = dp[i];
-      dp[i] = Math.min(dp[i] + 1, dp[i - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
-      prev = tmp;
-    }
-  }
-  return dp[m];
-}
-function parseTimeToMinutes(time) {
-  if (!time) return null;
-  const m = String(time).match(/(\d{1,2})[:.](\d{2})/);
-  if (!m) return null;
-  const h = parseInt(m[1], 10), min = parseInt(m[2], 10);
-  if (h > 23 || min > 59) return null;
-  return h * 60 + min;
-}
 function str(v, max) { return v == null ? '' : String(v).slice(0, max); }
 function num01(v) { const n = Number(v); if (isNaN(n)) return 0.5; return Math.max(0, Math.min(1, n)); }
 function asBool(v) { return v === true || v === 'true' || v === 1; }

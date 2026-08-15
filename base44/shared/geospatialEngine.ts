@@ -2,6 +2,7 @@
 // Vypočítava vzdialenosti medzi slovenskými a európskymi mestami,
 // minimálny potrebný čas na presun a deteguje fyzikálne nemožné alibi.
 import haversine from 'haversine-distance';
+import { parseTimeToMinutes } from './forenzCore.ts';
 
 export interface GeoLocation {
   lat: number;
@@ -126,16 +127,6 @@ export interface TravelFeasibilityResult {
   actualDiffMinutes: number;
   severity: 'critical' | 'high' | 'medium' | 'none';
   explanation: string;
-}
-
-// Pomocník na prevod HH:MM na minúty
-function parseTimeToMinutes(time: string): number | null {
-  if (!time) return null;
-  const m = String(time).match(/(\d{1,2})[:.](\d{2})/);
-  if (!m) return null;
-  const h = parseInt(m[1], 10), min = parseInt(m[2], 10);
-  if (h > 23 || min > 59) return null;
-  return h * 60 + min;
 }
 
 // Vyhodnotenie uskutočniteľnosti presunu medzi dvoma svedeckými výpoveďami
