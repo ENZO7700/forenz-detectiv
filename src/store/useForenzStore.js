@@ -1,0 +1,195 @@
+import { create } from 'zustand';
+import { base44 } from '@/api/base44Client';
+import { saveCaseOffline, getCaseOffline } from '@/lib/offlineDb';
+import { calculateGraphMetrics } from '@/lib/graphMetrics';
+
+export const useForenzStore = create((set, get) => ({
+  // 1. Dátové entity
+  documents: [],
+  persons: [],
+  relationships: [],
+  redFlags: [],
+  flaggedPassages: [],
+  claims: [],
+  events: [],
+  locations: [],
+  vehicles: [],
+  contradictions: [],
+  overrides: [],
+
+  // 2. UI a navigácia
+  loading: true,
+  scanning: false,
+  bulkProgress: null,
+  toast: '',
+  showStats: true,
+  activeShare: null,
+  activeView: typeof window !== 'undefined' && window.innerWidth <= 640 ? 'overview' : 'graph',
+  selectedDocId: null,
+  selectedPerson: null,
+  selectedEdge: null,
+  currentUser: null,
+  sherlockSignal: 0,
+  maxTime: 0,
+  replaying: false,
+  activeEdgeId: null,
+  leftCollapsed: false,
+  rightCollapsed: false,
+  searchOpen: false,
+  introOpen: typeof window !== 'undefined' ? !localStorage.getItem('forenz_intro_seen') : false,
+  graphFilter: 'all', // 'all' | 'key_hubs' | 'suspects' | 'conflicts'
+
+  // 3. Nastavovače stavu
+  setDocuments: (docs) => set({ documents: docs }),
+  setPersons: (persons) => set({ persons }),
+  setRelationships: (relationships) => set({ relationships }),
+  setRedFlags: (redFlags) => set({ redFlags }),
+  setFlaggedPassages: (flaggedPassages) => set({ flaggedPassages }),
+  setClaims: (claims) => set({ claims }),
+  setEvents: (events) => set({ events }),
+  setLocations: (locations) => set({ locations }),
+  setVehicles: (vehicles) => set({ vehicles }),
+  setContradictions: (contradictions) => set({ contradictions }),
+  setOverrides: (overrides) => set({ overrides }),
+
+  setSelectedDocId: (selectedDocId) => set({ selectedDocId }),
+  setSelectedPerson: (selectedPerson) => set({ selectedPerson }),
+  setSelectedEdge: (selectedEdge) => set({ selectedEdge }),
+  setActiveView: (activeView) => set({ activeView }),
+  setMaxTime: (maxTime) => set({ maxTime }),
+  setReplaying: (replaying) => set({ replaying }),
+  setActiveEdgeId: (activeEdgeId) => set({ activeEdgeId }),
+  setScanning: (scanning) => set({ scanning }),
+  setBulkProgress: (bulkProgress) => set({ bulkProgress }),
+  setShowStats: (updater) => set((s) => ({ showStats: typeof updater === 'function' ? updater(s.showStats) : updater })),
+  setActiveShare: (activeShare) => set({ activeShare }),
+  setCurrentUser: (currentUser) => set({ currentUser }),
+  setSherlockSignal: (updater) => set((s) => ({ sherlockSignal: typeof updater === 'function' ? updater(s.sherlockSignal) : updater })),
+  setLeftCollapsed: (updater) => set((s) => ({ leftCollapsed: typeof updater === 'function' ? updater(s.leftCollapsed) : updater })),
+  setRightCollapsed: (updater) => set((s) => ({ rightCollapsed: typeof updater === 'function' ? updater(s.rightCollapsed) : updater })),
+  setSearchOpen: (searchOpen) => set({ searchOpen }),
+  setIntroOpen: (introOpen) => set({ introOpen }),
+  setGraphFilter: (graphFilter) => set({ graphFilter }),
+
+  showToast: (msg) => {
+    set({ toast: msg });
+    setTimeout(() => {
+      if (get().toast === msg) set({ toast: '' });
+    }, 4000);
+  },
+
+  // 4. Centralizovaný asynchrónny fetch dát (s offline fallbackom)
+  fetchData: async (scope = null, initialData = null) => {
+    set({ loading: true });
+
+    if (initialData) {
+      set({
+        documents: initialData.documents || [],
+        persons: initialData.persons || [],
+        relationships: initialData.relationships || [],
+        redFlags: initialData.redFlags || [],
+        flaggedPassages: initialData.flaggedPassages || [],
+        claims: initialData.claims || [],
+        events: initialData.events || [],
+        locations: initialData.locations || [],
+        vehicles: initialData.vehicles || [],
+        contradictions: initialData.contradictions || [],
+        overrides: initialData.overrides || [],
+        loading: false
+      });
+      return;
+    }
+
+    try {
+      let docs, ppl, rels, flags, flagged, clms, evs, locs, vehs, contras, ovs;
+
+      if (scope?.creatorId) {
+        if (scope.documentId) {
+          docs = [await base44.entities.Document.get(scope.documentId)];
+          ppl = await base44.entities.Person.filter({ document_id: scope.documentId });
+          rels = await base44.entities.Relationship.filter({ document_id: scope.documentId });
+          flags = await base44.entities.RedFlag.filter({ document_id: scope.documentId });
+          flagged = await base44.entities.FlaggedPassage.filter({ document_id: scope.documentId });
+          clms = await base44.entities.ForensicClaim.filter({ document_id: scope.documentId });
+          evs = await base44.entities.Event.filter({ document_id: scope.documentId });
+          locs = await base44.entities.Location.filter({ document_id: scope.documentId });
+          vehs = await base44.entities.Vehicle.filter({ document_id: scope.documentId });
+          contras = await base44.entities.Contradiction.filter({ document_id: scope.documentId });
+          ovs = [];
+        } else {
+          docs = await base44.entities.Document.filter({ created_by_id: scope.creatorId }, '-created_date', 500);
+          ppl = await base44.entities.Person.filter({ created_by_id: scope.creatorId }, '-created_date', 1000);
+          rels = await base44.entities.Relationship.filter({ created_by_id: scope.creatorId }, '-created_date', 1000);
+          flags = await base44.entities.RedFlag.filter({ created_by_id: scope.creatorId }, '-created_date', 1000);
+          flagged = await base44.entities.FlaggedPassage.filter({ created_by_id: scope.creatorId }, '-created_date', 1000);
+          clms = await base44.entities.ForensicClaim.filter({ created_by_id: scope.creatorId }, '-created_date', 2000);
+          evs = await base44.entities.Event.filter({ created_by_id: scope.creatorId }, '-created_date', 1000);
+          locs = await base44.entities.Location.filter({ created_by_id: scope.creatorId }, '-created_date', 500);
+          vehs = await base44.entities.Vehicle.filter({ created_by_id: scope.creatorId }, '-created_date', 500);
+          contras = await base44.entities.Contradiction.filter({ created_by_id: scope.creatorId }, '-created_date', 1000);
+          ovs = [];
+        }
+      } else {
+        const [d, p, r, f, fp, c, e, l, v, ct, o] = await Promise.all([
+          base44.entities.Document.list('-created_date', 500),
+          base44.entities.Person.list('-created_date', 1000),
+          base44.entities.Relationship.list('-created_date', 1000),
+          base44.entities.RedFlag.list('-created_date', 1000),
+          base44.entities.FlaggedPassage.list('-created_date', 1000),
+          base44.entities.ForensicClaim.list('-created_date', 2000),
+          base44.entities.Event.list('-created_date', 1000),
+          base44.entities.Location.list('-created_date', 500),
+          base44.entities.Vehicle.list('-created_date', 500),
+          base44.entities.Contradiction.list('-created_date', 1000),
+          base44.entities.IdentityOverride.list('-created_date', 500)
+        ]);
+        docs = d; ppl = p; rels = r; flags = f; flagged = fp; clms = c; evs = e; locs = l; vehs = v; contras = ct; ovs = o;
+      }
+
+      const freshData = {
+        documents: docs || [],
+        persons: ppl || [],
+        relationships: rels || [],
+        redFlags: flags || [],
+        flaggedPassages: flagged || [],
+        claims: clms || [],
+        events: evs || [],
+        locations: locs || [],
+        vehicles: vehs || [],
+        contradictions: contras || [],
+        overrides: ovs || []
+      };
+
+      set({
+        ...freshData,
+        loading: false
+      });
+
+      // Uloženie do offline IndexedDB
+      saveCaseOffline('current', freshData);
+    } catch (err) {
+      console.error('Fetch zlyhal, skúšam načítať z offline cache:', err);
+      const offline = await getCaseOffline('current');
+      if (offline) {
+        set({
+          documents: offline.documents || [],
+          persons: offline.persons || [],
+          relationships: offline.relationships || [],
+          redFlags: offline.redFlags || [],
+          flaggedPassages: offline.flaggedPassages || [],
+          claims: offline.claims || [],
+          events: offline.events || [],
+          locations: offline.locations || [],
+          vehicles: offline.vehicles || [],
+          contradictions: offline.contradictions || [],
+          overrides: offline.overrides || [],
+          loading: false
+        });
+        get().showToast('Načítané z offline vyšetrovacieho archívu');
+      } else {
+        set({ loading: false });
+        get().showToast('Nepodarilo sa načítať dáta prípadu');
+      }
+    }
+  }
+}));
