@@ -1,0 +1,19 @@
+{
+  "name": "ForenzDetectiv AI",
+  "short_name": "Forenz",
+  "description": "Inteligentná analýza vyšetrovacích spisov — AI extrakcia výpovedí, grafy vzťahov a detekcia rozporov.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
