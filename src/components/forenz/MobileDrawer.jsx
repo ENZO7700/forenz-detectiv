@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Network, Layers, BarChart3, Search, FolderOpen, Share2, Archive,
   Settings, UserCircle, LogOut, X, ShieldAlert, FileSearch, Scale,
-  Sun, Moon, Monitor, Users, HelpCircle
+  Sun, Moon, Monitor, Users, HelpCircle, Clock, MapPin
 } from 'lucide-react';
 
 function initials(name) {
@@ -108,7 +108,8 @@ export default function MobileDrawer({ user, activeView, onNavigate, onClose, on
           <SectionLabel>Pracovný priestor</SectionLabel>
           <Item icon={Network} label="Pavúk" active={activeView === 'graph'} onClick={() => go('graph')} />
           <Item icon={Layers} label="Kartotéka" active={activeView === 'archive'} onClick={() => go('archive')} />
-          <Item icon={BarChart3} label="Timeline" badge="Soon" onClick={onClose} />
+          <Item icon={Clock} label="Timeline" active={activeView === 'timeline'} onClick={() => go('timeline')} />
+          <Item icon={MapPin} label="Geografická mapa" active={activeView === 'map'} onClick={() => go('map')} />
 
           <SectionLabel>Prípady</SectionLabel>
           <Item icon={FolderOpen} label="Všetky prípady" active={activeView === 'overview'} onClick={() => go('overview')} />

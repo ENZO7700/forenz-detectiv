@@ -43,33 +43,42 @@ Postavené na platforme **Base44** (backend-as-a-service: auth, databáza, integ
 
 ```
 ├── base44/
-│   ├── entities/           # Databázové entity (JSONC schémy)
+│   ├── entities/           # Databázové entity (JSONC schémy: Document, Person, Relationship, Contradiction...)
 │   ├── functions/          # Backend funkcie (Deno runtime)
 │   │   ├── analyzeDocument/
 │   │   ├── detectContradictions/
+│   │   ├── generateExpertSummary/
 │   │   ├── loadSharedCase/
 │   │   ├── recoverStuckDocuments/
 │   │   └── sherlockChat/
-│   ├── shared/             # Zdieľaná logika naprieč funkciami
+│   ├── shared/             # Zdieľaná logika naprieč backendom
+│   │   ├── forenzCore.ts         # Zdieľané primitívy (časové konverzie, diakritika, Levenshtein)
+│   │   ├── geospatialEngine.ts   # GPS databáza SR miest + Haversine cestná kalkulácia
+│   │   ├── contradictionEngine.ts # Detekcia rozporov v alibi a čase naprieč spismi
+│   │   ├── aiValidation.ts       # Zod validácia & ochrana proti prompt injection
 │   │   ├── analyzeCore.ts        # Jadro AI analýzy (timeout, retry, idempotencia)
-│   │   ├── aiValidation.ts       # Validácia & normalizácia AI výstupu
-│   │   ├── contradictionEngine.ts # Detekcia rozporov naprieč dokumentmi
-│   │   ├── rateLimit.ts          # Per-user rate limiting
-│   │   └── forenz-qa-report.md
-│   ├── workflows/          # Automatizované procesy (CNCF SWF .jsonc)
-│   │   └── Recovery Sweep.jsonc
-│   ├── mcp/                # MCP konfigurácia pre AI agentov
-│   └── config.jsonc
+│   │   └── rateLimit.ts          # Per-user rate limiting
+│   ├── workflows/          # Automatizované procesy (Recovery Sweep.jsonc)
+│   └── mcp/                # MCP konfigurácia pre AI agentov
+├── public/
+│   ├── manifest.json       # PWA Web App Manifest
+│   ├── sw.js               # Offline Service Worker
+│   └── icon.svg            # Vektorová ikona aplikácie
 ├── src/
-│   ├── api/base44Client.js # Inicializovaný Base44 SDK klient
+│   ├── api/base44Client.js # Base44 SDK klient
 │   ├── components/
-│   │   ├── forenz/          # Forenzné komponenty (graf, archív, chat, mobilné)
-│   │   └── ui/              # Shadcn/ui primitívy
-│   ├── hooks/               # use-mobile, use-size
-│   ├── lib/                 # AuthContext, query-client, utils, imageProcessor, forenzUtils, adaptiveConcurrency
-│   ├── pages/               # ForenzDetectiv, Dashboard, Login, Register, SharedCase, OAuthConsent, ...
-│   ├── App.jsx              # Router + AuthProvider + QueryClientProvider
-│   └── index.css            # Tailwind + design tokeny + animácie
+│   │   ├── forenz/         # Forenzné komponenty (GraphCanvas, MapView, CameraScanner, EventTimeline, WelcomeIntroModal...)
+│   │   └── ui/             # Liquid Glass UI komponenty (Button, Card, Modal, Input, Tooltip, Spinner, ThemeToggle)
+│   ├── store/              # useForenzStore.js (Zustand stavový manažment)
+│   ├── hooks/              # use-mobile, use-size
+│   ├── lib/                # camera.js, graphMetrics.js, offlineDb.js, pdfExporter.js, ocrProcessor.js
+│   ├── pages/              # ForenzDetectiv, Dashboard, Login, Register, SharedCase...
+│   ├── App.jsx             # Hlavný router s ThemeProviderom a PWA
+│   └── index.css           # Liquid Glass Design Tokens & utility triedy
+├── tests/
+│   ├── integrity.test.js   # 21 testov integrity backendu a rozporov
+│   ├── geospatialEngine.test.js # Testy alibi kalkulácie
+│   └── components/         # Vitest UI testy (EventTimeline, WelcomeIntroModal)
 └── package.json
 ```
 

@@ -15,11 +15,12 @@ import RedFlagsPanel from '@/components/forenz/RedFlagsPanel';
 import SherlockChat from '@/components/forenz/SherlockChat';
 import ArchiveView from '@/components/forenz/ArchiveView';
 import EventTimeline from '@/components/forenz/EventTimeline';
+import MapView from '@/components/forenz/MapView';
 import QuickSearchDialog from '@/components/forenz/QuickSearchDialog';
 import WelcomeIntroModal from '@/components/forenz/WelcomeIntroModal';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { exportForensicCasePdf } from '@/lib/pdfExporter';
-import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle } from 'lucide-react';
+import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileDrawer from '@/components/forenz/MobileDrawer';
 import MobileBottomNav from '@/components/forenz/MobileBottomNav';
@@ -690,6 +691,15 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           <Clock className="w-3.5 h-3.5" />
           Timeline
         </button>
+        <button
+          onClick={() => setActiveView('map')}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
+            activeView === 'map' ? 'bg-blue-600/15 text-blue-700 border border-blue-200/40' : 'bg-white/40 text-slate-600 border border-white hover:bg-white/70'
+          }`}
+        >
+          <MapPin className="w-3.5 h-3.5" />
+          Mapa
+        </button>
       </div>
 
       <AnimatePresence mode="wait">
@@ -701,7 +711,15 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           transition={{ duration: 0.22, ease: 'easeOut' }}
           className="flex-1 flex min-h-0 overflow-hidden"
         >
-      {activeView === 'timeline' ? (
+      {activeView === 'map' ? (
+        <div className="flex-1 p-2 lg:p-4 min-h-0 flex flex-col">
+          <MapView
+            locations={locations}
+            claims={claims}
+            contradictions={contradictions}
+          />
+        </div>
+      ) : activeView === 'timeline' ? (
         <EventTimeline
           events={visibleEvents}
           contradictions={visibleContradictions}
