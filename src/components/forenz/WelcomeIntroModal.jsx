@@ -247,7 +247,7 @@ export default function WelcomeIntroModal({ open, onClose }) {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="relative w-full max-w-5xl h-full max-h-[100dvh] md:max-h-[92vh] flex flex-col rounded-3xl md:rounded-[36px] bg-slate-900/95 border-[1.5px] border-white/15 text-slate-100 shadow-2xl overflow-hidden backdrop-blur-2xl"
+        className="relative w-full max-w-5xl h-full max-h-[100dvh] md:max-h-[92vh] flex flex-col rounded-3xl md:rounded-[36px] liquid-glass-panel text-slate-100 shadow-glass-lg overflow-hidden"
       >
         {/* Dekoratívne slovenské farby v pozadí (Modrá - Biela - Červená) */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-white to-red-600 z-20" />

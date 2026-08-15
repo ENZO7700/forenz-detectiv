@@ -17,6 +17,7 @@ import ArchiveView from '@/components/forenz/ArchiveView';
 import EventTimeline from '@/components/forenz/EventTimeline';
 import QuickSearchDialog from '@/components/forenz/QuickSearchDialog';
 import WelcomeIntroModal from '@/components/forenz/WelcomeIntroModal';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 import { exportForensicCasePdf } from '@/lib/pdfExporter';
 import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -506,19 +507,20 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         </div>
       )}
 
-      <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-white bg-white/70 backdrop-blur-3xl shrink-0">
-        <button onClick={() => setMobileMenuOpen(true)} className="text-blue-700 hover:text-blue-900 p-1" aria-label="Menu">
+      <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-white/40 dark:border-white/10 liquid-glass-panel shrink-0">
+        <button onClick={() => setMobileMenuOpen(true)} className="text-blue-700 dark:text-blue-400 hover:text-blue-900 p-1" aria-label="Menu">
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex-1 flex items-center justify-center gap-2">
-          <Network className="w-4 h-4 text-blue-700" />
-          <h1 className="text-sm font-semibold text-blue-800">ForenzDetectiv</h1>
+          <Network className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+          <h1 className="text-sm font-bold text-blue-800 dark:text-blue-300">ForenzDetectiv</h1>
         </div>
-        <div className="flex items-center gap-1">
-          <button className="relative text-blue-700 hover:text-blue-900 p-1" aria-label="Notifikácie">
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
+          <button className="relative text-blue-700 dark:text-blue-400 hover:text-blue-900 p-1" aria-label="Notifikácie">
             <Bell className="w-5 h-5" />
             {(redFlags.length + contradictions.length) > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] text-white flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] text-white flex items-center justify-center font-bold">
                 {redFlags.length + contradictions.length}
               </span>
             )}
@@ -527,18 +529,23 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         </div>
       </header>
 
-      <header className="hidden lg:flex items-center gap-3 px-4 py-3 border-b border-white bg-white/70 backdrop-blur-3xl shrink-0">
+      <header className="hidden lg:flex items-center gap-3 px-4 py-3 border-b border-white/40 dark:border-white/10 liquid-glass-panel shrink-0">
         <div className="flex items-center gap-2">
-          <Network className="w-5 h-5 text-blue-700" />
-          <h1 className="text-base font-semibold text-blue-800">ForenzDetectiv</h1>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-red-600 p-0.5 flex items-center justify-center shadow-glass-sm">
+            <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
+              <Network className="w-4 h-4 text-white" />
+            </div>
+          </div>
+          <h1 className="text-base font-bold text-blue-900 dark:text-white tracking-tight">ForenzDetectiv</h1>
         </div>
-        <span className="text-xs text-blue-500/80 hidden sm:inline">
+        <span className="text-xs text-blue-700/80 dark:text-blue-400/80 font-medium hidden sm:inline">
           {documents.length} výpovedí · {persons.length} osôb · {relationships.length} vzťahov · {redFlags.length} varovaní · {flaggedPassages.length} zvýraznení
         </span>
         <div className="ml-auto flex items-center gap-2 shrink-0">
+          <ThemeToggle />
           <button
             onClick={() => setSearchOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 border border-white dark:border-white/10 hover:bg-white/70 dark:hover:bg-slate-700 transition-colors text-sm shadow-xs"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl liquid-glass-card text-slate-700 dark:text-slate-200 text-sm shadow-glass-sm"
             title="Rýchle vyhľadávanie v prípade (Ctrl+K)"
           >
             <SearchIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -547,11 +554,11 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           </button>
           <button
             onClick={() => setIntroOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-blue-600/10 via-white/40 to-red-600/10 dark:from-blue-600/20 dark:via-slate-800/40 dark:to-red-600/20 text-slate-700 dark:text-slate-200 border border-blue-200/50 dark:border-white/10 hover:bg-white/80 dark:hover:bg-slate-700 transition-colors text-sm shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-blue-600/15 via-white/50 to-red-600/15 dark:from-blue-600/25 dark:via-slate-800/50 dark:to-red-600/25 text-slate-800 dark:text-slate-100 border border-blue-200/60 dark:border-white/10 hover:bg-white/90 dark:hover:bg-slate-700 transition-all text-sm shadow-glass-sm"
             title="Sprievodca systémom ForenzDetectiv (3 kroky)"
           >
             <HelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="hidden sm:inline">Sprievodca</span>
+            <span className="hidden sm:inline font-medium">Sprievodca</span>
           </button>
           {!readOnly && (
             <>

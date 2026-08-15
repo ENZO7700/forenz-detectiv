@@ -553,42 +553,42 @@ export default function GraphCanvas({
         cooldownTicks={100}
       />
 
-      {/* Ovládacie tlačidlá Zoomu */}
-      <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-20">
+      {/* Ovládacie tlačidlá Zoomu (Liquid Glass) */}
+      <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
         <button
           onClick={handleZoomIn}
-          className="w-9 h-9 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-slate-700 text-blue-700 dark:text-blue-400 border border-white/50 dark:border-white/10 flex items-center justify-center shadow-md transition-all"
+          className="w-10 h-10 rounded-2xl liquid-glass-panel hover:bg-white/90 dark:hover:bg-slate-800 text-blue-700 dark:text-blue-400 flex items-center justify-center shadow-glass transition-all hover:scale-105"
           title="Priblížiť"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           onClick={handleZoomOut}
-          className="w-9 h-9 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-slate-700 text-blue-700 dark:text-blue-400 border border-white/50 dark:border-white/10 flex items-center justify-center shadow-md transition-all"
+          className="w-10 h-10 rounded-2xl liquid-glass-panel hover:bg-white/90 dark:hover:bg-slate-800 text-blue-700 dark:text-blue-400 flex items-center justify-center shadow-glass transition-all hover:scale-105"
           title="Oddialiť"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
           onClick={handleZoomFit}
-          className="w-9 h-9 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-slate-700 text-blue-700 dark:text-blue-400 border border-white/50 dark:border-white/10 flex items-center justify-center shadow-md transition-all"
+          className="w-10 h-10 rounded-2xl liquid-glass-panel hover:bg-white/90 dark:hover:bg-slate-800 text-blue-700 dark:text-blue-400 flex items-center justify-center shadow-glass transition-all hover:scale-105"
           title="Vycentrovať graf"
         >
           <Maximize2 className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Legenda typov osôb */}
-      <div className="absolute bottom-3 left-3 flex flex-wrap gap-3 text-xs px-3 py-2 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-sm z-20">
-        <Legend color={dark ? '#f87171' : '#CE1126'} label="Podozrivý" shape="oct" />
-        <Legend color={dark ? '#60a5fa' : '#003DA5'} label="Svedok" shape="circle" />
+      {/* Legenda typov osôb (Liquid Glass) */}
+      <div className="absolute bottom-3 left-3 flex flex-wrap gap-3 text-xs px-4 py-2.5 rounded-3xl liquid-glass-panel shadow-glass z-20">
+        <Legend color={dark ? '#f87171' : '#ee1c25'} label="Podozrivý" shape="oct" />
+        <Legend color={dark ? '#60a5fa' : '#0b3b8c'} label="Svedok" shape="circle" />
         <Legend color={dark ? '#94a3b8' : '#64748b'} label="Obeť" shape="tri" />
         <Legend color={dark ? '#38bdf8' : '#0284c7'} label="Alibi" shape="square" />
       </div>
 
       {/* Focus Mode info */}
       {focusId && (
-        <div className="absolute top-3 left-3 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-white/50 dark:border-white/10 text-xs text-blue-700 dark:text-blue-300 shadow-sm z-20">
+        <div className="absolute top-3 left-3 px-3.5 py-2 rounded-2xl liquid-glass-panel text-xs text-blue-700 dark:text-blue-300 shadow-glass z-20">
           Focus Mode — stlačte <strong>Esc</strong> pre zrušenie
         </div>
       )}
@@ -601,13 +601,13 @@ export default function GraphCanvas({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-3xl bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-4 py-2.5 rounded-3xl liquid-glass-panel shadow-glass-lg"
           >
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 pl-1">{multiSel.size} vybraných</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 pl-1 font-medium">{multiSel.size} vybraných</span>
             {canMerge && (
               <button
                 onClick={openMerge}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
+                className="liquid-glass-btn liquid-glass-btn-primary"
               >
                 <UserPlus className="w-4 h-4" />
                 Zlúčiť identity
@@ -616,7 +616,7 @@ export default function GraphCanvas({
             {splitGroup && (
               <button
                 onClick={openSplit}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-amber-500 hover:bg-amber-400 text-white text-sm font-medium transition-colors"
+                className="liquid-glass-btn liquid-glass-btn-red"
               >
                 <Split className="w-4 h-4" />
                 Rozdeliť identity
@@ -624,7 +624,7 @@ export default function GraphCanvas({
             )}
             <button
               onClick={() => setMultiSel(new Set())}
-              className="w-9 h-9 rounded-2xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-2xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700 flex items-center justify-center transition-colors"
               title="Zrušiť výber"
             >
               <X className="w-4 h-4" />
