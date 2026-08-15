@@ -1,0 +1,246 @@
+# ForenzDetectiv
+
+Inteligentný nástroj na analýzu vyšetrovacích spisov. Pomocou AI (Mistral Pixtral-12B) transformuje písomné výpovede svedkov na prehľadné vizuálne grafy vzťahov, časové osi a detekuje rozpory naprieč dokumentmi — pre efektívnejšie odhaľovanie súvislostí v kriminálnych prípadoch.
+
+Postavené na platforme **Base44** (backend-as-a-service: auth, databáza, integrácie, hosting) s frontendom v **React + Tailwind CSS + shadcn/ui**.
+
+---
+
+## Obsah
+
+1. [Prehľad funkcií](#prehľad-funkcií)
+2. [Štruktúra projektu](#štruktúra-projektu)
+3. [Setup & spustenie](#setup--spustenie)
+4. [Backend](#backend)
+5. [AI pipeline](#ai-pipeline)
+6. [Entitná schéma](#entitná-schéma)
+7. [Bezpečnosť & RLS](#bezpečnosť--rls)
+8. [Workflow automatizácie](#workflow-automatizácie)
+9. [Frontend](#frontend)
+10. [Zdieľanie prípadov](#zdieľanie-prípadov)
+11. [MCP integrácia](#mcp-integrácia)
+
+---
+
+## Prehľad funkcií
+
+- **Nahrávanie & spracovanie výpovedí** — jednotlivé aj hromadné (až 100 dokumentov naraz), s PWA prístupom ku kamere pre skenovanie.
+- **AI extrakcia** — z obrázku výpovede sa extrahujú osoby, vzťahy, tvrdenia (claims), udalosti, lokality, vozidlá, varovania a varovné pasáže — každé s presným citátom (`source_quote`).
+- **Interaktívny graf vzťahov** — vlastná SVG silová implementácia (force-directed) s podporou drag & drop, zoom, časová os a replay.
+- **Kartotéka (Digitálna kartotéka)** — detailný prehľad dokumentu so všetkými extrahovanými entitami.
+- **Cross-document rozpory** — algoritmus porovnáva tvrdenia naprieč dokumentmi a hľadá logické rozpory (čas, miesto, identita, faktá).
+- **Sherlock AI chat** — asistent, ktorý odpovedá na otázky nad dátami prípadu (RAG nad entitami).
+- **Dashboard** — vizualizácia štatistík pomocou Recharts.
+- **Zdieľanie prípadov** — kryptograficky zabezpečené linky s expiráciou a možnosťou zneplatnenia.
+- **PDF export** — report jedného prípadu aj komplexný archív všetkých prípadov (jsPDF).
+- **Mobilný dizajn** — Liquid Glass estetika, slide-out drawer, bottom nav, optimalizované pre 373px (iPhone SE).
+
+---
+
+## Štruktúra projektu
+
+```
+├── base44/
+│   ├── entities/           # Databázové entity (JSONC schémy)
+│   ├── functions/          # Backend funkcie (Deno runtime)
+│   │   ├── analyzeDocument/
+│   │   ├── detectContradictions/
+│   │   ├── loadSharedCase/
+│   │   ├── recoverStuckDocuments/
+│   │   └── sherlockChat/
+│   ├── shared/             # Zdieľaná logika naprieč funkciami
+│   │   ├── analyzeCore.ts        # Jadro AI analýzy (timeout, retry, idempotencia)
+│   │   ├── aiValidation.ts       # Validácia & normalizácia AI výstupu
+│   │   ├── contradictionEngine.ts # Detekcia rozporov naprieč dokumentmi
+│   │   ├── rateLimit.ts          # Per-user rate limiting
+│   │   └── forenz-qa-report.md
+│   ├── workflows/          # Automatizované procesy (CNCF SWF .jsonc)
+│   │   └── Recovery Sweep.jsonc
+│   ├── mcp/                # MCP konfigurácia pre AI agentov
+│   └── config.jsonc
+├── src/
+│   ├── api/base44Client.js # Inicializovaný Base44 SDK klient
+│   ├── components/
+│   │   ├── forenz/          # Forenzné komponenty (graf, archív, chat, mobilné)
+│   │   └── ui/              # Shadcn/ui primitívy
+│   ├── hooks/               # use-mobile, use-size
+│   ├── lib/                 # AuthContext, query-client, utils, imageProcessor, forenzUtils, adaptiveConcurrency
+│   ├── pages/               # ForenzDetectiv, Dashboard, Login, Register, SharedCase, OAuthConsent, ...
+│   ├── App.jsx              # Router + AuthProvider + QueryClientProvider
+│   └── index.css            # Tailwind + design tokeny + animácie
+└── package.json
+```
+
+---
+
+## Setup & spustenie
+
+### Inštalácia závislostí
+```bash
+npm install
+```
+
+### Spustenie vývoja (Base44 — backend aj frontend naraz)
+```bash
+base44 dev
+```
+
+### API kľúč
+V Base44 dashboarde alebo cez CLI pridaj tajný kľúč pre Mistral AI:
+```bash
+base44 secret set MISTRAL_API_KEY your_key_here
+```
+
+> Jediný požadovaný secret je `MISTRAL_API_KEY`. Žiadne ďalšie API kľúče nie sú potrebné — všetko ostatné (auth, databáza, upload) zabezpečuje platforma Base44.
+
+---
+
+## Backend
+
+Backend funkcie bežia v Deno runtime (`base44/functions/<name>/entry.ts`) a komunikujú cez Base44 SDK. Zdieľaná logika, ktorú používa viac ako jedna funkcia, je v `base44/shared/` — nikdy sa nesmie kopírovať medzi funkciami.
+
+### Funkcie
+
+| Funkcia | Účel | Kontext |
+|---|---|---|
+| `analyzeDocument` | Spustí AI analýzu jedného dokumentu. Ownership check + per-user rate limit (100 / 15 min). | User context |
+| `detectContradictions` | Manuálne spustenie cross-document detekcie rozporov pre prihláseného používateľa. | User context |
+| `loadSharedCase` | Načíta dáta zdieľaného prípadu podľa tokenu (obchádza RLS cez service role, striktná validácia tokenu a expirácie). | User context (RLS bypass) |
+| `recoverStuckDocuments` | Recovery sweep — nájde zaseknuté (analyzing > 4 min) a 429-pending dokumenty a znova ich analyzuje alebo označí error. Admin-only auth gate. | Service role |
+| `sherlockChat` | AI odpoveď na otázku nad kontextom prípadu (RAG). | User context |
+
+### Zdieľané moduly
+
+- **`analyzeCore.ts`** — jadro AI analýzy: fetch obrázku, volanie Mistralu s timeoutom (60s), retry s exponenciálnym backoffom, idempotentný delete-and-replace entít, štruktúrované logovanie. Používa sa v `analyzeDocument` aj `recoverStuckDocuments`.
+- **`aiValidation.ts`** — validácia a normalizácia AI výstupu do entitných schém.
+- **`contradictionEngine.ts`** — porovnávanie `ForensicClaim` naprieč dokumentmi toho istého používateľa; deteguje časové, miestne, identitné a faktické rozpory → `Contradiction`.
+- **`rateLimit.ts`** — per-user fixné-okno rate limiting (`checkRate`).
+
+---
+
+## AI pipeline
+
+### Model
+- **Mistral Pixtral-12B** (`pixtral-12b-2409`) — multimodálny, spracováva obrázok výpovede.
+- `temperature: 0`, `response_format: { type: "json_object" }` pre deterministický štruktúrovaný výstup.
+
+### Stavový automat dokumentu
+```
+pending → analyzing → done
+                     ↘ error
+                     ↘ pending (pri 429, s next_retry_at)
+```
+
+### Robustnosť pipeline
+- **Timeout**: 60s pre jedno AI volanie, 20s pre fetch obrázku.
+- **Retry s exponenciálnym backoffom**: max 3 pokusy, backoff 3s → 15s s jitterom. Pri 429 rešpektuje `retry-after` hlavičku.
+- **Idempotencia**: `runAnalysis()` na začiatku znovu načíta dokument z DB; ak už beží aktívny job (`analyzing` + `processing_job_id` + mladší ako `AI_TIMEOUT_MS`), vráti `already_in_progress`. Delete-and-replace entít prebehne až po úspešnom parsovaní — pri zlyhaní Mistralu staré dáta zostanú neporušené.
+- **429 handling**: ak Mistral vráti 429 aj po vyčerpaní retry, dokument sa prestaví na `status=pending` s `next_retry_at` (retry-after alebo fallback 5 min). Recovery Sweep ho automaticky spracuje pri najbližšom behu.
+- **Memory management (bulk)**: pri hromadnom nahrávaní sa `base64` a `outFile` explicitne nullujú po uploade, aby GC uvoľnil pamäť — pre 100 dokumentov to bráni pádu prehliadača.
+
+### Audit logovanie
+`analyzeCore.ts` produkuje štruktúrované JSON logy pre každý krok:
+`analysis_start`, `ai_ok`, `ai_fail`, `ai_backoff`, `entity_write_start`, `entity_write_done`, `retry_scheduled`, `analysis_done`, `analysis_error`, `already_in_progress`, `contradiction_error`.
+
+---
+
+## Entitná schéma
+
+Každá entita má vstavané polia: `id`, `created_date`, `updated_date`, `created_by_id`.
+
+| Entita | Účel | Kľúčové polia |
+|---|---|---|
+| **Document** | Výpoveď — obrázok + stav spracovania + metadáta | `title`, `image_url`, `status` (pending/analyzing/done/error), `attempt_count`, `last_error`, `next_retry_at`, `processing_job_id`, počítadlá |
+| **Person** | Osoba z výpovede | `name`, `type` (podozrivý/svedok/obeť/alibi), `details`, `document_id` |
+| **Relationship** | Vzťah medzi osobami | `source_name`, `target_name`, `label`, `time`, `description`, `document_id` |
+| **RedFlag** | Varovanie / nezrovnalosť | `description`, `category` (časová_nesúlad/chýbajúce_info/lingvistika/rozpor/iné) |
+| **FlaggedPassage** | Citát pasáže signalizujúcej neistotu/rozpor | `text` (presný citát), `category` (neistota/rozpor), `explanation` |
+| **ForensicClaim** | Atomické tvrdenie (subject-predicate-object) | `subject`, `predicate`, `object`, `event_date`, `event_time`, `approximate_time`, `time_start/end`, `location`, `source_quote`, `confidence` |
+| **Event** | Udalosť | `title`, `type`, `persons[]`, `date`, `time`, `location`, `source_quote`, `confidence` |
+| **Location** | Miesto | `name`, `address`, `source_quote`, `confidence` |
+| **Vehicle** | Vozidlo | `type`, `brand_model`, `color`, `license_plate`, `owner_name`, `source_quote`, `confidence` |
+| **Contradiction** | Rozpor medzi dvoma tvrdeniami | `claim_a_id`, `claim_b_id`, `document_a_id`, `document_b_id`, `entity_ref`, `type`, `severity`, `status` (possible/confirmed/dismissed), `explanation` |
+| **SharedCase** | Zdieľaný prípad — token + expirácia | `token`, `document_id`, `expires_at`, `revoked_at`, `created_by`, `created_by_name` |
+| **RateLimit** | Fixné-okno počítadlo (admin-only) | `key`, `window`, `count` |
+| **User** | Vstavaná entita | `email`, `full_name`, `role` (admin/user) |
+
+> Pravidlá AI extrakcie: každé tvrdenie, udalosť, lokalita a vozidlo **musí** obsahovať `source_quote` — presný doslovný citát zo zdrojovej výpovede. AI nesmie vymýšľať dáta, ktoré dokument neobsahuje.
+
+---
+
+## Bezpečnosť & RLS
+
+### Row-Level Security (per entita)
+Všetky forenzné entity (`Document`, `Person`, `Relationship`, `RedFlag`, `FlaggedPassage`, `ForensicClaim`, `Event`, `Location`, `Vehicle`, `Contradiction`, `SharedCase`) majú RLS nastavené na `created_by_id === {{user.id}}` pre read/update/delete — **používateľ vidí a modifikuje len svoje vlastné dáta**. `RateLimit` je admin-only (cez `user_condition: { role: "admin" }`).
+
+### Server-side vynútenie
+- **Ownership check**: `analyzeDocument` overuje, že `doc.created_by_id === user.id` pred spustením analýzy (nie len klientska validácia).
+- **Auth gate**: `recoverStuckDocuments` volá `base44.auth.me()` a zamietne non-admin volania (401/403) — scheduled sweep beží s admin identitou, takže je preň priepustný.
+- **Idempotencia guard**: bráni race condition pri súbežných volaniach analýzy toho istého dokumentu.
+- **Rate limiting**: `checkRate` obmedzuje 100 analýz / 15 min per používateľ + rešpektuje Mistral API limity (429 → `next_retry_at`).
+
+### Zdieľanie
+`loadSharedCase` obchádza RLS cez service role, ale vynucuje: platný kryptografický token, nezaniknutý (`revoked_at`), neexpirovaný (`expires_at`). Inak vracia 401/403.
+
+---
+
+## Workflow automatizácie
+
+### Recovery Sweep (`base44/workflows/Recovery Sweep.jsonc`)
+Scheduled workflow bežiaci každých 5 minút, ktorý volá `recoverStuckDocuments`:
+1. Nájde dokumenty zaseknuté v `analyzing` > 4 min (normálna analýza + retry < 190s).
+2. Nájde dokumenty v `pending` s `next_retry_at <= now` (429 retry fronta).
+3. Pre každý (spoločný CAP 5 dok./beh) — ak `attempt_count >= 3`, označí `error`; inak re-analyzuje cez `runAnalysis`.
+
+---
+
+## Frontend
+
+### Stack
+- React 18 + Vite (ESM), Tailwind CSS, shadcn/ui, lucide-react.
+- `@tanstack/react-query` (data fetching), `recharts` (dashboard), `jsPDF` (PDF export), `react-leaflet` (mapy), `framer-motion`, `three.js`, `@hello-pangea/dnd`, `react-quill-new`, `react-markdown`.
+
+### Hlavné komponenty (`src/components/forenz/`)
+- **GraphCanvas** — vlastná SVG force-directed vizualizácia s drag/zoom, časovou osou a replay.
+- **ArchiveView / ArchiveFilmstrip / ArchiveViewer / ArchiveMetaPanel** — digitálna kartotéka s obojsmerným linkingom dokumentov a entít.
+- **SherlockChat** — AI chat s lokálnou rýchlov odpoveďou pre jednoduché otázky a LLM pre komplexné.
+- **DocumentList, PersonPanel, RedFlagsPanel, TimeSlider, StatsBar** — bočné panely a ovládacie prvky.
+- **MobileDrawer, MobileBottomNav, MobileDashboard** — mobilné rozhranie (Liquid Glass, backdrop-blur-xl).
+
+### Stránky (`src/pages/`)
+- `ForenzDetectiv` — hlavná stránka, orchestrácia dokumentov / grafu / archívu.
+- `Dashboard` — štatistiky (Recharts).
+- `SharedCase` — verejné zobrazenie zdieľaného prípadu (len na čítanie).
+- `Login / Register / ForgotPassword / ResetPassword / OAuthConsent` — auth toky (email+heslo, Google OAuth, OTP).
+
+### Routing & auth
+`src/App.jsx` obsahuje `<AuthProvider>`, `<QueryClientProvider>`, `<Router>`. Authentifikované stránky sú chránené cez `<ProtectedRoute>` (layout route s `<Outlet />`). Auth stránky používajú hard redirect (`window.location.href`) podľa platformových konvencií.
+
+### Design tokeny
+`src/index.css` vlastní tokeny (`:root` + `.dark`), `tailwind.config.js` ich mapuje na Tailwind triedy. V JSX sa používajú mapované triedy (`bg-primary`, `font-body`), žiadne hardcoded hodnoty.
+
+---
+
+## Zdieľanie prípadov
+
+1. Používateľ klikne „Zdieľať“ → vygeneruje sa kryptograficky náhodný 24-bajtový token, vytvorí sa `SharedCase` s `expires_at` (+7 dní).
+2. Link `${origin}/shared/${token}` sa skopíruje do schránky.
+3. Verejná stránka `SharedCase` volá `loadSharedCase`, ktorý validuje token, expiráciu a revokáciu, potom načíta dokumenty/osoby/vzťahy cez service role.
+4. Zdieľané zobrazenie je `readOnly` — bez tlačidiel na úpravu/scan.
+5. Pôvodný používateľ môže link kedykoľvek zneplatniť (`revoked_at`).
+
+---
+
+## MCP integrácia
+
+`base44/mcp/config.json` sprístupňuje vybrané backend funkcie (`analyzeDocument`, `sherlockChat`) externým AI klientom (ChatGPT, Claude, …) cez MCP server. Detaily konfigurácie pozri v súbore.
+
+---
+
+## Poznámky k údržbe
+
+- **Nová logika pre viac funkcií** → `base44/shared/`, nie kópia do funkcie.
+- **Entity schémy** sa zapisujú vždy ako kompletný JSON objekt (`write_file`), nikdy `find_replace`.
+- **Nové komponenty** → vlastný súbor (`≤ 50 riadkov`), žiadne pridávanie do existujúcich.
+- **Tailwind triedy** ako literály — dynamické mená sa purgovaným buildom odstránia.
+- **Importy** cez `@/` alias (nikdy relatívne `src/` cesty).
