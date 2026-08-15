@@ -1,0 +1,44 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "recovery_sweep",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sweep": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "recoverStuckDocuments"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Recovery sweep",
+            "description": "Obnova zaseknut\u00fdch dokumentov"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Recovery Sweep",
+  "description": "Ka\u017ed\u00fdch 5 min\u00fat obnov\u00ed dokumenty zaseknut\u00e9 v 'analyzing' (p\u00e1d/runtime timeout) \u2014 re-anal\u00fdza alebo error pod\u013ea attempt policy.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 5,
+      "interval_unit": "minutes",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

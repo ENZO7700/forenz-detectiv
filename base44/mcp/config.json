@@ -1,0 +1,63 @@
+{
+  "auth": "oauth",
+  "tools": {
+    "functions": [
+      {
+        "name": "analyze_document",
+        "title": "Analyze witness statement",
+        "description": "Runs AI analysis on an uploaded witness-statement document owned by the signed-in user, extracting persons, relationships, red flags, and flagged passages. Call when the user wants to analyze or re-analyze a document. The document must already exist with an uploaded image; pass its documentId.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "documentId": {
+              "type": "string",
+              "description": "ID of the Document record to analyze. Must be owned by the signed-in user."
+            },
+            "documentTitle": {
+              "type": "string",
+              "description": "Optional display title; defaults to the document's stored title."
+            }
+          },
+          "required": ["documentId"]
+        },
+        "handler": "analyzeDocument",
+        "annotations": { "read_only_hint": false, "destructive_hint": false, "idempotent_hint": true }
+      },
+      {
+        "name": "ask_sherlock",
+        "title": "Ask Sherlock about a case",
+        "description": "Asks the Sherlock AI assistant a question about a case, grounded in provided case context (persons, relationships, red flags). Call when the user wants natural-language reasoning over case data. Returns a concise answer and refuses to fabricate facts not in the context.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "The question to ask, up to 1000 characters."
+            },
+            "context": {
+              "type": "string",
+              "description": "Optional case context (JSON of persons/relationships/red flags), up to 20000 characters."
+            }
+          },
+          "required": ["question"]
+        },
+        "handler": "sherlockChat",
+        "annotations": { "read_only_hint": true, "destructive_hint": false, "idempotent_hint": true }
+      },
+      {
+        "name": "detect_contradictions",
+        "title": "Detect cross-document contradictions",
+        "description": "Re-runs cross-document contradiction detection across the signed-in user's forensic claims. Compares normalized claims between documents and creates or refreshes Contradiction records (time, location, factual conflicts). Optionally pass documentId to recompute only contradictions touching that one document.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "documentId": { "type": "string", "description": "Optional: limit recompute to contradictions touching this document. Omit for a full recompute across all of the user's claims." }
+          },
+          "required": []
+        },
+        "handler": "detectContradictions",
+        "annotations": { "read_only_hint": false, "destructive_hint": false, "idempotent_hint": true }
+      }
+    ]
+  }
+}
