@@ -10,6 +10,9 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "test": "node --test tests/integrity.test.js",
+    "test:vitest": "vitest run",
+    "test:watch": "vitest",
+    "test:all": "node --test tests/integrity.test.js && vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
