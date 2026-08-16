@@ -1,12 +1,9 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { prepareFileForUpload } from '@/lib/imageProcessor';
 import { parseTimeToMinutes, namesMatch } from '@/lib/forenzUtils';
 import { mapWithAdaptiveConcurrency } from '@/lib/adaptiveConcurrency';
 import DocumentList from '@/components/forenz/DocumentList';
-import ScanButton from '@/components/forenz/ScanButton';
-import BulkScanButton from '@/components/forenz/BulkScanButton';
 import StatsBar from '@/components/forenz/StatsBar';
 import PersonPanel from '@/components/forenz/PersonPanel';
 import TimeSlider from '@/components/forenz/TimeSlider';
@@ -18,8 +15,7 @@ import QuickTip from '@/components/forenz/QuickTip';
 import HomeHero from '@/components/forenz/HomeHero';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ViewSkeleton } from '@/components/ui/SkeletonViews';
-import ThemeToggle from '@/components/ui/ThemeToggle';
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import AppHeader from '@/components/forenz/AppHeader';
 import PricingModal from '@/components/pricing/PricingModal';
 import PaywallGate from '@/components/pricing/PaywallGate';
 import TrustPackModal from '@/components/trust/TrustPackModal';
@@ -29,7 +25,7 @@ import PdfExportDialog from '@/components/export/PdfExportDialog';
 import { saveDocumentOffline, saveCaseOffline } from '@/lib/offlineDb';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated } from '@/lib/analytics';
-import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin, Trash2, Gift, Zap, ScrollText } from 'lucide-react';
+import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileDrawer from '@/components/forenz/MobileDrawer';
 import MobileBottomNav from '@/components/forenz/MobileBottomNav';
@@ -687,185 +683,42 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
   return (
     <div className="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
-      {sharedBy && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-violet-950/60 border-b border-violet-800/50 text-violet-200 text-sm">
-          <ShieldCheck className="w-4 h-4 text-violet-400" />
-          <span>Zdieľaný prípad od <strong>{sharedBy}</strong> · len na čítanie</span>
-        </div>
-      )}
-
-      {/* Mobile Header */}
-      <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-slate-800 bg-slate-900 shrink-0">
-        <button onClick={() => setMobileMenuOpen(true)} className="text-slate-300 hover:text-white p-1" aria-label="Menu">
-          <Menu className="w-5 h-5" />
-        </button>
-        <div className="flex-1 flex items-center justify-center gap-2">
-          <Network className="w-4 h-4 text-blue-400" />
-          <h1 className="text-sm font-semibold text-slate-100">ForenzDetectiv</h1>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <ThemeToggle />
-          <button className="relative text-slate-300 hover:text-white p-1" aria-label="Notifikácie">
-            <Bell className="w-5 h-5" />
-            {(redFlags.length + contradictions.length) > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] text-white flex items-center justify-center font-bold">
-                {redFlags.length + contradictions.length}
-              </span>
-            )}
-          </button>
-          {!readOnly && <ScanButton onScan={handleScan} scanning={scanning} />}
-        </div>
-      </header>
-
-      {/* Desktop Header */}
-      <header className="hidden lg:flex items-center gap-3 px-4 py-3 border-b border-slate-800 bg-slate-900 shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 p-0.5 flex items-center justify-center shadow-sm">
-            <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-              <Network className="w-4 h-4 text-blue-400" />
-            </div>
-          </div>
-          <h1 className="text-base font-semibold text-slate-100 tracking-tight">ForenzDetectiv</h1>
-        </div>
-        <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-          {documents.length} výpovedí · {persons.length} osôb · {relationships.length} vzťahov · {redFlags.length} varovaní · {flaggedPassages.length} zvýraznení
-        </span>
-        <div className="ml-auto flex items-center gap-2 shrink-0">
-          <LanguageSwitcher className="hidden sm:inline-flex" />
-          <button
-            type="button"
-            onClick={() => setPricingModalOpen(true)}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${plan === 'pro' || plan === 'agency'
-              ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
-              : 'bg-slate-800 text-slate-300 border-slate-700/80 hover:bg-slate-700'
-              }`}
-            title="Licencie a plány"
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden md:inline uppercase">{plan === 'agency' ? 'Agency' : plan === 'pro' ? 'Pro' : 'Free'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setTrustOpen(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm transition-colors"
-            title="LEA Trust Pack"
-          >
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span className="hidden xl:inline">Trust</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setAuditOpen(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm transition-colors"
-            title="Audit log"
-          >
-            <ScrollText className="w-4 h-4 text-amber-400" />
-            <span className="hidden xl:inline">Audit</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setReferralOpen(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm transition-colors"
-            title="Odporučiť kolegu"
-          >
-            <Gift className="w-4 h-4 text-amber-400" />
-            <span className="hidden xl:inline">Referral</span>
-          </button>
-          <ThemeToggle />
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm shadow-sm transition-colors"
-            title="Rýchle vyhľadávanie v prípade (Ctrl+K)"
-          >
-            <SearchIcon className="w-4 h-4 text-blue-400" />
-            <span className="hidden sm:inline">Hľadať</span>
-            <kbd className="hidden md:inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-700">Ctrl+K</kbd>
-          </button>
-          <button
-            onClick={() => setIntroOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm shadow-sm transition-colors"
-            title="Sprievodca systémom ForenzDetectiv"
-          >
-            <HelpCircle className="w-4 h-4 text-blue-400" />
-            <span className="hidden sm:inline font-medium">Sprievodca</span>
-          </button>
-          {!readOnly && (
-            <>
-              <button
-                onClick={() => setShowStats((s) => !s)}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm transition-colors border ${showStats ? 'bg-blue-600/20 text-blue-400 border-blue-500/40' : 'bg-slate-800 text-slate-200 border-slate-700/80 hover:bg-slate-700'
-                  }`}
-                title="Zobraziť/skryť štatistiky"
-              >
-                <BarChart3 className="w-4 h-4 text-blue-400" />
-                <span className="hidden sm:inline">Štatistiky</span>
-              </button>
-              <Link
-                to="/dashboard"
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-colors text-sm shadow-sm"
-                title="Dashboard so štatistikami"
-              >
-                <LayoutDashboard className="w-4 h-4 text-indigo-400" /><span className="hidden xl:inline">Dashboard</span>
-              </Link>
-              <button
-                onClick={() => setActiveView('identity')}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-colors text-sm shadow-sm"
-                title="Správa identít"
-              >
-                <Users className="w-4 h-4 text-cyan-400" /><span className="hidden xl:inline">Identity</span>
-              </button>
-              <button
-                onClick={handleShare}
-                disabled={!documents.length}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-600/20 text-blue-300 border border-blue-500/40 hover:bg-blue-600/30 disabled:opacity-40 transition-colors text-sm"
-              >
-                <div className="relative"><Share2 className="w-4 h-4" />{activeShare && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}</div><span className="hidden xl:inline">Zdieľať</span>
-              </button>
-              {activeShare && (
-                <button
-                  onClick={handleRevokeShare}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-950/60 text-red-300 border border-red-800/60 hover:bg-red-900/60 transition-colors text-sm"
-                  title="Zneplatniť aktívny zdieľaný link"
-                >
-                  <Ban className="w-4 h-4" />
-                  <span className="hidden sm:inline">Zneplatniť link</span>
-                </button>
-              )}
-              <button
-                onClick={handleExport}
-                disabled={!persons.length}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 disabled:opacity-40 transition-colors text-sm shadow-sm"
-              >
-                <Download className="w-4 h-4 text-emerald-400" /><span className="hidden xl:inline">Report PDF</span>
-              </button>
-              <button
-                onClick={handleExportAll}
-                disabled={!documents.length}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 disabled:opacity-40 transition-colors text-sm shadow-sm"
-                title="Hromadný export všetkých prípadov do jedného PDF"
-              >
-                <Archive className="w-4 h-4 text-amber-400" /><span className="hidden xl:inline">Archív PDF</span>
-              </button>
-              {documents.length > 0 && (
-                <button
-                  onClick={() => {
-                    if (window.confirm('Naozaj chcete zavrieť aktuálny spis a vrátiť sa na domovskú obrazovku?')) {
-                      clearCase();
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-sm shadow-sm transition-colors"
-                  title="Zavrieť spis a prejsť na Domov"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="hidden xl:inline">Nový spis</span>
-                </button>
-              )}
-              <BulkScanButton onBulkScan={handleBulkScan} scanning={scanning} progress={bulkProgress} />
-              <ScanButton onScan={handleScan} scanning={scanning} />
-            </>
-          )}
-        </div>
-      </header>
+      {/* 100% Responzívny Forenzný Header */}
+      <AppHeader
+        documents={documents}
+        persons={persons}
+        relationships={relationships}
+        redFlags={redFlags}
+        contradictions={contradictions}
+        flaggedPassages={flaggedPassages}
+        plan={plan}
+        showStats={showStats}
+        setShowStats={setShowStats}
+        activeShare={activeShare}
+        handleShare={handleShare}
+        handleRevokeShare={handleRevokeShare}
+        readOnly={readOnly}
+        scanning={scanning}
+        handleScan={handleScan}
+        handleBulkScan={handleBulkScan}
+        bulkProgress={bulkProgress}
+        onExport={handleExport}
+        onExportAll={handleExportAll}
+        onClearCase={() => {
+          if (window.confirm('Naozaj chcete zavrieť aktuálny spis a vrátiť sa na domovskú obrazovku?')) {
+            clearCase();
+          }
+        }}
+        onOpenMobileMenu={() => setMobileMenuOpen(true)}
+        onOpenSearch={() => setSearchOpen(true)}
+        onOpenIntro={() => setIntroOpen(true)}
+        onOpenPricing={() => setPricingModalOpen(true)}
+        onOpenTrust={() => setTrustOpen(true)}
+        onOpenAudit={() => setAuditOpen(true)}
+        onOpenReferral={() => setReferralOpen(true)}
+        onNavigateIdentity={() => setActiveView('identity')}
+        sharedBy={sharedBy}
+      />
 
       {bulkProgress && (
         <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center gap-3 text-xs text-slate-300 shrink-0">

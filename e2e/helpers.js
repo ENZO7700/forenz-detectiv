@@ -7,9 +7,9 @@ import path from 'node:path';
 import { expect } from '@playwright/test';
 
 export async function gotoApp(page, pathName = '/') {
-  await page.goto(pathName);
-  await page.waitForLoadState('domcontentloaded');
-  await expect(page.getByText('ForenzDetectiv').first()).toBeVisible({ timeout: 20_000 });
+  await page.goto(pathName, { waitUntil: 'domcontentloaded' });
+  // Mobile header h1 is in DOM but CSS-hidden on desktop — assert via body text
+  await expect(page.locator('body')).toContainText('ForenzDetectiv', { timeout: 30_000 });
 }
 
 export async function dismissQuickTipIfPresent(page) {
@@ -80,13 +80,18 @@ export async function expectToastMatching(page, pattern) {
 }
 
 export async function openPricingModal(page) {
-  // Desktop header plan badge
-  const planBtn = page.getByRole('button', { name: /Free|Pro|Agency/i }).first();
+  const planBtn = page.locator('header.hidden.lg\\:flex, header').getByRole('button', { name: /Free|Pro|Agency/i }).first();
   if (await planBtn.isVisible().catch(() => false)) {
     await planBtn.click();
     return;
   }
+  // Desktop Free badge in header
+  const freeBtn = page.getByTitle('Licencie a plány');
+  if (await freeBtn.isVisible().catch(() => false)) {
+    await freeBtn.click();
+    return;
+  }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Menu' }).click();
-  await page.getByText(/^Cenník$|Pricing/i).first().click();
+  await page.getByText(/Cenník/i).first().click();
 }
