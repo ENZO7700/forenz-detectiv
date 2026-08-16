@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { resolveLocationCoords } from '../../../base44/shared/geospatialEngine.ts';
-import { MapPin, AlertTriangle } from 'lucide-react';
+import { MapPin, AlertTriangle, Users, Filter } from 'lucide-react';
 
 const createCustomIcon = (color, label) => {
   return L.divIcon({
@@ -14,8 +14,8 @@ const createCustomIcon = (color, label) => {
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        border: 2px solid #0f172a;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        border: 2px solid #020617;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.6);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -38,6 +38,8 @@ export default function MapView({
   contradictions = [],
   className = ''
 }) {
+  const [selectedPersonFilter, setSelectedPersonFilter] = useState('ALL');
+
   const mapPoints = useMemo(() => {
     const points = [];
     const seen = new Set();
@@ -83,13 +85,16 @@ export default function MapView({
   const impossibleRoutes = useMemo(() => {
     const routes = [];
     contradictions
-      .filter((c) => c.type === 'geospatial_impossible_travel' || c.type === 'geografická_nesúlad')
+      .filter((c) => c.type === 'geospatial_impossible_travel' || c.type === 'geografická_nesúlad' || c.type === 'Geograficky nemožné alibi')
       .forEach((c) => {
         const claimA = claims.find((cl) => cl.id === c.claim_a_id);
         const claimB = claims.find((cl) => cl.id === c.claim_b_id);
-        if (claimA?.location && claimB?.location) {
-          const coordsA = resolveLocationCoords(claimA.location);
-          const coordsB = resolveLocationCoords(claimB.location);
+        const locA = c.locationA || c.locA || claimA?.location;
+        const locB = c.locationB || c.locB || claimB?.location;
+
+        if (locA && locB) {
+          const coordsA = resolveLocationCoords(locA);
+          const coordsB = resolveLocationCoords(locB);
           if (coordsA && coordsB) {
             routes.push({
               id: c.id,
@@ -97,8 +102,8 @@ export default function MapView({
                 [coordsA.lat, coordsA.lng],
                 [coordsB.lat, coordsB.lng]
               ],
-              explanation: c.explanation,
-              subject: claimA.subject
+              explanation: c.explanation || c.description,
+              subject: c.person || c.entity_ref || claimA?.subject || 'Podozrivá osoba'
             });
           }
         }
@@ -106,39 +111,83 @@ export default function MapView({
     return routes;
   }, [contradictions, claims]);
 
+  // Všetci unikátni aktéri s trasou
+  const subjectsWithRoutes = useMemo(() => {
+    const subs = new Set();
+    impossibleRoutes.forEach((r) => {
+      if (r.subject) subs.add(r.subject);
+    });
+    return Array.from(subs);
+  }, [impossibleRoutes]);
+
+  const filteredRoutes = useMemo(() => {
+    if (selectedPersonFilter === 'ALL') return impossibleRoutes;
+    return impossibleRoutes.filter((r) => r.subject === selectedPersonFilter);
+  }, [impossibleRoutes, selectedPersonFilter]);
+
   const defaultCenter = [48.7363, 19.1462];
 
   return (
-    <div className={`w-full h-full relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl flex flex-col ${className}`}>
+    <div className={`w-full h-full relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-xl flex flex-col ${className}`}>
       {/* Horná info lišta mapy */}
-      <div className="px-4 py-3 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 flex items-center justify-between z-10 shrink-0">
+      <div className="px-4 py-3 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-10 shrink-0">
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4 text-blue-400" />
-          <h3 className="text-xs font-semibold text-slate-100">Geografická mapa vyšetrovania</h3>
+          <h3 className="text-xs font-semibold text-slate-100">Geografická mapa vyšetrovania & Alibi</h3>
         </div>
-        <div className="flex items-center gap-3 text-xs">
+
+        {/* Person Filters */}
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          {subjectsWithRoutes.length > 1 && (
+            <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+              <Filter className="w-3 h-3 text-slate-400" />
+              <button
+                type="button"
+                onClick={() => setSelectedPersonFilter('ALL')}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                  selectedPersonFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Všetky trasy
+              </button>
+              {subjectsWithRoutes.map((sub) => (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() => setSelectedPersonFilter(sub)}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                    selectedPersonFilter === sub ? 'bg-red-500 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {sub}
+                </button>
+              ))}
+            </div>
+          )}
+
           <span className="flex items-center gap-1.5 text-blue-400 font-medium bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700">
             <span className="w-2 h-2 rounded-full bg-blue-500" /> {mapPoints.length} lokalít
           </span>
           {impossibleRoutes.length > 0 && (
             <span className="flex items-center gap-1.5 text-red-400 font-semibold bg-red-950/60 px-2 py-0.5 rounded-lg border border-red-800">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" /> {impossibleRoutes.length} nemožných presunov
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" /> {filteredRoutes.length} nemožných presunov
             </span>
           )}
         </div>
       </div>
 
-      {/* Map Container */}
-      <div className="flex-1 w-full h-full min-h-[360px] relative z-0">
+      {/* Map Container s tmavou témou */}
+      <div className="flex-1 w-full h-full min-h-[360px] relative z-0 bg-slate-950">
         <MapContainer
           center={defaultCenter}
           zoom={7}
           scrollWheelZoom={true}
-          style={{ width: '100%', height: '100%', minHeight: '360px', background: '#090d16' }}
+          style={{ width: '100%', height: '100%', minHeight: '360px', background: '#020617' }}
+          className="map-dark-tiles"
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
           {mapPoints.map((pt) => (
@@ -148,7 +197,7 @@ export default function MapView({
               icon={createCustomIcon(pt.color, pt.name.slice(0, 2).toUpperCase())}
             >
               <Popup>
-                <div className="p-1 min-w-[140px] text-slate-900">
+                <div className="p-1 min-w-[140px] text-slate-900 font-sans">
                   <h4 className="font-bold text-sm">{pt.name}</h4>
                   {pt.address && <p className="text-xs text-slate-600 mt-0.5">{pt.address}</p>}
                   {pt.subject && (
@@ -161,7 +210,7 @@ export default function MapView({
             </Marker>
           ))}
 
-          {impossibleRoutes.map((route) => (
+          {filteredRoutes.map((route) => (
             <Polyline
               key={route.id}
               positions={route.positions}
@@ -173,11 +222,11 @@ export default function MapView({
               }}
             >
               <Popup>
-                <div className="p-2 max-w-xs text-slate-900">
+                <div className="p-2 max-w-xs text-slate-900 font-sans">
                   <div className="flex items-center gap-1.5 text-red-600 font-bold text-xs mb-1">
                     <AlertTriangle className="w-4 h-4" /> Nemožné alibi: {route.subject}
                   </div>
-                  <p className="text-xs text-slate-700">{route.explanation}</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">{route.explanation}</p>
                 </div>
               </Popup>
             </Polyline>

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Network, Layers, BarChart3, Search } from 'lucide-react';
+import { Network, Layers, BarChart3, Search, MapPin } from 'lucide-react';
 
 const TABS = [
   { key: 'graph', label: 'Pavúk', icon: Network },
-  { key: 'archive', label: 'Kartotéka', icon: Layers },
-  { key: 'timeline', label: 'Timeline', icon: BarChart3, disabled: true },
+  { key: 'archive', label: 'Spis', icon: Layers },
+  { key: 'map', label: 'Alibi', icon: MapPin },
+  { key: 'timeline', label: 'Časová os', icon: BarChart3 },
   { key: 'sherlock', label: 'Sherlock', icon: Search }
 ];
 
@@ -15,7 +16,6 @@ export default function MobileBottomNav({ activeView, onTabChange, onSherlock })
   };
 
   const handle = (tab) => {
-    if (tab.disabled) return;
     if (tab.key === 'sherlock') {
       onSherlock?.();
     } else {
@@ -25,26 +25,26 @@ export default function MobileBottomNav({ activeView, onTabChange, onSherlock })
 
   return (
     <nav
-      className="lg:hidden shrink-0 z-40 bg-white/70 backdrop-blur-3xl border-t border-white"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="lg:hidden shrink-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 text-slate-100"
+      style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
     >
-      <div className="flex items-stretch h-16">
+      <div className="flex items-stretch h-14">
         {TABS.map((tab) => {
           const active = isActive(tab.key);
           return (
             <button
               key={tab.key}
+              type="button"
               onClick={() => handle(tab)}
-              disabled={tab.disabled}
-              className={`relative flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
-                tab.disabled ? 'text-slate-400 cursor-not-allowed' : active ? 'text-blue-700' : 'text-slate-500 hover:text-slate-800'
+              className={`relative flex-1 flex flex-col items-center justify-center gap-1 transition-all min-h-[48px] ${
+                active ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              {active && !tab.disabled && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-blue-700" />
+              {active && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
               )}
               <tab.icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <span className="text-[10px] tracking-tight">{tab.label}</span>
             </button>
           );
         })}

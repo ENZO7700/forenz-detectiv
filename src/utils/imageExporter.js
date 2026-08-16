@@ -1,7 +1,7 @@
 import html2canvas from 'html2canvas';
 
 /**
- * Exportuje zadaný DOM element do PNG obrázku s vysokým rozlíšením (Retina/High-DPI).
+ * Exportuje zadaný DOM element do PNG obrázku s vysokým rozlíšením (Retina/High-DPI 2K).
  * @param {HTMLElement} element - DOM element na export
  * @param {string} filename - Názov výsledného súboru (bez prípony alebo s .png)
  * @returns {Promise<string>} Data URL vygenerovaného obrázku
@@ -11,8 +11,10 @@ export async function exportElementAsPng(element, filename = 'forenz-alibi-card.
     throw new Error('Element pre export do PNG neexistuje.');
   }
 
+  const retinaScale = typeof window !== 'undefined' ? Math.max(2, window.devicePixelRatio || 2) : 2;
+
   const canvas = await html2canvas(element, {
-    scale: 2, // 2x škálovanie pre ostrý výstup a retina displeje
+    scale: retinaScale, // 2x+ škálovanie pre ostrý výstup a retina displeje
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#020617', // slate-950
@@ -42,8 +44,10 @@ export async function copyElementImageToClipboard(element) {
     throw new Error('Element pre kopírovanie do schránky neexistuje.');
   }
 
+  const retinaScale = typeof window !== 'undefined' ? Math.max(2, window.devicePixelRatio || 2) : 2;
+
   const canvas = await html2canvas(element, {
-    scale: 2,
+    scale: retinaScale,
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#020617',

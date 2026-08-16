@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -375,7 +375,7 @@ export default function GraphCanvas({
     ctx.fillStyle = C.name;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(displayName, x, pillY + pillH / 2);
+    ctx.lineWidth = 2.5; ctx.strokeStyle = dark ? "rgba(2,6,23,0.9)" : "rgba(255,255,255,0.9)"; ctx.strokeText(displayName, x, pillY + pillH / 2); ctx.fillText(displayName, x, pillY + pillH / 2);
 
     ctx.restore();
   }, [RING, C, selectedPersonId, focusId, multiSel, hoverId, timeEnabled, maxTime, earliestTimeMap, neighbors, dark]);

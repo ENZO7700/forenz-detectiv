@@ -4,6 +4,13 @@ import { formatMinutes } from '@/lib/forenzUtils';
 
 export default function TimeSlider({ min, max, value, onChange, replaying, onToggleReplay }) {
   if (min >= max) return null;
+
+  const handleDragStart = () => {
+    if (replaying && onToggleReplay) {
+      onToggleReplay();
+    }
+  };
+
   return (
     <div className="flex items-center gap-3 px-4 py-3 bg-slate-900/80 border-t border-slate-800 shrink-0">
       <button
@@ -23,6 +30,8 @@ export default function TimeSlider({ min, max, value, onChange, replaying, onTog
         min={min}
         max={max}
         value={value}
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
         onChange={(e) => onChange(Number(e.target.value))}
         className="flex-1 accent-blue-500 cursor-pointer"
       />

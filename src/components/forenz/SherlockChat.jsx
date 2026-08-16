@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { Search, X, Send, Loader2, AlertTriangle, ShieldCheck, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
@@ -138,7 +138,7 @@ export default function SherlockChat({ persons = [], edges = [], redFlags = [], 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-            className="fixed bottom-20 right-3 sm:right-6 lg:bottom-20 lg:right-6 z-50 w-[calc(100vw-1.5rem)] sm:w-[24rem] h-[30rem] max-h-[calc(100vh-6.5rem)] bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-[max(5rem,env(safe-area-inset-bottom,0px))] right-3 sm:right-6 lg:bottom-20 lg:right-6 z-50 w-[calc(100vw-1.5rem)] sm:w-[24rem] h-[min(30rem,85dvh)] max-h-[85dvh] bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             <div className="px-3.5 py-2.5 border-b border-slate-800 flex items-center gap-2 bg-slate-900/90">
               <div className="w-6 h-6 rounded-lg bg-blue-950/60 border border-blue-500/30 flex items-center justify-center">
@@ -232,7 +232,7 @@ export default function SherlockChat({ persons = [], edges = [], redFlags = [], 
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') send();
                 }}
-                placeholder="Napíšte otázku vyšetrovateľovi…"
+                onFocus={() => endRef.current?.scrollIntoView({ behavior: "smooth" })} placeholder="Napíšte otázku vyšetrovateľovi…"
                 className="flex-1 bg-slate-950 border border-slate-800 text-slate-100 text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 placeholder:text-slate-500"
               />
               <button onClick={send} disabled={busy} className="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50 flex items-center justify-center shrink-0 transition-colors shadow-sm" aria-label="Odoslať otázku">

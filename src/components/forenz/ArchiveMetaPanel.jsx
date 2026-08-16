@@ -1,5 +1,5 @@
-import React from 'react';
-import { Calendar, Users, MapPin, Car, Network, Flag, AlertOctagon, CalendarClock, ExternalLink, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Users, MapPin, Car, Network, Flag, AlertOctagon, CalendarClock, ExternalLink, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
 const STATUS = {
   pending: { label: 'Čaká', cls: 'bg-amber-500/15 text-amber-300 border border-amber-500/30' },
@@ -55,6 +55,12 @@ export default function ArchiveMetaPanel({
   onJumpToContradiction,
   readOnly
 }) {
+  const [expandedQuotes, setExpandedQuotes] = useState({});
+
+  const toggleQuote = (id) => {
+    setExpandedQuotes((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const docId = doc?.id;
   const docPersons = docId ? persons.filter((p) => p.document_id === docId) : [];
   const docEvents = docId ? events.filter((e) => e.document_id === docId) : [];
@@ -145,31 +151,67 @@ export default function ArchiveMetaPanel({
                     <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${c.severity === 'high' ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}`}>
                       {c.severity}
                     </span>
-                    <span className="ml-1 text-xs text-slate-300">{c.type.replace(/_/g, ' ')}</span>
+                    <span className="ml-1 text-xs text-slate-300">{c.type?.replace(/_/g, ' ')}</span>
                     {c.explanation && <span className="block text-[10px] text-slate-400">{c.explanation}</span>}
                   </LinkRow>
                 ))}
               </Section>
             )}
 
-            {/* Dôležité pasáže */}
+            {/* Dôležité pasáže & Citácie */}
             {(docFlagged.length > 0 || docClaims.length > 0) && (
               <Section title="Dôležité pasáže & Tvrdenia">
-                {docFlagged.map((p) => (
-                  <div key={p.id} className={`p-2 text-xs border-l-2 ${p.category === 'rozpor' ? 'border-red-500 bg-red-950/30' : 'border-amber-500 bg-amber-950/25'}`}>
-                    <span className={`font-semibold ${p.category === 'rozpor' ? 'text-red-400' : 'text-amber-400'}`}>
-                      {p.category === 'rozpor' ? 'Rozpor' : 'Neistota'}
-                    </span>
-                    <p className="text-slate-300 italic mt-0.5">„{p.text}"</p>
-                    {p.explanation && <p className="text-slate-400 mt-1 text-[11px]">{p.explanation}</p>}
-                  </div>
-                ))}
-                {docClaims.map((c) => (
-                  <div key={c.id} className="p-2 text-xs bg-slate-950/40 border-l-2 border-slate-700">
-                    <span className="text-slate-300 font-medium">{c.subject} {c.predicate} {c.object}</span>
-                    {c.source_quote && <p className="text-slate-400 italic mt-0.5">„{c.source_quote}"</p>}
-                  </div>
-                ))}
+                {docFlagged.map((p) => {
+                  const isLong = (p.text || '').length > 120;
+                  const isExpanded = expandedQuotes[p.id];
+                  const displayText = isLong && !isExpanded ? `${p.text.slice(0, 120)}...` : p.text;
+
+                  return (
+                    <div key={p.id} className={`p-2.5 text-xs border-l-2 ${p.category === 'rozpor' ? 'border-red-500 bg-red-950/30' : 'border-amber-500 bg-amber-950/25'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className={`font-semibold text-[10px] uppercase tracking-wider ${p.category === 'rozpor' ? 'text-red-400' : 'text-amber-400'}`}>
+                          {p.category === 'rozpor' ? 'Rozpor' : 'Neistota'}
+                        </span>
+                        {isLong && (
+                          <button
+                            type="button"
+                            onClick={() => toggleQuote(p.id)}
+                            className="text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-0.5"
+                          >
+                            {isExpanded ? <>Zbaliť <ChevronUp className="w-3 h-3" /></> : <>Celý citát <ChevronDown className="w-3 h-3" /></>}
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-slate-200 italic mt-1 leading-relaxed">„{displayText}"</p>
+                      {p.explanation && <p className="text-slate-400 mt-1.5 text-[11px] bg-slate-900/60 p-1.5 rounded">{p.explanation}</p>}
+                    </div>
+                  );
+                })}
+                {docClaims.map((c) => {
+                  const isLong = (c.source_quote || '').length > 120;
+                  const isExpanded = expandedQuotes[c.id];
+                  const displayText = isLong && !isExpanded ? `${c.source_quote.slice(0, 120)}...` : c.source_quote;
+
+                  return (
+                    <div key={c.id} className="p-2.5 text-xs bg-slate-950/40 border-l-2 border-slate-700">
+                      <span className="text-slate-300 font-medium">{c.subject} {c.predicate} {c.object}</span>
+                      {c.source_quote && (
+                        <div className="mt-1">
+                          <p className="text-slate-400 italic">„{displayText}"</p>
+                          {isLong && (
+                            <button
+                              type="button"
+                              onClick={() => toggleQuote(c.id)}
+                              className="text-[10px] text-blue-400 hover:text-blue-300 mt-1 flex items-center gap-0.5"
+                            >
+                              {isExpanded ? <>Zbaliť <ChevronUp className="w-3 h-3" /></> : <>Celý kontext <ChevronDown className="w-3 h-3" /></>}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </Section>
             )}
           </div>

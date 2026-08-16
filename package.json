@@ -9,7 +9,7 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
-    "test": "node --test tests/integrity.test.js tests/legalIntegration.test.js tests/diagnostics.test.js tests/aiRetry.test.js tests/analyticsAndSanitizer.test.js tests/prompts06To12.test.js tests/uiUxRegression.test.js",
+    "test": "node --test tests/integrity.test.js tests/legalIntegration.test.js tests/diagnostics.test.js tests/aiRetry.test.js tests/analyticsAndSanitizer.test.js tests/prompts06To12.test.js tests/uiUxRegression.test.js tests/uiUxRegression.test.js",
     "test:vitest": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
+﻿import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { fileToNormalizedBase64, base64DataUrlToBlobFile } from '@/lib/imageProcessor';
@@ -617,24 +617,21 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-colors text-sm shadow-sm"
                 title="Dashboard so štatistikami"
               >
-                <LayoutDashboard className="w-4 h-4 text-indigo-400" />
-                <span className="hidden sm:inline">Dashboard</span>
+                <LayoutDashboard className="w-4 h-4 text-indigo-400" /><span className="hidden xl:inline">Dashboard</span>
               </Link>
               <button
                 onClick={() => setActiveView('identity')}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-colors text-sm shadow-sm"
                 title="Správa identít"
               >
-                <Users className="w-4 h-4 text-cyan-400" />
-                <span className="hidden sm:inline">Identity</span>
+                <Users className="w-4 h-4 text-cyan-400" /><span className="hidden xl:inline">Identity</span>
               </button>
               <button
                 onClick={handleShare}
                 disabled={!documents.length}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-600/20 text-blue-300 border border-blue-500/40 hover:bg-blue-600/30 disabled:opacity-40 transition-colors text-sm"
               >
-                <Share2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Zdieľať</span>
+                <div className="relative"><Share2 className="w-4 h-4" />{activeShare && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}</div><span className="hidden xl:inline">Zdieľať</span>
               </button>
               {activeShare && (
                 <button
@@ -651,8 +648,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                 disabled={!persons.length}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 disabled:opacity-40 transition-colors text-sm shadow-sm"
               >
-                <Download className="w-4 h-4 text-emerald-400" />
-                <span className="hidden sm:inline">Report PDF</span>
+                <Download className="w-4 h-4 text-emerald-400" /><span className="hidden xl:inline">Report PDF</span>
               </button>
               <button
                 onClick={handleExportAll}
@@ -660,8 +656,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 disabled:opacity-40 transition-colors text-sm shadow-sm"
                 title="Hromadný export všetkých prípadov do jedného PDF"
               >
-                <Archive className="w-4 h-4 text-amber-400" />
-                <span className="hidden sm:inline">Archív PDF</span>
+                <Archive className="w-4 h-4 text-amber-400" /><span className="hidden xl:inline">Archív PDF</span>
               </button>
               {documents.length > 0 && (
                 <button
@@ -768,7 +763,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
       {/* Ak nie je nahratý žiadny dokument, zobraz prominentný HomeHero s 1-tap Demo a Drag&Drop */}
       {documents.length === 0 && !loading ? (
-        <HomeHero onScan={handleScan} scanning={scanning} />
+        <HomeHero onScan={handleScan} onBulkScan={handleBulkScan} scanning={scanning} />
       ) : (
         <AnimatePresence mode="wait">
           <motion.div

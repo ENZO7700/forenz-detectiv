@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, Split, X, ShieldCheck, Info } from 'lucide-react';
+import { UserPlus, Split, X, ShieldCheck, Info, AlertTriangle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction
+} from '@/components/ui/alert-dialog';
 
 export default function IdentityPanel({ overrides = [], persons = [], onRevokeOverride }) {
+  const [confirmRevokeId, setConfirmRevokeId] = useState(null);
+
   const personName = (id) => persons.find((p) => p.id === id)?.name || 'Neznáma';
+  const targetOverride = overrides.find(o => o.id === confirmRevokeId);
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-950 p-4 lg:p-8 min-h-0">
@@ -67,7 +80,7 @@ export default function IdentityPanel({ overrides = [], persons = [], onRevokeOv
                         )}
                       </div>
                       <button
-                        onClick={() => onRevokeOverride(o.id)}
+                        onClick={() => setConfirmRevokeId(o.id)}
                         className="shrink-0 w-7 h-7 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-950/40 transition-colors flex items-center justify-center"
                         title="Zrušiť opravu"
                       >
@@ -81,6 +94,39 @@ export default function IdentityPanel({ overrides = [], persons = [], onRevokeOv
           )}
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={!!confirmRevokeId} onOpenChange={() => setConfirmRevokeId(null)}>
+        <AlertDialogContent className="bg-slate-950 border-slate-800 text-slate-100">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-amber-400">
+              <AlertTriangle className="w-5 h-5" />
+              <AlertDialogTitle>Potvrdenie zrušenia korekcie identity</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-slate-400 text-xs mt-2">
+              Naozaj chcete zrušiť túto manuálnu úpravu pre aktérov{' '}
+              <strong className="text-slate-200">{targetOverride ? personName(targetOverride.source_person_id) : ''}</strong> a{' '}
+              <strong className="text-slate-200">{targetOverride ? personName(targetOverride.target_person_id) : ''}</strong>? Graf väzieb sa vráti k pôvodnému automatickému stavu.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800">
+              Ponechať
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmRevokeId) {
+                  onRevokeOverride(confirmRevokeId);
+                  setConfirmRevokeId(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold"
+            >
+              Potvrdiť zrušenie
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
