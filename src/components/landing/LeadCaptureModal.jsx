@@ -98,7 +98,7 @@ export default function LeadCaptureModal({ isOpen, onClose }) {
               <input
                 type="text"
                 required
-                placeholder="Advokátska kancelária Kováč & Partners"
+                placeholder="Názov advokátskej kancelárie"
                 value={formData.firm}
                 onChange={(e) => setFormData({ ...formData, firm: e.target.value })}
                 className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"

@@ -22,8 +22,15 @@ export default function AlibiShareCard({
   };
 
   const displayName = anonymized ? 'Podozrivá osoba [ANONYM]' : data.personName;
-  const displayCitationA = anonymized ? data.citationA.replace(/Peter Kováč|Kováč/gi, 'Osoba A') : data.citationA;
-  const displayCitationB = anonymized ? data.citationB.replace(/Peter Kováč|Kováč/gi, 'Osoba A') : data.citationB;
+  const anonymizeText = (text) => {
+    if (!anonymized || !text) return text;
+    const name = (data.personName || '').trim();
+    if (!name || name === 'Podozrivá osoba') return text;
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(escaped, 'gi'), 'Osoba A');
+  };
+  const displayCitationA = anonymizeText(data.citationA);
+  const displayCitationB = anonymizeText(data.citationB);
 
   return (
     <div
