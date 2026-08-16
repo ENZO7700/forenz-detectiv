@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { fileToNormalizedBase64, base64DataUrlToBlobFile } from '@/lib/imageProcessor';
+import { prepareFileForUpload } from '@/lib/imageProcessor';
 import { parseTimeToMinutes, namesMatch } from '@/lib/forenzUtils';
 import { mapWithAdaptiveConcurrency } from '@/lib/adaptiveConcurrency';
 import DocumentList from '@/components/forenz/DocumentList';
@@ -19,10 +19,15 @@ import HomeHero from '@/components/forenz/HomeHero';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ViewSkeleton } from '@/components/ui/SkeletonViews';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import PricingModal from '@/components/pricing/PricingModal';
+import PaywallGate from '@/components/pricing/PaywallGate';
+import TrustPackModal from '@/components/trust/TrustPackModal';
+import ReferralModal from '@/components/referral/ReferralModal';
 import { exportForensicCasePdf } from '@/lib/pdfExporter';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported } from '@/lib/analytics';
-import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin, Trash2 } from 'lucide-react';
+import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin, Trash2, Gift, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileDrawer from '@/components/forenz/MobileDrawer';
 import MobileBottomNav from '@/components/forenz/MobileBottomNav';
@@ -30,6 +35,8 @@ import MobileDashboard from '@/components/forenz/MobileDashboard';
 import IdentityPanel from '@/components/forenz/IdentityPanel';
 import CollapsibleSidebar from '@/components/forenz/CollapsibleSidebar';
 import { useForenzStore } from '@/store/useForenzStore';
+import { usePlanStore } from '@/store/usePlanStore';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { appParams } from '@/lib/app-params';
 
 // Lazy-loaded ťažké moduly pre rýchly počiatočný štart aplikácie
@@ -90,8 +97,21 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [trustOpen, setTrustOpen] = useState(false);
+  const [referralOpen, setReferralOpen] = useState(false);
   const replayRef = useRef(null);
   const pulseRef = useRef(null);
+  const isMobile = useIsMobile();
+
+  const plan = usePlanStore((s) => s.plan);
+  const pricingModalOpen = usePlanStore((s) => s.pricingModalOpen);
+  const paywallReason = usePlanStore((s) => s.paywallReason);
+  const setPricingModalOpen = usePlanStore((s) => s.setPricingModalOpen);
+  const canAddDocument = usePlanStore((s) => s.canAddDocument);
+
+  const openPaywall = useCallback((reason) => {
+    setPricingModalOpen(false, reason);
+  }, [setPricingModalOpen]);
 
   const fetchStoreData = useForenzStore((s) => s.fetchData);
   const fetchData = useCallback(() => fetchStoreData(scope, initialData), [fetchStoreData, scope, initialData]);
@@ -207,13 +227,16 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       showToast(`Súbor "${file.name}" prekračuje limit 50 MB (${sizeKb.toLocaleString()} KB / max 50 000 KB).`);
       return;
     }
+    if (!canAddDocument(documents.length)) {
+      openPaywall('limit_documents');
+      return;
+    }
     setScanning(true);
     try {
       trackFileUploaded(file.name?.split('.').pop() || 'unknown', Math.round(file.size / 1024));
-      // LOAD → PREPROCESS → UPLOAD preprocessed → RELEASE local memory → ANALYZE FROM STORAGE
-      const base64 = await fileToNormalizedBase64(file);
-      const outFile = base64DataUrlToBlobFile(base64, file.name);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: outFile });
+      // LOAD / PREPARE → UPLOAD → RELEASE local memory → ANALYZE FROM STORAGE
+      const uploadFile = await prepareFileForUpload(file);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadFile });
       const doc = await base44.entities.Document.create({
         title: file.name,
         image_url: file_url,
@@ -267,18 +290,41 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
     if (validFiles.length === 0) return;
 
-    const batch = validFiles.slice(0, 100);
+    if (!canAddDocument(documents.length + Math.min(validFiles.length, 1))) {
+      openPaywall('limit_documents');
+      return;
+    }
+
+    const maxBatch = isMobile ? 20 : 100;
+    if (validFiles.length > maxBatch) {
+      showToast(`Na mobile/desktope je limit ${maxBatch} súborov naraz. Spracujem prvých ${maxBatch}.`);
+    }
+    const batch = validFiles.slice(0, maxBatch);
+
+    const remainingSlots = plan === 'free' || plan === undefined
+      ? Math.max(0, 5 - documents.length)
+      : batch.length;
+    if (plan === 'free' && remainingSlots <= 0) {
+      openPaywall('limit_documents');
+      return;
+    }
+    const cappedBatch = plan === 'free' ? batch.slice(0, remainingSlots) : batch;
+    if (plan === 'free' && cappedBatch.length < batch.length) {
+      showToast(`Free plán: spracujem ${cappedBatch.length} z ${batch.length} (limit 5 výpovedí).`);
+    }
+    if (cappedBatch.length === 0) {
+      openPaywall('limit_documents');
+      return;
+    }
+
     setScanning(true);
-    setBulkProgress({ total: batch.length, done: 0, analyzing: 0, failed: 0 });
+    setBulkProgress({ total: cappedBatch.length, done: 0, analyzing: 0, failed: 0 });
     try {
       // Pipeline jeden-dokument-na-workera: preprocess → upload → create → analyze,
       // potom sa lokálna pamäť (base64/blob) uvoľní. Žiadny queue držiaci 100 base64.
-      await mapWithAdaptiveConcurrency(batch, 4, 6, async (file) => {
-        let base64 = await fileToNormalizedBase64(file);
-        let outFile = base64DataUrlToBlobFile(base64, file.name);
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: outFile });
-        base64 = null;
-        outFile = null;
+      await mapWithAdaptiveConcurrency(cappedBatch, 4, 6, async (file) => {
+        const uploadFile = await prepareFileForUpload(file);
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadFile });
         const doc = await base44.entities.Document.create({
           title: file.name,
           image_url: file_url,
@@ -468,6 +514,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   }, []);
 
   const handleExport = async () => {
+    if (plan === 'free') {
+      openPaywall('pro_feature');
+      return;
+    }
     try {
       const canvas = document.querySelector('.relative.flex-1 canvas');
       await exportForensicCasePdf({
@@ -491,6 +541,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   };
 
   const handleExportAll = async () => {
+    if (plan === 'free') {
+      openPaywall('pro_feature');
+      return;
+    }
     try {
       const canvas = document.querySelector('.relative.flex-1 canvas');
       await exportForensicCasePdf({
@@ -609,6 +663,38 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           {documents.length} výpovedí · {persons.length} osôb · {relationships.length} vzťahov · {redFlags.length} varovaní · {flaggedPassages.length} zvýraznení
         </span>
         <div className="ml-auto flex items-center gap-2 shrink-0">
+          <LanguageSwitcher className="hidden sm:inline-flex" />
+          <button
+            type="button"
+            onClick={() => setPricingModalOpen(true)}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+              plan === 'pro' || plan === 'agency'
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                : 'bg-slate-800 text-slate-300 border-slate-700/80 hover:bg-slate-700'
+            }`}
+            title="Licencie a plány"
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden md:inline uppercase">{plan === 'agency' ? 'Agency' : plan === 'pro' ? 'Pro' : 'Free'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTrustOpen(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm transition-colors"
+            title="LEA Trust Pack"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span className="hidden xl:inline">Trust</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setReferralOpen(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm transition-colors"
+            title="Odporučiť kolegu"
+          >
+            <Gift className="w-4 h-4 text-amber-400" />
+            <span className="hidden xl:inline">Referral</span>
+          </button>
           <ThemeToggle />
           <button
             onClick={() => setSearchOpen(true)}
@@ -622,7 +708,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           <button
             onClick={() => setIntroOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm shadow-sm transition-colors"
-            title="Sprievodca systémom ForenzDetectiv (3 kroky)"
+            title="Sprievodca systémom ForenzDetectiv"
           >
             <HelpCircle className="w-4 h-4 text-blue-400" />
             <span className="hidden sm:inline font-medium">Sprievodca</span>
@@ -963,6 +1049,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           onClose={() => setMobileMenuOpen(false)}
           onLogout={handleLogout}
           onOpenIntro={() => setIntroOpen(true)}
+          onOpenPricing={() => setPricingModalOpen(true)}
+          onOpenTrust={() => setTrustOpen(true)}
+          onOpenReferral={() => setReferralOpen(true)}
+          plan={plan}
           alertCount={redFlags.length + contradictions.length}
         />
       )}
@@ -990,6 +1080,27 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       <WelcomeIntroModal
         open={introOpen}
         onClose={() => setIntroOpen(false)}
+      />
+
+      <PricingModal
+        isOpen={pricingModalOpen}
+        onClose={() => setPricingModalOpen(false)}
+      />
+
+      <PaywallGate
+        isOpen={!!paywallReason}
+        onClose={() => setPricingModalOpen(false, null)}
+        reason={paywallReason || 'limit_cases'}
+      />
+
+      <TrustPackModal
+        isOpen={trustOpen}
+        onClose={() => setTrustOpen(false)}
+      />
+
+      <ReferralModal
+        isOpen={referralOpen}
+        onClose={() => setReferralOpen(false)}
       />
     </div>
   );

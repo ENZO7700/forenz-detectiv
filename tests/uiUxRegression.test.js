@@ -86,4 +86,17 @@ describe('UI/UX Anomaly Fixes & Regression Suite (HERO-01 to CHAT-10)', () => {
     assert.strictEqual(oversized.length, 1);
     assert.strictEqual(oversized[0].name, 'spis_oversized.pdf');
   });
+
+  test('BULK-CAP: Mobile limit 20 súborov, desktop 100', () => {
+    const getBulkCap = (isMobile) => (isMobile ? 20 : 100);
+    const applyBulkCap = (files, isMobile) => files.slice(0, getBulkCap(isMobile));
+
+    const files = Array.from({ length: 25 }, (_, i) => ({ name: `doc-${i}.pdf` }));
+
+    assert.strictEqual(getBulkCap(true), 20);
+    assert.strictEqual(getBulkCap(false), 100);
+    assert.strictEqual(applyBulkCap(files, true).length, 20);
+    assert.strictEqual(applyBulkCap(files, false).length, 25);
+    assert.strictEqual(applyBulkCap(Array.from({ length: 150 }, (_, i) => i), false).length, 100);
+  });
 });

@@ -4,6 +4,7 @@
  */
 
 let isSentryInitialized = false;
+let SentryModule = null;
 
 // Kľúče, ktoré obsahujú citlivé informácie a musia byť vymazané pred odoslaním do telemetrie
 const SENSITIVE_KEYS = [
@@ -53,24 +54,42 @@ export function sanitizeDiagnosticData(data, depth = 0) {
 /**
  * Inicializácia Sentry v prípade dostupnosti DSN v env premenných
  */
-export function initSentry() {
+export async function initSentry() {
   if (isSentryInitialized) return;
 
   const dsn = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_SENTRY_DSN : null;
 
   if (!dsn) {
-    // Tichý fallback v offline / guest móde
     isSentryInitialized = true;
     return;
   }
 
   try {
-    // Dynamický import v prípade inštalácie @sentry/react
-    // Inak používame bezpečný fallback
+    SentryModule = await import('@sentry/react');
+    SentryModule.init({
+      dsn,
+      environment: import.meta.env?.MODE || 'production',
+      tracesSampleRate: 0.1,
+      beforeSend(event) {
+        if (event.extra) {
+          event.extra = sanitizeDiagnosticData(event.extra);
+        }
+        if (event.contexts) {
+          event.contexts = sanitizeDiagnosticData(event.contexts);
+        }
+        if (event.tags) {
+          event.tags = sanitizeDiagnosticData(event.tags);
+        }
+        return event;
+      }
+    });
     isSentryInitialized = true;
-    console.info('[Sentry] Inicializovaný s ochranou osobných údajov.');
+    if (import.meta.env?.DEV) {
+      console.info('[Sentry] Inicializovaný s ochranou osobných údajov.');
+    }
   } catch (err) {
     console.warn('[Sentry] Inicializácia zlyhala:', err);
+    isSentryInitialized = true;
   }
 }
 
@@ -80,13 +99,10 @@ export function initSentry() {
 export function captureException(error, context = {}) {
   const safeContext = sanitizeDiagnosticData(context);
 
-  if (typeof window !== 'undefined' && window.Sentry && typeof window.Sentry.captureException === 'function') {
-    window.Sentry.captureException(error, safeContext);
-  } else {
-    // V lokálnom vývojovom režime logujeme s varovaním
-    if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
-      console.warn('[Telemetry Error Captured]:', error?.message || error, safeContext);
-    }
+  if (SentryModule && typeof SentryModule.captureException === 'function') {
+    SentryModule.captureException(error, { extra: safeContext });
+  } else if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    console.warn('[Telemetry Error Captured]:', error?.message || error, safeContext);
   }
 }
 
@@ -94,8 +110,8 @@ export function captureException(error, context = {}) {
  * Zachytenie správy
  */
 export function captureMessage(message, level = 'info') {
-  if (typeof window !== 'undefined' && window.Sentry && typeof window.Sentry.captureMessage === 'function') {
-    window.Sentry.captureMessage(message, level);
+  if (SentryModule && typeof SentryModule.captureMessage === 'function') {
+    SentryModule.captureMessage(message, level);
   } else if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
     console.info(`[Telemetry ${level.toUpperCase()}]:`, message);
   }

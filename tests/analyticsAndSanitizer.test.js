@@ -73,4 +73,12 @@ describe('Demo Case Dataset (Kauza Bratislava – Košice)', () => {
     assert.ok(alibiContra.source_quote_a.length > 10);
     assert.ok(alibiContra.source_quote_b.length > 10);
   });
+
+  test('CZ_DEMO_CASE_DATA export je dostupný a obsahuje alibi rozpor', async () => {
+    const { CZ_DEMO_CASE_DATA, CZ_DEMO_CASE } = await import('../src/data/index.js');
+    assert.ok(CZ_DEMO_CASE);
+    assert.strictEqual(CZ_DEMO_CASE, CZ_DEMO_CASE_DATA);
+    assert.ok(CZ_DEMO_CASE_DATA.contradictions?.length >= 1);
+    assert.ok(CZ_DEMO_CASE_DATA.persons?.length >= 1);
+  });
 });

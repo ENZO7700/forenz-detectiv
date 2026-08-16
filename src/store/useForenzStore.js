@@ -3,7 +3,25 @@ import { base44 } from '../api/base44Client.js';
 import { saveCaseOffline, getCaseOffline } from '../lib/offlineDb.js';
 import { calculateGraphMetrics } from '../lib/graphMetrics.js';
 import { DEMO_CASE_DATA } from '../data/demoCaseData.js';
+import { CZ_DEMO_CASE } from '../data/czDemoCaseData.js';
 import { trackDemoLaunched, trackContradictionDetected } from '../lib/analytics.js';
+
+function normalizeDemoCase(raw, caseId) {
+  return {
+    documents: raw.documents || [],
+    persons: raw.persons || [],
+    relationships: raw.relationships || [],
+    locations: raw.locations || [],
+    events: raw.events || [],
+    claims: raw.claims || [],
+    redFlags: raw.redFlags || [],
+    flaggedPassages: raw.flaggedPassages || [],
+    vehicles: raw.vehicles || [],
+    contradictions: raw.contradictions || [],
+    overrides: raw.overrides || [],
+    caseId
+  };
+}
 
 export const useForenzStore = create((set, get) => ({
   // 1. Dátové entity
@@ -80,30 +98,57 @@ export const useForenzStore = create((set, get) => ({
     }, 4000);
   },
 
-  // 3.1 Okamžité načítanie Demo spisu (BA-KE Alibi paradox)
+  // 3.1 Okamžité načítanie Demo spisu (BA-KE / Praha-Brno Alibi paradox)
+  // Paywall bypass — demo je ukážka, nie produkčný upload.
   loadDemoCase: () => {
+    const lang = typeof window !== 'undefined' ? localStorage.getItem('forenz_lang') : 'sk';
+    const isCs = lang === 'cs';
+    const raw = isCs ? CZ_DEMO_CASE : DEMO_CASE_DATA;
+    const caseId = isCs ? 'praha-brno' : 'ba-ke';
+    const demo = normalizeDemoCase(raw, caseId);
+
+    const alibiPerson =
+      demo.persons.find((p) =>
+        (demo.redFlags || []).some((f) =>
+          (f.type || '').toLowerCase().includes('alibi') &&
+          (f.person_id === p.id || f.entity_ref === p.name || f.person_name === p.name)
+        )
+      ) ||
+      demo.persons.find((p) =>
+        (demo.contradictions || []).some((c) =>
+          (c.type || '').toLowerCase().includes('alibi') &&
+          (c.entity_ref === p.name || c.person_id === p.id)
+        )
+      ) ||
+      demo.persons[0] ||
+      null;
+
     set({
-      documents: DEMO_CASE_DATA.documents,
-      persons: DEMO_CASE_DATA.persons,
-      relationships: DEMO_CASE_DATA.relationships,
-      locations: DEMO_CASE_DATA.locations,
-      events: DEMO_CASE_DATA.events,
-      claims: DEMO_CASE_DATA.claims,
-      redFlags: DEMO_CASE_DATA.redFlags,
-      flaggedPassages: DEMO_CASE_DATA.flaggedPassages,
-      vehicles: DEMO_CASE_DATA.vehicles,
-      contradictions: DEMO_CASE_DATA.contradictions,
-      overrides: DEMO_CASE_DATA.overrides,
+      documents: demo.documents,
+      persons: demo.persons,
+      relationships: demo.relationships,
+      locations: demo.locations,
+      events: demo.events,
+      claims: demo.claims,
+      redFlags: demo.redFlags,
+      flaggedPassages: demo.flaggedPassages,
+      vehicles: demo.vehicles,
+      contradictions: demo.contradictions,
+      overrides: demo.overrides,
       selectedDocId: null,
-      selectedPerson: null,
+      selectedPerson: alibiPerson,
       selectedEdge: null,
-      activeView: 'archive',
+      activeView: 'map',
       loading: false
     });
 
-    trackDemoLaunched('ba-ke');
-    trackContradictionDetected(DEMO_CASE_DATA.contradictions.length, true);
-    get().showToast('⚡ Demo spis BA-KE načítaný: Nájdené 2 kritické rozpory');
+    trackDemoLaunched(caseId);
+    trackContradictionDetected(demo.contradictions.length, true);
+    get().showToast(
+      isCs
+        ? 'Ukázka rozporu: Podívejte se na citaci ze zdroje a mapu nemožného přesunu.'
+        : 'Ukážka rozporu: Pozrite si citáciu zo zdroja a mapu nemožného presunu.'
+    );
   },
 
   // 3.2 Vyčistenie prípadu (pre návrat na čistý Home)

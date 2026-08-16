@@ -1,3 +1,20 @@
+// Príprava súboru pre upload: PDF a textové súbory sa nahrávajú priamo, obrázky prejdú normalizáciou
+export async function prepareFileForUpload(file) {
+  if (!file) return file;
+  const isImage = file.type?.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif)$/i.test(file.name || '');
+  if (!isImage) {
+    // PDF alebo textový dokument — nepoužívame Image/Canvas normalizáciu
+    return file;
+  }
+  try {
+    const base64 = await fileToNormalizedBase64(file);
+    return base64DataUrlToBlobFile(base64, file.name);
+  } catch (err) {
+    console.warn('[ImageProcessor] Normalizácia obrázka zlyhala, použijem originál:', err);
+    return file;
+  }
+}
+
 // Normalizácia obrázku výpovede: zmena veľkosti, zvýšenie kontrastu, výstup ako Base64 (data URL).
 export async function fileToNormalizedBase64(file, maxSize = 1600, contrast = 1.35, quality = 0.85) {
   const img = await loadImage(file);

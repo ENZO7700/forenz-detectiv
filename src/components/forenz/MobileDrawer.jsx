@@ -3,10 +3,12 @@ import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import {
   Network, Layers, Archive, LogOut, X, ShieldAlert,
-  Sun, Moon, Monitor, Users, HelpCircle, Clock, MapPin, LayoutDashboard, Download
+  Sun, Moon, Monitor, Users, HelpCircle, Clock, MapPin, LayoutDashboard, Download,
+  ShieldCheck, Gift, Zap
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePwaInstall } from '@/lib/pwaInstall';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 function initials(name) {
   if (!name) return 'VY';
@@ -70,13 +72,24 @@ function ThemeSwitcher() {
   );
 }
 
-export default function MobileDrawer({ user, activeView, onNavigate, onClose, onLogout, onOpenIntro, alertCount = 0 }) {
+export default function MobileDrawer({
+  user,
+  activeView,
+  onNavigate,
+  onClose,
+  onLogout,
+  onOpenIntro,
+  onOpenPricing,
+  onOpenTrust,
+  onOpenReferral,
+  plan = 'free',
+  alertCount = 0
+}) {
   const go = (view) => { onNavigate(view); onClose(); };
   const { canInstall, promptInstall } = usePwaInstall();
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
-      {/* Overlay */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -84,14 +97,12 @@ export default function MobileDrawer({ user, activeView, onNavigate, onClose, on
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
-      {/* Panel */}
       <motion.div
         initial={{ x: '-100%' }}
         animate={{ x: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="absolute left-0 top-0 h-full w-[80%] max-w-xs bg-slate-900 border-r border-slate-800 rounded-r-2xl shadow-2xl flex flex-col"
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
@@ -107,7 +118,6 @@ export default function MobileDrawer({ user, activeView, onNavigate, onClose, on
           </button>
         </div>
 
-        {/* Scrollable nav */}
         <div className="flex-1 overflow-y-auto px-2 pb-2">
           <SectionLabel>Pracovný priestor</SectionLabel>
           <Item icon={Network} label="Pavúk vzťahov" active={activeView === 'graph'} onClick={() => go('graph')} />
@@ -127,6 +137,22 @@ export default function MobileDrawer({ user, activeView, onNavigate, onClose, on
           <Item icon={Users} label="Prepojené identity" active={activeView === 'identity'} onClick={() => go('identity')} />
           <Item icon={Archive} label="Archív spisov" active={activeView === 'archive'} onClick={() => go('archive')} />
 
+          <SectionLabel>Účet & Dôvera</SectionLabel>
+          {onOpenPricing && (
+            <Item
+              icon={Zap}
+              label="Licencie a plány"
+              badge={plan === 'agency' ? 'Agency' : plan === 'pro' ? 'Pro' : 'Free'}
+              onClick={() => { onOpenPricing(); onClose(); }}
+            />
+          )}
+          {onOpenTrust && (
+            <Item icon={ShieldCheck} label="LEA Trust Pack" onClick={() => { onOpenTrust(); onClose(); }} />
+          )}
+          {onOpenReferral && (
+            <Item icon={Gift} label="Odporučiť kolegu" onClick={() => { onOpenReferral(); onClose(); }} />
+          )}
+
           <SectionLabel>Nápoveda & Nastavenia</SectionLabel>
           {canInstall && (
             <Item
@@ -140,12 +166,14 @@ export default function MobileDrawer({ user, activeView, onNavigate, onClose, on
             />
           )}
           {onOpenIntro && (
-            <Item icon={HelpCircle} label="Sprievodca systémom (3 kroky)" onClick={() => { onOpenIntro(); onClose(); }} />
+            <Item icon={HelpCircle} label="Sprievodca" onClick={() => { onOpenIntro(); onClose(); }} />
           )}
+          <div className="px-3 mb-2 mt-2">
+            <LanguageSwitcher className="w-full justify-center" />
+          </div>
           <ThemeSwitcher />
         </div>
 
-        {/* Footer */}
         <div className="px-3 py-3 border-t border-slate-800">
           {alertCount > 0 && (
             <div className="mb-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-red-950/60 border border-red-800/70 text-red-300 text-[10px] font-medium">

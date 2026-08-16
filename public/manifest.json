@@ -1,7 +1,7 @@
 {
-  "name": "ForenzDetectiv: AI Analýza Spisov",
+  "name": "ForenzDetectiv: AI rozpory",
   "short_name": "ForenzDetectiv",
-  "description": "Nájdi rozpory vo výpovediach a nemožné alibi — AI forenzná analýza spisov so 100% citáciou zo zdroja.",
+  "description": "Nájdi rozpory vo výpovediach a nemožné alibi — AI s citáciou zo zdroja.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

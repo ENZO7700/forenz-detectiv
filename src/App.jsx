@@ -13,34 +13,39 @@ import { AuthProvider } from '@/lib/AuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { initSentry } from '@/lib/sentry';
 import { initAnalytics } from '@/lib/analytics';
+import { I18nProvider } from '@/i18n/i18nContext';
+import { usePlanStore } from '@/store/usePlanStore';
 
 export default function App() {
   useEffect(() => {
     initSentry();
     initAnalytics();
+    usePlanStore.getState().captureReferralCode();
   }, []);
 
   return (
     <ErrorBoundary>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <PwaInstallProvider>
-          <AuthProvider>
-            <QueryClientProvider client={queryClientInstance}>
-              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <ScrollToTop />
-                <Routes>
-                  {/* Priamy prístup do ForenzDetectiv bez nutnosti prihlasovania */}
-                  <Route path="/" element={<ForenzDetectiv />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/shared/:token" element={<SharedCase />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-                <Toaster />
-              </Router>
-            </QueryClientProvider>
-          </AuthProvider>
-        </PwaInstallProvider>
-      </ThemeProvider>
+      <I18nProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <PwaInstallProvider>
+            <AuthProvider>
+              <QueryClientProvider client={queryClientInstance}>
+                <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <ScrollToTop />
+                  <Routes>
+                    {/* Priamy prístup do ForenzDetectiv bez nutnosti prihlasovania */}
+                    <Route path="/" element={<ForenzDetectiv />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/shared/:token" element={<SharedCase />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                  <Toaster />
+                </Router>
+              </QueryClientProvider>
+            </AuthProvider>
+          </PwaInstallProvider>
+        </ThemeProvider>
+      </I18nProvider>
     </ErrorBoundary>
   );
 }

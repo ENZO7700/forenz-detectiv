@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Download, Copy, Share2, Eye, EyeOff, Check, Loader2, Sparkles } from 'lucide-react';
 import AlibiShareCard from './AlibiShareCard';
 import { exportElementAsPng, copyElementImageToClipboard } from '@/utils/imageExporter';
+import { usePlanStore } from '@/store/usePlanStore';
+import { trackShareCardGenerated } from '@/lib/analytics';
 
 export default function ShareModal({
   isOpen,
@@ -14,12 +16,25 @@ export default function ShareModal({
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const fullCardRef = useRef(null);
+  const plan = usePlanStore((s) => s.plan);
+  const setPricingModalOpen = usePlanStore((s) => s.setPricingModalOpen);
+
+  const requirePro = () => {
+    if (plan === 'free') {
+      onClose();
+      setPricingModalOpen(false, 'pro_feature');
+      return true;
+    }
+    return false;
+  };
 
   const handleDownload = async () => {
+    if (requirePro()) return;
     try {
       setLoading(true);
       if (!fullCardRef.current) return;
       await exportElementAsPng(fullCardRef.current, `alibi-paradox-${Date.now()}.png`);
+      trackShareCardGenerated('alibi_impossible');
     } catch (err) {
       console.error('Chyba pri sťahovaní karty:', err);
     } finally {
@@ -28,10 +43,12 @@ export default function ShareModal({
   };
 
   const handleCopy = async () => {
+    if (requirePro()) return;
     try {
       setLoading(true);
       if (!fullCardRef.current) return;
       await copyElementImageToClipboard(fullCardRef.current);
+      trackShareCardGenerated('alibi_impossible');
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch (err) {
