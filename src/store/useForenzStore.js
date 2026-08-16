@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import { base44 } from '@/api/base44Client';
-import { saveCaseOffline, getCaseOffline } from '@/lib/offlineDb';
-import { calculateGraphMetrics } from '@/lib/graphMetrics';
-import { DEMO_CASE_DATA } from '@/data/demoCaseData';
-import { trackDemoLaunched, trackContradictionDetected } from '@/lib/analytics';
+import { base44 } from '../api/base44Client.js';
+import { saveCaseOffline, getCaseOffline } from '../lib/offlineDb.js';
+import { calculateGraphMetrics } from '../lib/graphMetrics.js';
+import { DEMO_CASE_DATA } from '../data/demoCaseData.js';
+import { trackDemoLaunched, trackContradictionDetected } from '../lib/analytics.js';
 
 export const useForenzStore = create((set, get) => ({
   // 1. Dátové entity

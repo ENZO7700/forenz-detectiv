@@ -1,5 +1,5 @@
 import { createClient } from '@base44/sdk';
-import { appParams } from '@/lib/app-params';
+import { appParams } from '../lib/app-params.js';
 
 // Deaktivácia interného Base44 SDK analytics v guest / standalone režime
 if (typeof window !== 'undefined') {
