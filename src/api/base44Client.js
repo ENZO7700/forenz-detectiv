@@ -28,12 +28,13 @@ if (typeof window !== 'undefined') {
   };
 }
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
+const { appId, apiKey, token, functionsVersion, appBaseUrl } = appParams;
 
 // Create a client configured to communicate directly with Base44 platform
 export const base44 = createClient({
   appId: appId || '6a81f5e7f4adbf6a9523b9d8',
   token,
+  headers: apiKey ? { api_key: apiKey } : undefined,
   functionsVersion: functionsVersion || 'v1',
   serverUrl: appBaseUrl || 'https://app.base44.com',
   requiresAuth: false,

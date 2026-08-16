@@ -1,16 +1,16 @@
 # Remaining backlog — po PROMPT-01..12 (100 %)
 
-Stav kódu na `main` (~`1802e77`): produktový sprint PROMPT-01..12 je **uzatvorený**. Tento dokument je copy-paste backlog pre GitHub Issues / Jira — **nie** zoznam P0 ship blockerov.
+Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo gated, PDF chunking, E2E harden, Document schema push).
 
 **Zámerné rozhodnutia (neotvárať znova):**
 
-- Demo ostáva `activeView: 'map'` (aha = alibi na mape), nie contradictions board
+- Demo CTA / `loadDemoCase` len s `VITE_ENABLE_DEMO=true` (alebo E2E `__FORENZ_E2E_DEMO__`) — produkcia bez synthetic cases
 - Graph / Sherlock systémové stringy ostávajú SK v tejto vlne
 - Do `assetlinks.json` sa nedáva fake SHA-256 — len fingerprint z reálneho keystore
 
 **Ako použiť:** každý ticket nižšie skopíruj do GitHub Issue. `gh` CLI môže vyžadovať `gh auth login`.
 
-**Pipeline note:** PDF page-chunking je v kóde (`Document.jsonc`: `parent_document_id`, `page_number`, `page_count`, `source_kind`) — produkcia vyžaduje `base44 entities push` (po `base44 login` / linknutom app), pozri README AI pipeline.
+**Pipeline (hotové):** upload → validate ≤50 MB → PDF page-chunking (`pdf_container` + `pdf_page`, max 40 strán) → `analyzeDocument` → contradictions. Polia `parent_document_id` / `page_number` / `page_count` / `source_kind` sú v `Document.jsonc` a **`base44 entities push` prebehlo** (PROMPT-OPS-01).
 
 ---
 
@@ -19,23 +19,26 @@ Stav kódu na `main` (~`1802e77`): produktový sprint PROMPT-01..12 je **uzatvor
 | Oblasť | Stav | Poznámka |
 |--------|------|----------|
 | Debug HMR / WS probe | Done | HMR na `127.0.0.1`, bez ingestu |
-| UTM + LeadCapture + MiniPlayground | Done | `App.jsx`, `HomeHero` |
-| Audit `logAction` + AuditLogViewer | Done | upload / paywall / PDF / alibi |
-| PostHog 8 helperov + wiring (väčšina) | Done | RB-03: `contradiction_detected` len na demo |
+| UTM + LeadCapture; MiniPlayground odstránený | Done | HomeHero = upload-first |
+| Audit `logAction` + AuditLogViewer | Done | |
+| PostHog 8 helperov + wiring | Done | |
 | Onboarding QuickTip / non-blocking intro | Done | |
 | PdfExportDialog, bulk ≤20, i18n shell SK/CS | Done | |
 | `canCreateCase` + referral credit | Done | |
 | TWA scaffolding + PNG + docs | Done | fingerprint = placeholder → RB-06 |
 | Stripe test mode + docs | Done | live Checkout → RB-05 |
-| Looker / Ads **docs** | Done | live dashboard / spend → RB-04 / RB-07 |
-| Lokálny CI (`test`/`lint`/`typecheck`/`build`) | Done | 75/75 |
-| `trackContradictionDetected` mimo demo | Done | **RB-03** hotové v useForenzStore.js |
-| Stripe `createCheckoutSession` | Done | **RB-05** Base44 serverless function + stripe.js |
-| GitHub Actions zelený | Remaining | billing lock → **RB-01** (GitHub admin) |
-| PostHog EU prod key | Remaining | **RB-02** (.env / secrets) |
-| Looker North Star chart | Remaining | **RB-04** (Looker Studio dashboard) |
-| assetlinks SHA-256 z keystore | Remaining | **RB-06** (Google Play signing) |
-| Beta 100 + Ads ops | Remaining | **RB-07** (Campaign rollout) |
+| Looker / Ads **docs** | Done | live dashboard → RB-04 / RB-07 |
+| PDF page-chunking + Document schema push | Done | **PROMPT-OPS-01** |
+| Demo production gate (`VITE_ENABLE_DEMO`) | Done | **PROMPT-OPS-01** |
+| Master E2E (Playwright S01–S12) | Done | merge `cursor/e2e-master-hardening` |
+| Lokálny CI gate | Done | focused + lint/typecheck/build |
+| `trackContradictionDetected` mimo demo | Done | **RB-03** |
+| Stripe `createCheckoutSession` | Done | **RB-05** |
+| GitHub Actions zelený | Remaining | billing lock → **RB-01** |
+| PostHog EU prod key | Remaining | **RB-02** |
+| Looker North Star chart | Remaining | **RB-04** |
+| assetlinks SHA-256 z keystore | Remaining | **RB-06** |
+| Beta 100 + Ads ops | Remaining | **RB-07** |
 
 ```mermaid
 flowchart TD

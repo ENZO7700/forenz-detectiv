@@ -375,8 +375,18 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         showToast(`Spis "${file.name}" bol načítaný a bezpečne uložený do lokálneho úložiska (IndexedDB 50 MB).`);
       }
     } catch (e) {
+      // #region agent log
+      const _dbgPayloadD = { sessionId: '121488', runId: 'post-fix', hypothesisId: 'D', location: 'ForenzDetectiv.jsx:handleScan:catch', message: 'handleScan caught error', data: { name: e && e.name, message: e && e.message, isPdf: isPdfFile(file), fileName: file && file.name, fileType: file && file.type, online: typeof navigator !== 'undefined' ? navigator.onLine : null }, timestamp: Date.now() };
+      fetch('/__agent_debug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(_dbgPayloadD) }).catch(() => {});
+      fetch('http://127.0.0.1:7931/ingest/03fe994d-dc2e-4915-a6fc-c0a0e5b6913f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '121488' }, body: JSON.stringify(_dbgPayloadD) }).catch(() => {});
+      // #endregion
       console.error(e);
-      showToast('Nahrávanie zlyhalo');
+      const msg = String(e?.message || '');
+      if (/Failed to fetch dynamically imported module|Loading module|\/\.vite\/deps\//i.test(msg)) {
+        showToast('Dev server sa odpojil — obnov stránku na http://127.0.0.1:5173 a skús znova.');
+      } else {
+        showToast('Nahrávanie zlyhalo');
+      }
     } finally {
       setScanning(false);
       setBulkProgress(null);

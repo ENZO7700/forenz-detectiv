@@ -40,7 +40,8 @@ const getAppParams = () => {
 		storage.removeItem('token');
 	}
 	return {
-		appId: getAppParamValue("app_id", { defaultValue: import.meta.env?.VITE_BASE44_APP_ID || "6a7ed366df1f1138ad653044" }),
+		appId: getAppParamValue("app_id", { defaultValue: import.meta.env?.VITE_BASE44_APP_ID || "6a81f5e7f4adbf6a9523b9d8" }),
+		apiKey: getAppParamValue("api_key", { defaultValue: import.meta.env?.VITE_BASE44_API_KEY || "fafad43d1f2e4c0ea0724f2e33181a39" }),
 		token: getAppParamValue("access_token", { removeFromUrl: true }),
 		fromUrl: getAppParamValue("from_url", { defaultValue: typeof window !== 'undefined' ? window.location.href : "/" }),
 		functionsVersion: getAppParamValue("functions_version", { defaultValue: import.meta.env?.VITE_BASE44_FUNCTIONS_VERSION || "v1" }),
