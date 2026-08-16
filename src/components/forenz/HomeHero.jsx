@@ -8,20 +8,30 @@ import {
   AlertTriangle,
   Sparkles,
   ArrowRight,
-  Scale
+  Scale,
+  Files
 } from 'lucide-react';
 import { useForenzStore } from '@/store/useForenzStore';
 
-export default function HomeHero({ onScan, scanning = false }) {
+export default function HomeHero({ onScan, onBulkScan = null, scanning = false }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const loadDemoCase = useForenzStore((s) => s.loadDemoCase);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file && onScan) {
-      onScan(file);
+  const handleFiles = (fileList) => {
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+    if (files.length > 1 && onBulkScan) {
+      onBulkScan(files);
+    } else if (onScan) {
+      onScan(files[0]);
     }
+  };
+
+  const handleFileChange = (e) => {
+    handleFiles(e.target.files);
+    // Reset file input value to allow re-upload of same files
+    e.target.value = '';
   };
 
   const handleDragOver = (e) => {
@@ -37,10 +47,7 @@ export default function HomeHero({ onScan, scanning = false }) {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file && onScan) {
-      onScan(file);
-    }
+    handleFiles(e.dataTransfer.files);
   };
 
   return (
@@ -102,6 +109,7 @@ export default function HomeHero({ onScan, scanning = false }) {
           <input
             ref={fileInputRef}
             type="file"
+            multiple
             accept=".pdf,.png,.jpg,.jpeg,.txt"
             onChange={handleFileChange}
             className="hidden"
@@ -114,19 +122,23 @@ export default function HomeHero({ onScan, scanning = false }) {
 
             <div className="space-y-1">
               <h3 className="text-base sm:text-lg font-semibold text-white">
-                {scanning ? 'Spracovávam výpoveď...' : 'Kliknite alebo presuňte spis sem'}
+                {scanning ? 'Spracovávam výpoveď...' : 'Pretiahnite sem 1 alebo viacero zápisníc naraz'}
               </h3>
               <p className="text-xs text-slate-400">
-                Podporované formáty: PDF zápisnice, fotografie svedectiev (OCR), textové súbory
+                Podpora hromadného nahratia (Bulk upload): PDF zápisnice, fotografie svedectiev (OCR), textové súbory
               </p>
             </div>
 
             <button
               type="button"
               disabled={scanning}
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
               className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-md transition-all group-hover:shadow-amber-500/20"
             >
-              <Upload className="w-4 h-4" /> Nahrať výpoveď (PDF / Foto)
+              <Files className="w-4 h-4" /> Nahrať spis / výpovede (PDF / Foto)
             </button>
           </div>
         </motion.div>
