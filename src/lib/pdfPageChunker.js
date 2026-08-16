@@ -71,25 +71,7 @@ let pdfjsModulePromise = null;
 
 async function loadPdfjs() {
   if (!pdfjsModulePromise) {
-    // #region agent log
-    const _dbgProbeUrl = `${window.location.origin}/node_modules/.vite/deps/pdfjs-dist.js`;
-    let _dbgProbe = { ok: false, status: null, err: null };
-    try {
-      const _r = await fetch(_dbgProbeUrl, { method: 'HEAD', cache: 'no-store' });
-      _dbgProbe = { ok: _r.ok, status: _r.status, err: null };
-    } catch (_e) {
-      _dbgProbe = { ok: false, status: null, err: String(_e && _e.message || _e) };
-    }
-    const _dbgPayloadA = { sessionId: '121488', runId: 'post-fix', hypothesisId: 'A', location: 'pdfPageChunker.js:loadPdfjs', message: 'pdfjs import starting + deps probe', data: { probeUrl: _dbgProbeUrl, probe: _dbgProbe, origin: window.location.origin, href: window.location.href }, timestamp: Date.now() };
-    fetch('/__agent_debug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(_dbgPayloadA) }).catch(() => {});
-    fetch('http://127.0.0.1:7931/ingest/03fe994d-dc2e-4915-a6fc-c0a0e5b6913f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '121488' }, body: JSON.stringify(_dbgPayloadA) }).catch(() => {});
-    // #endregion
     pdfjsModulePromise = import('pdfjs-dist').then((pdfjs) => {
-      // #region agent log
-      const _dbgPayloadB = { sessionId: '121488', runId: 'post-fix', hypothesisId: 'B', location: 'pdfPageChunker.js:loadPdfjs:ok', message: 'pdfjs import succeeded', data: { hasGetDocument: typeof pdfjs.getDocument, hasWorkerOpts: !!pdfjs.GlobalWorkerOptions, version: pdfjs.version || null }, timestamp: Date.now() };
-      fetch('/__agent_debug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(_dbgPayloadB) }).catch(() => {});
-      fetch('http://127.0.0.1:7931/ingest/03fe994d-dc2e-4915-a6fc-c0a0e5b6913f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '121488' }, body: JSON.stringify(_dbgPayloadB) }).catch(() => {});
-      // #endregion
       if (typeof window !== 'undefined' && pdfjs.GlobalWorkerOptions && !pdfjs.GlobalWorkerOptions.workerSrc) {
         pdfjs.GlobalWorkerOptions.workerSrc = new URL(
           'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -98,11 +80,6 @@ async function loadPdfjs() {
       }
       return pdfjs;
     }).catch((err) => {
-      // #region agent log
-      const _dbgPayloadC = { sessionId: '121488', runId: 'post-fix', hypothesisId: 'C', location: 'pdfPageChunker.js:loadPdfjs:fail', message: 'pdfjs import failed', data: { name: err && err.name, message: err && err.message, probe: _dbgProbe }, timestamp: Date.now() };
-      fetch('/__agent_debug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(_dbgPayloadC) }).catch(() => {});
-      fetch('http://127.0.0.1:7931/ingest/03fe994d-dc2e-4915-a6fc-c0a0e5b6913f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '121488' }, body: JSON.stringify(_dbgPayloadC) }).catch(() => {});
-      // #endregion
       pdfjsModulePromise = null;
       throw err;
     });

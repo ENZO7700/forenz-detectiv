@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import base44 from '@base44/vite-plugin';
@@ -7,45 +6,6 @@ import { defineConfig } from 'vite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// #region agent log
-function agentDebugLogPlugin() {
-  const logPath = path.resolve(__dirname, 'debug-121488.log');
-  return {
-    name: 'agent-debug-log',
-    configureServer(server) {
-      server.middlewares.use('/__agent_debug', (req, res) => {
-        if (req.method === 'OPTIONS') {
-          res.statusCode = 204;
-          res.end();
-          return;
-        }
-        if (req.method !== 'POST') {
-          res.statusCode = 405;
-          res.end();
-          return;
-        }
-        const chunks = [];
-        req.on('data', (c) => chunks.push(c));
-        req.on('end', () => {
-          try {
-            const raw = Buffer.concat(chunks).toString('utf8');
-            const payload = JSON.parse(raw);
-            fs.appendFileSync(
-              logPath,
-              `${JSON.stringify({ sessionId: '121488', timestamp: Date.now(), ...payload })}\n`
-            );
-          } catch (_) {
-            /* ignore */
-          }
-          res.statusCode = 204;
-          res.end();
-        });
-      });
-    }
-  };
-}
-// #endregion
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -63,9 +23,6 @@ export default defineConfig({
     }
   },
   plugins: [
-    // #region agent log
-    agentDebugLogPlugin(),
-    // #endregion
     base44({
       legacySDKImports: process.env.BASE44_LEGACY_SDK_IMPORTS === 'true',
       hmrNotifier: false,

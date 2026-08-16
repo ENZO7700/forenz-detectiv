@@ -40,7 +40,7 @@ export const useForenzStore = create((set, get) => ({
   scanning: false,
   bulkProgress: null,
   toast: '',
-  showStats: true,
+  showStats: false,
   activeShare: null,
   activeView: typeof window !== 'undefined' && window.innerWidth <= 640 ? 'overview' : 'graph',
   selectedDocId: null,

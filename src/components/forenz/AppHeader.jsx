@@ -203,7 +203,7 @@ export default function AppHeader({
                   ? 'bg-blue-600/20 text-blue-300 border-blue-500/40'
                   : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
               }`}
-              title="Zobraziť/skryť štatistiky spisu"
+              title="Štatistiky spisu (vysunúť)"
             >
               <BarChart3 className="w-3.5 h-3.5 text-blue-400" />
               <span>Štatistiky</span>
