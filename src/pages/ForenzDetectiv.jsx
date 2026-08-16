@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { base44 } from '@/api/base44Client';
 import { prepareFileForUpload } from '@/lib/imageProcessor';
+import { MAX_FILE_SIZE_BYTES, validateUploadSize } from '@/lib/documentPipeline';
 import { parseTimeToMinutes, namesMatch } from '@/lib/forenzUtils';
 import { mapWithAdaptiveConcurrency } from '@/lib/adaptiveConcurrency';
 import DocumentList from '@/components/forenz/DocumentList';
@@ -224,13 +225,12 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     stopReplay();
   }, [timeBounds.min, timeBounds.max, timeBounds.hasTime]);
 
-  const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB (50 000 KB)
-
+  // Upload → validate → prepare → analyzeDocument → contradiction detect (see documentPipeline.js)
   const handleScan = async (file) => {
     if (!file) return;
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      const sizeKb = Math.round(file.size / 1024);
-      showToast(`Súbor "${file.name}" prekračuje limit 50 MB (${sizeKb.toLocaleString()} KB / max 50 000 KB).`);
+    const sizeCheck = validateUploadSize(file, MAX_FILE_SIZE_BYTES);
+    if (!sizeCheck.ok) {
+      showToast(`Súbor "${file.name}" prekračuje limit 50 MB (${sizeCheck.sizeKb.toLocaleString()} KB / max 50 000 KB).`);
       return;
     }
     if (!canAddDocument(documents.length)) {
@@ -332,7 +332,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     const oversizedFiles = [];
 
     (files || []).forEach((file) => {
-      if (file.size > MAX_FILE_SIZE_BYTES) {
+      if (!validateUploadSize(file, MAX_FILE_SIZE_BYTES).ok) {
         oversizedFiles.push(file);
       } else {
         validFiles.push(file);
@@ -797,7 +797,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         </button>
       </div>
 
-      {/* Ak nie je nahratý žiadny dokument, zobraz prominentný HomeHero s 1-tap Demo a Drag&Drop */}
+      {/* Empty workspace: upload-first HomeHero (no production demo injection) */}
       {documents.length === 0 && !loading ? (
         <HomeHero onScan={handleScan} onBulkScan={handleBulkScan} scanning={scanning} />
       ) : (

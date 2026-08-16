@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { base44 } from '../api/base44Client.js';
 import { saveCaseOffline, getCaseOffline } from '../lib/offlineDb.js';
-import { calculateGraphMetrics } from '../lib/graphMetrics.js';
 import { isDemoEnabled } from '../lib/demoFlag.js';
 import { trackDemoLaunched, trackContradictionDetected } from '../lib/analytics.js';
 

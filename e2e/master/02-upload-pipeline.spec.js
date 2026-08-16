@@ -9,15 +9,30 @@ test.describe('S02 — Mega Upload Pipeline & Bulk gates', () => {
     await gotoApp(page);
     await dismissQuickTipIfPresent(page);
 
-    // Playwright blocks in-memory buffers >50MB; inject File via DataTransfer in-page
+    // Fake size without allocating 50MB heap (avoids OOM in Chromium)
     await page.locator('input[type="file"]').first().evaluate((input) => {
-      const size = 50 * 1024 * 1024 + 4096;
-      const bytes = new Uint8Array(size);
-      bytes[0] = 0x25; bytes[1] = 0x50; bytes[2] = 0x44; bytes[3] = 0x46; // %PDF
-      const file = new File([bytes], 'spis_52mb.pdf', { type: 'application/pdf' });
+      const file = new File(['%PDF-1.4 oversized marker'], 'spis_52mb.pdf', { type: 'application/pdf' });
+      Object.defineProperty(file, 'size', { value: 50 * 1024 * 1024 + 4096 });
       const dt = new DataTransfer();
       dt.items.add(file);
-      input.files = dt.files;
+      // DataTransfer may copy size from blob — rebuild via prototype trick
+      const dt2 = new DataTransfer();
+      try {
+        dt2.items.add(file);
+      } catch {
+        /* ignore */
+      }
+      input.files = dt2.files;
+      // If browser ignored size override, dispatch with manually patched FileList
+      if (!input.files[0] || input.files[0].size <= 50 * 1024 * 1024) {
+        const patched = {
+          0: file,
+          length: 1,
+          item: (i) => (i === 0 ? file : null),
+          [Symbol.iterator]: function* () { yield file; }
+        };
+        Object.defineProperty(input, 'files', { configurable: true, value: patched });
+      }
       input.dispatchEvent(new Event('change', { bubbles: true }));
     });
 

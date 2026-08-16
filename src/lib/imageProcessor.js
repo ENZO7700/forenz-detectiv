@@ -1,4 +1,5 @@
-// Príprava súboru pre upload: PDF a textové súbory sa nahrávajú priamo, obrázky prejdú normalizáciou
+// Príprava súboru pre upload: PDF a textové súbory sa nahrávajú priamo, obrázky prejdú normalizáciou.
+// Gap: veľké multi-page PDF sa zatiaľ nerozdeľujú na stránky pre Pixtral — pozri documentPipeline.js.
 export async function prepareFileForUpload(file) {
   if (!file) return file;
   const isImage = file.type?.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif)$/i.test(file.name || '');

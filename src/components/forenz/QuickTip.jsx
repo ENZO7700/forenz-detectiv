@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Lightbulb, X, Zap } from 'lucide-react';
-import { useForenzStore } from '@/store/useForenzStore';
+import { Lightbulb, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/i18nContext';
 
 export default function QuickTip() {
   const [visible, setVisible] = useState(false);
-  const loadDemoCase = useForenzStore((s) => s.loadDemoCase);
-  const documents = useForenzStore((s) => s.documents);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -19,11 +16,6 @@ export default function QuickTip() {
   const handleDismiss = () => {
     localStorage.setItem('forenz_quicktip_dismissed', 'true');
     setVisible(false);
-  };
-
-  const handleRunDemo = () => {
-    handleDismiss();
-    loadDemoCase();
   };
 
   if (!visible) return null;
@@ -39,23 +31,13 @@ export default function QuickTip() {
         </p>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        {documents.length === 0 && (
-          <button
-            onClick={handleRunDemo}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition-colors"
-          >
-            <Zap className="w-3 h-3 fill-slate-950" /> {t('quickTip.demo')}
-          </button>
-        )}
-        <button
-          onClick={handleDismiss}
-          className="text-slate-400 hover:text-white p-1 rounded-md transition-colors"
-          aria-label={t('quickTip.close')}
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      <button
+        onClick={handleDismiss}
+        className="text-slate-400 hover:text-white p-1 rounded-md transition-colors shrink-0"
+        aria-label={t('quickTip.close')}
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 /**
- * Český ukážkový vyšetrovací spis pre prezentácie a testovanie: Kauza Praha – Brno.
+ * LOCAL / DEV ONLY Czech fixture (Praha – Brno). Only via VITE_ENABLE_DEMO=true.
  */
 export const CZ_DEMO_CASE = {
   caseTitle: 'Kauza Praha – Brno (Spis ČVS-442/2026)',

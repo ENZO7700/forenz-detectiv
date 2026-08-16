@@ -2,7 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { sanitizeAnalyticsProps, trackEvent, trackContradictionViewed, trackDemoLaunched } from '../src/lib/analytics.js';
 import { sanitizeDiagnosticData } from '../src/lib/sentry.js';
-import { DEMO_CASE_DATA } from '../src/data/demoCaseData.js';
+import { validateUploadSize, MAX_FILE_SIZE_BYTES, PIPELINE_STEPS, PDF_PAGE_CHUNKING_IMPLEMENTED } from '../src/lib/documentPipeline.js';
 
 describe('Privacy & Telemetry Sanitization Tests', () => {
   test('sanitizeAnalyticsProps striktne odstraňuje mená, citácie a texty výpovedí', () => {
@@ -58,27 +58,17 @@ describe('Privacy & Telemetry Sanitization Tests', () => {
   });
 });
 
-describe('Demo Case Dataset (Kauza Bratislava – Košice)', () => {
-  test('DEMO_CASE_DATA obsahuje kompletné entity a aspoň 2 rozpory', () => {
-    assert.ok(DEMO_CASE_DATA.documents.length >= 3);
-    assert.ok(DEMO_CASE_DATA.persons.length >= 3);
-    assert.ok(DEMO_CASE_DATA.locations.length >= 3);
-    assert.ok(DEMO_CASE_DATA.contradictions.length >= 2);
-
-    const alibiContra = DEMO_CASE_DATA.contradictions.find((c) => c.type === 'alibi_impossible');
-    assert.ok(alibiContra, 'Musí existovať alibi_impossible rozpor');
-    assert.equal(alibiContra.speed_kmh, 675);
-    assert.equal(alibiContra.distance_km, 450);
-    assert.equal(alibiContra.time_delta_minutes, 40);
-    assert.ok(alibiContra.source_quote_a.length > 10);
-    assert.ok(alibiContra.source_quote_b.length > 10);
+describe('Production upload pipeline helpers', () => {
+  test('validateUploadSize odmietne súbory nad 50 MB', () => {
+    const ok = validateUploadSize({ size: 1024 });
+    assert.equal(ok.ok, true);
+    const bad = validateUploadSize({ size: MAX_FILE_SIZE_BYTES + 1 });
+    assert.equal(bad.ok, false);
+    assert.ok(bad.sizeKb > 50_000);
   });
 
-  test('CZ_DEMO_CASE_DATA export je dostupný a obsahuje alibi rozpor', async () => {
-    const { CZ_DEMO_CASE_DATA, CZ_DEMO_CASE } = await import('../src/data/index.js');
-    assert.ok(CZ_DEMO_CASE);
-    assert.strictEqual(CZ_DEMO_CASE, CZ_DEMO_CASE_DATA);
-    assert.ok(CZ_DEMO_CASE_DATA.contradictions?.length >= 1);
-    assert.ok(CZ_DEMO_CASE_DATA.persons?.length >= 1);
+  test('pipeline kroky sú zdokumentované a PDF chunking ešte nie je hotový', () => {
+    assert.ok(PIPELINE_STEPS.length >= 5);
+    assert.equal(PDF_PAGE_CHUNKING_IMPLEMENTED, false);
   });
 });

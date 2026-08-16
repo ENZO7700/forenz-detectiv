@@ -32,7 +32,7 @@ Postavené na platforme **Base44** (backend-as-a-service: auth, databáza, integ
 - **Cross-document rozpory** — algoritmus porovnáva tvrdenia naprieč dokumentmi a hľadá logické rozpory (čas, miesto, identita, faktá).
 - **Sherlock AI chat** — asistent, ktorý odpovedá na otázky nad dátami prípadu (RAG nad entitami).
 - **Zustand State Management & Offline IndexedDB** — centralizovaný reaktívny store s offline ukladaním prípadov v teréne.
-- **1-tip onboarding** — `QuickTip` pri prvom behu; plný `WelcomeIntroModal` len cez drawer „Sprievodca“ (neblokuje start).
+- **1-tip onboarding** — `QuickTip` pri prvom behu; plný `WelcomeIntroModal` len cez drawer „Sprievodca“ (neblokuje start). Primárny CTA je nahratie reálneho spisu — **žiadny produkčný demo spis**.
 - **Liquid Glass Design System** — moderná frosted glass estetika, 3D hĺbka, neon-glow indikátory a vstavaný Dark/Light theme toggle.
 - **Automatizovaná testovacia sada** — 21 integritných testov backendu (`npm test`) a 8 UI testov cez Vitest (`npm run test:vitest`).
 - **PDF export** — oficiálny vyšetrovací protokol s tabuľkou osôb, červenými vlajkami a grafom.
@@ -115,6 +115,12 @@ Skopíruj [`.env.example`](.env.example) → `.env.local`:
 | `VITE_SENTRY_DSN` | Error tracking (silent fallback bez DSN) |
 | `VITE_POSTHOG_KEY` / `VITE_POSTHOG_HOST` | Product analytics EU |
 | `VITE_STRIPE_PUBLIC_KEY` | Live Stripe; bez kľúča = test mode + lokálny upgrade |
+| `VITE_ENABLE_DEMO` | Len lokálne (`true`). V produkcii **nesmie** byť zapnuté — demo by skresľovalo investigator dáta |
+
+### Demo vs produkcia
+- Produkčné buildy **neinjectujú** demo kauzu BA–KE/Praha–Brno do store/IndexedDB/analytics ako reálne dáta.
+- Primárny tok je vždy **upload → analýza**. Lokálne demo CTA sa zobrazí len pri `VITE_ENABLE_DEMO=true`.
+- Stripe test mode ostáva env-gated (bez publishable key) a **nie je** demo spisom.
 
 ### Spustenie testov & Kontrola kvality
 ```bash
@@ -170,6 +176,15 @@ Backend funkcie bežia v Deno runtime (`base44/functions/<name>/entry.ts`) a kom
 ---
 
 ## AI pipeline
+
+### Post-upload tok (produkcia)
+1. **Kontrola veľkosti** — max 50 MB (`validateUploadSize` / `documentPipeline.js`).
+2. **Príprava** — obrázky normalizácia (`prepareFileForUpload`); PDF/text zatiaľ pass-through.
+3. **Upload** — `UploadFile` → `Document.create(status: pending)`.
+4. **AI analýza** — `analyzeDocument` / `runAnalysis` (Pixtral) → zápis entít.
+5. **Rozpory** — `runContradictionDetection` naprieč dokumentmi používateľa.
+
+**Gap:** rozdelenie veľkých multi-page PDF na stránky (chunk/split) pre vision model **ešte nie je implementované** (`PDF_PAGE_CHUNKING_IMPLEMENTED = false`). Ďalší krok: render stránok → N jobov analýzy.
 
 ### Model
 - **Mistral Pixtral-12B** (`pixtral-12b-2409`) — multimodálny, spracováva obrázok výpovede.

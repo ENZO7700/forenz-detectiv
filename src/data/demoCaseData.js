@@ -1,6 +1,7 @@
 /**
- * Interaktívny Demo Spis pre ForenzDetectiv: Kauza Bratislava – Košice (Alibi Paradox)
- * Slúži ako okamžitá ukážka (Aha! moment) detekcie nemožného alibi a faktických rozporov s citáciami.
+ * LOCAL / DEV ONLY fixture — Kauza Bratislava – Košice (Alibi Paradox).
+ * Loaded only when VITE_ENABLE_DEMO=true via dynamic import in loadDemoCase.
+ * Never presented as production investigator data.
  */
 
 export const DEMO_CASE_DATA = {

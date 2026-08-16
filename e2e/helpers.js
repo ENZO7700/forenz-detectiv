@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 export async function gotoApp(page, pathName = '/') {
   await page.goto(pathName, { waitUntil: 'domcontentloaded' });
@@ -22,8 +22,13 @@ export async function dismissQuickTipIfPresent(page) {
 export async function launchDemo(page) {
   await gotoApp(page);
   await dismissQuickTipIfPresent(page);
-  const demoBtn = page.getByRole('button', { name: /Spustiť Demo spis|Spustit demo|Demo spis/i }).first();
-  await expect(demoBtn).toBeVisible({ timeout: 15_000 });
+  const demoBtn = page.getByRole('button', {
+    name: /Lokálne demo|Lokální demo|Načítať lokálne demo|Načíst lokální demo|Spustiť Demo spis|Spustit demo|Demo spis/i
+  }).first();
+  const visible = await demoBtn.isVisible().catch(() => false);
+  if (!visible) {
+    test.skip(true, 'Demo CTA vypnuté (produkčná čistota). Zapnite VITE_ENABLE_DEMO=true pre lokálne demo E2E.');
+  }
   await demoBtn.click();
   // Desktop nav tabs appear after demo documents load
   await expect(

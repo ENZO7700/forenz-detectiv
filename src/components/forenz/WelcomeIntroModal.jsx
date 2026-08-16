@@ -3,18 +3,20 @@ import { motion } from 'framer-motion';
 import {
   ShieldAlert,
   CheckCircle2,
-  Sparkles,
   MapPin,
   FileSearch,
   X,
-  Zap
+  Zap,
+  Sparkles
 } from 'lucide-react';
 import { useForenzStore } from '@/store/useForenzStore';
 import { useTranslation } from '@/i18n/i18nContext';
+import { isDemoEnabled } from '@/lib/demoFlag';
 
 export default function WelcomeIntroModal({ open, onClose }) {
   const loadDemoCase = useForenzStore((s) => s.loadDemoCase);
   const { t } = useTranslation();
+  const demoOn = isDemoEnabled();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -33,6 +35,7 @@ export default function WelcomeIntroModal({ open, onClose }) {
   };
 
   const handleDemo = () => {
+    if (!demoOn) return;
     localStorage.setItem('forenz_intro_seen', 'true');
     onClose();
     loadDemoCase();
@@ -115,12 +118,15 @@ export default function WelcomeIntroModal({ open, onClose }) {
             {t('welcome.skip')}
           </button>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleDemo}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-semibold text-xs sm:text-sm transition-colors"
-            >
-              <Sparkles className="w-4 h-4" /> {t('welcome.demo')}
-            </button>
+            {demoOn && (
+              <button
+                type="button"
+                onClick={handleDemo}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-semibold text-xs sm:text-sm transition-colors"
+              >
+                <Sparkles className="w-4 h-4" /> {t('welcome.demo')}
+              </button>
+            )}
             <button
               onClick={handleFinish}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all"

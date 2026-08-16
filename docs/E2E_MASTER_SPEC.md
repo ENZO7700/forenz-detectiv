@@ -8,14 +8,14 @@ Mapovanie 12 scenárov na **Playwright** (`e2e/master/*.spec.js`) a existujúce 
 # Unit + legal + upload gates (rýchle, CI-friendly)
 npm test
 
-# Browser E2E (štartuje Vite na 127.0.0.1:5173)
+# Browser E2E — Playwright štartuje Vite s VITE_ENABLE_DEMO=true (demo BA–KE)
 npm run test:e2e
 
 # Len master suite
 npx playwright test e2e/master
 ```
 
-**Poznámka:** 49–52 MB skutočné upload heap testy sú v `tests/upload49mbSmoke.test.js` (unit). Playwright overuje **gate + toast** (52 MB buffer) a demo/map/graph UX bez AI backendu.
+**Poznámka:** Produkčný build má demo vypnuté (`isDemoEnabled()` → `VITE_ENABLE_DEMO=true` len v E2E). 49–52 MB heap testy sú v `tests/upload49mbSmoke.test.js`; Playwright overuje size gate cez fake `File.size`.
 
 ## Coverage matrix
 

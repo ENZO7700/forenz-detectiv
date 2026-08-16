@@ -29,9 +29,14 @@ export default defineConfig({
     }
   ],
   webServer: {
+    // Demo BA–KE must be on for master E2E (isDemoEnabled requires VITE_ENABLE_DEMO=true)
     command: 'npm run dev -- --host 127.0.0.1 --port 5173',
     url: BASE_URL,
-    reuseExistingServer: true,
-    timeout: 120_000
+    reuseExistingServer: false,
+    timeout: 120_000,
+    env: {
+      ...process.env,
+      VITE_ENABLE_DEMO: 'true'
+    }
   }
 });
