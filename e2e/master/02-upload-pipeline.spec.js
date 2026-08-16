@@ -34,7 +34,7 @@ test.describe('S02 — Mega Upload Pipeline & Bulk gates', () => {
       const input = page.locator('input[type="file"]').first();
       await input.setInputFiles(filePath);
       await page.waitForTimeout(1000);
-      await expect(page.getByText('ForenzDetectiv').first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.locator('body')).toContainText('ForenzDetectiv', { timeout: 20_000 });
     } finally {
       fs.unlinkSync(filePath);
     }

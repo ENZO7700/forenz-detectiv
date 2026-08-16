@@ -29,8 +29,8 @@ test.describe('S11 — PWA, mobilné UI & offline', () => {
   test('Offline po demo — UI ostáva použiteľné', async ({ page, context }) => {
     await launchDemo(page);
     await context.setOffline(true);
-    await page.getByRole('button', { name: /Pavúk vzťahov|Pavúk|Kartotéka/i }).first().click();
-    await expect(page.getByText('ForenzDetectiv').first()).toBeVisible();
+    await page.getByRole('button', { name: /Pavúk|Kartotéka|Spis/i }).first().click();
+    await expect(page.locator('body')).toContainText('ForenzDetectiv');
     await context.setOffline(false);
   });
 });

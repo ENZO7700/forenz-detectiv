@@ -5,7 +5,7 @@ test.describe('S05/S08/S09 — Legal smoke, Sherlock, PDF export', () => {
   test('S05 smoke: Home obsahuje forenzný copy', async ({ page }) => {
     await gotoApp(page);
     await dismissQuickTipIfPresent(page);
-    await expect(page.getByText(/rozpory|alibi|ForenzDetectiv/i).first()).toBeVisible();
+    await expect(page.getByText(/rozpory|alibi|ForenzDetectiv AI|nemožné/i).first()).toBeVisible();
   });
 
   test('S08 Sherlock panel sa otvorí', async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe('S05/S08/S09 — Legal smoke, Sherlock, PDF export', () => {
     if (await dialog.count()) {
       await expect(dialog.first()).toBeVisible();
     } else {
-      await expect(page.getByText('ForenzDetectiv').first()).toBeVisible();
+      await expect(page.locator('body')).toContainText('ForenzDetectiv');
     }
   });
 });

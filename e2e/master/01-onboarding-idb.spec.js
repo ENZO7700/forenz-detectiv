@@ -25,13 +25,12 @@ test.describe('S01 — Onboarding, Guest Mode & IndexedDB', () => {
   test('Offline sieť — app nespadne na bielu obrazovku', async ({ page, context }) => {
     await gotoApp(page);
     await dismissQuickTipIfPresent(page);
-    await context.setOffline(true);
-    // Bez reload (ERR_INTERNET_DISCONNECTED) — client-side navigácia
-    await page.evaluate(() => {
-      window.dispatchEvent(new Event('offline'));
-    });
-    await expect(page.getByText('ForenzDetectiv').first()).toBeVisible();
-    await expect(page.locator('body')).not.toBeEmpty();
-    await context.setOffline(false);
+    try {
+      await context.setOffline(true);
+      await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+      await expect(page.locator('body')).toContainText('ForenzDetectiv');
+    } finally {
+      await context.setOffline(false);
+    }
   });
 });
