@@ -32,7 +32,7 @@ Postavené na platforme **Base44** (backend-as-a-service: auth, databáza, integ
 - **Cross-document rozpory** — algoritmus porovnáva tvrdenia naprieč dokumentmi a hľadá logické rozpory (čas, miesto, identita, faktá).
 - **Sherlock AI chat** — asistent, ktorý odpovedá na otázky nad dátami prípadu (RAG nad entitami).
 - **Zustand State Management & Offline IndexedDB** — centralizovaný reaktívny store s offline ukladaním prípadov v teréne.
-- **3x Uvítací sprievodca v slovenskej trikolóre** — interaktívny 3-krokový onboarding (100vh/100dvh) s vysvetlivkami a forenznými tipmi.
+- **1-tip onboarding** — `QuickTip` pri prvom behu; plný `WelcomeIntroModal` len cez drawer „Sprievodca“ (neblokuje start).
 - **Liquid Glass Design System** — moderná frosted glass estetika, 3D hĺbka, neon-glow indikátory a vstavaný Dark/Light theme toggle.
 - **Automatizovaná testovacia sada** — 21 integritných testov backendu (`npm test`) a 8 UI testov cez Vitest (`npm run test:vitest`).
 - **PDF export** — oficiálny vyšetrovací protokol s tabuľkou osôb, červenými vlajkami a grafom.
@@ -60,8 +60,12 @@ Postavené na platforme **Base44** (backend-as-a-service: auth, databáza, integ
 │   │   └── rateLimit.ts          # Per-user rate limiting
 │   ├── workflows/          # Automatizované procesy (Recovery Sweep.jsonc)
 │   └── mcp/                # MCP konfigurácia pre AI agentov
+├── android/                # TWA scaffolding (twa-manifest.json) — pozri docs/TWA_SETUP.md
+├── docs/                   # TWA, Stripe, Looker, Ads, ASO
 ├── public/
-│   ├── manifest.json       # PWA Web App Manifest
+│   ├── manifest.json       # PWA Web App Manifest (PNG 192/512 + SVG)
+│   ├── icons/              # icon-192.png, icon-512.png
+│   ├── .well-known/        # Digital Asset Links (assetlinks.json)
 │   ├── sw.js               # Offline Service Worker
 │   └── icon.svg            # Vektorová ikona aplikácie
 ├── src/
@@ -96,21 +100,32 @@ npm install
 base44 dev
 ```
 
+### Frontend-only (Vite)
+```bash
+npm run dev
+```
+
+**HMR:** otváraj appku na [http://127.0.0.1:5173/](http://127.0.0.1:5173/) (nie `localhost`). Vite je viazaný na IPv4 `127.0.0.1` so `strictPort`, aby WebSocket HMR bol stabilný.
+
+### Environment (voliteľné)
+Skopíruj [`.env.example`](.env.example) → `.env.local`:
+
+| Premenná | Účel |
+|----------|------|
+| `VITE_SENTRY_DSN` | Error tracking (silent fallback bez DSN) |
+| `VITE_POSTHOG_KEY` / `VITE_POSTHOG_HOST` | Product analytics EU |
+| `VITE_STRIPE_PUBLIC_KEY` | Live Stripe; bez kľúča = test mode + lokálny upgrade |
+
 ### Spustenie testov & Kontrola kvality
 ```bash
-# 1. Integritné testy backendu a logiky rozporov (21 testov, 7 sád)
-npm test
+# Lokálny CI gate (zdroj pravdy; GitHub Actions môže byť zablokovaný billingom)
+npm test && npm run lint && npm run typecheck && npm run build
 
-# 2. UI & Komponentové testy (Vitest + Testing Library)
+# UI testy (Vitest)
 npm run test:vitest
-
-# 3. Kontrola TypeScript typov & Lint
-npm run typecheck
-npm run lint
-
-# 4. Produkčný build
-npm run build
 ```
+
+Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (test → lint → typecheck → build).
 
 ### API kľúč
 V Base44 dashboarde alebo cez CLI pridaj tajný kľúč pre Mistral AI:
@@ -118,7 +133,14 @@ V Base44 dashboarde alebo cez CLI pridaj tajný kľúč pre Mistral AI:
 base44 secret set MISTRAL_API_KEY your_key_here
 ```
 
-> Jediný požadovaný secret je `MISTRAL_API_KEY`. Žiadne ďalšie API kľúče nie sú potrebné — všetko ostatné (auth, databáza, upload) zabezpečuje platforma Base44.
+> Povinný backend secret: `MISTRAL_API_KEY`. Frontend env vyššie sú voliteľné.
+
+### Onboarding & docs
+- First-run UX = 1 tip (`QuickTip`); plný sprievodca je v draweri (neblokuje start).
+- TWA / Play: [`docs/TWA_SETUP.md`](docs/TWA_SETUP.md)
+- Stripe: [`docs/STRIPE_SETUP.md`](docs/STRIPE_SETUP.md)
+- Analytics → Looker: [`docs/LOOKER_POSTHOG.md`](docs/LOOKER_POSTHOG.md)
+- Google Ads UTM: [`docs/GOOGLE_ADS.md`](docs/GOOGLE_ADS.md)
 
 ---
 

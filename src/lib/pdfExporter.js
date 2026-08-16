@@ -32,6 +32,11 @@ export async function exportForensicCasePdf({
     caseTitle: scopeTitle
   });
 
+  const lang = typeof window !== 'undefined' ? localStorage.getItem('forenz_lang') : 'sk';
+  const caseLabel = lang === 'cs' ? 'KAUZA' : 'KAUZA';
+  const dateLabel = lang === 'cs' ? 'DATUM' : 'DÁTUM';
+  const localeTag = lang === 'cs' ? 'cs-CZ' : 'sk-SK';
+
   const pdfDoc = await PDFDocument.create();
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -79,7 +84,7 @@ export async function exportForensicCasePdf({
     color: rgb(1, 1, 1)
   });
 
-  currentPage.drawText(`KAUZA: ${scopeTitle.toUpperCase()}  |  DÁTUM: ${new Date().toLocaleString('sk-SK')}`, {
+  currentPage.drawText(`${caseLabel}: ${scopeTitle.toUpperCase()}  |  ${dateLabel}: ${new Date().toLocaleString(localeTag)}`, {
     x: MARGIN,
     y: PAGE_HEIGHT - 44,
     size: 8,

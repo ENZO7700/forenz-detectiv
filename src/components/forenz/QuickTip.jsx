@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Lightbulb, X, Zap } from 'lucide-react';
 import { useForenzStore } from '@/store/useForenzStore';
+import { useTranslation } from '@/i18n/i18nContext';
 
 export default function QuickTip() {
   const [visible, setVisible] = useState(false);
   const loadDemoCase = useForenzStore((s) => s.loadDemoCase);
   const documents = useForenzStore((s) => s.documents);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const isDismissed = localStorage.getItem('forenz_quicktip_dismissed');
@@ -33,7 +35,7 @@ export default function QuickTip() {
           <Lightbulb className="w-4 h-4" />
         </div>
         <p className="text-xs text-slate-300 truncate">
-          <strong className="text-amber-400">Rýchly tip:</strong> Nahrajte aspoň 2 výpovede pre automatické porovnanie rozporov a alibi.
+          <strong className="text-amber-400">{t('quickTip.label')}</strong> {t('quickTip.text')}
         </p>
       </div>
 
@@ -43,13 +45,13 @@ export default function QuickTip() {
             onClick={handleRunDemo}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition-colors"
           >
-            <Zap className="w-3 h-3 fill-slate-950" /> Demo
+            <Zap className="w-3 h-3 fill-slate-950" /> {t('quickTip.demo')}
           </button>
         )}
         <button
           onClick={handleDismiss}
           className="text-slate-400 hover:text-white p-1 rounded-md transition-colors"
-          aria-label="Zavrieť tip"
+          aria-label={t('quickTip.close')}
         >
           <X className="w-3.5 h-3.5" />
         </button>

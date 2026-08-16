@@ -1,6 +1,6 @@
 import { loadStripe } from '@stripe/stripe-js';
 
-const STRIPE_PUBLIC_KEY = import.meta.env?.VITE_STRIPE_PUBLIC_KEY || '';
+const STRIPE_PUBLIC_KEY = import.meta.env?.VITE_STRIPE_PUBLIC_KEY || import.meta.env?.VITE_STRIPE_PUBLISHABLE_KEY || '';
 
 let stripePromise = null;
 export function getStripe() {

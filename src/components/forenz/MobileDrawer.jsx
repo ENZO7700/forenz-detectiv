@@ -4,11 +4,12 @@ import { motion } from 'framer-motion';
 import {
   Network, Layers, Archive, LogOut, X, ShieldAlert,
   Sun, Moon, Monitor, Users, HelpCircle, Clock, MapPin, LayoutDashboard, Download,
-  ShieldCheck, Gift, Zap
+  ShieldCheck, Gift, Zap, ScrollText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePwaInstall } from '@/lib/pwaInstall';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useTranslation } from '@/i18n/i18nContext';
 
 function initials(name) {
   if (!name) return 'VY';
@@ -82,11 +83,13 @@ export default function MobileDrawer({
   onOpenPricing,
   onOpenTrust,
   onOpenReferral,
+  onOpenAudit,
   plan = 'free',
   alertCount = 0
 }) {
   const go = (view) => { onNavigate(view); onClose(); };
   const { canInstall, promptInstall } = usePwaInstall();
+  const { t } = useTranslation();
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
@@ -119,13 +122,13 @@ export default function MobileDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 pb-2">
-          <SectionLabel>Pracovný priestor</SectionLabel>
-          <Item icon={Network} label="Pavúk vzťahov" active={activeView === 'graph'} onClick={() => go('graph')} />
-          <Item icon={Layers} label="Kartotéka & Spisy" active={activeView === 'archive'} onClick={() => go('archive')} />
-          <Item icon={Clock} label="Časová os (Timeline)" active={activeView === 'timeline'} onClick={() => go('timeline')} />
-          <Item icon={MapPin} label="Geografická mapa" active={activeView === 'map'} onClick={() => go('map')} />
+          <SectionLabel>{t('nav.workspace')}</SectionLabel>
+          <Item icon={Network} label={t('nav.graph')} active={activeView === 'graph'} onClick={() => go('graph')} />
+          <Item icon={Layers} label={t('nav.archive')} active={activeView === 'archive'} onClick={() => go('archive')} />
+          <Item icon={Clock} label={t('nav.timeline')} active={activeView === 'timeline'} onClick={() => go('timeline')} />
+          <Item icon={MapPin} label={t('nav.map')} active={activeView === 'map'} onClick={() => go('map')} />
 
-          <SectionLabel>Prehľad & Štatistiky</SectionLabel>
+          <SectionLabel>{t('nav.dashboard')}</SectionLabel>
           <Link
             to="/dashboard"
             onClick={onClose}
@@ -137,23 +140,26 @@ export default function MobileDrawer({
           <Item icon={Users} label="Prepojené identity" active={activeView === 'identity'} onClick={() => go('identity')} />
           <Item icon={Archive} label="Archív spisov" active={activeView === 'archive'} onClick={() => go('archive')} />
 
-          <SectionLabel>Účet & Dôvera</SectionLabel>
+          <SectionLabel>{t('nav.account')}</SectionLabel>
           {onOpenPricing && (
             <Item
               icon={Zap}
-              label="Licencie a plány"
+              label={t('nav.pricing')}
               badge={plan === 'agency' ? 'Agency' : plan === 'pro' ? 'Pro' : 'Free'}
               onClick={() => { onOpenPricing(); onClose(); }}
             />
           )}
           {onOpenTrust && (
-            <Item icon={ShieldCheck} label="LEA Trust Pack" onClick={() => { onOpenTrust(); onClose(); }} />
+            <Item icon={ShieldCheck} label={t('nav.trust')} onClick={() => { onOpenTrust(); onClose(); }} />
+          )}
+          {onOpenAudit && (
+            <Item icon={ScrollText} label={t('nav.audit')} onClick={() => { onOpenAudit(); onClose(); }} />
           )}
           {onOpenReferral && (
-            <Item icon={Gift} label="Odporučiť kolegu" onClick={() => { onOpenReferral(); onClose(); }} />
+            <Item icon={Gift} label={t('nav.referral')} onClick={() => { onOpenReferral(); onClose(); }} />
           )}
 
-          <SectionLabel>Nápoveda & Nastavenia</SectionLabel>
+          <SectionLabel>{t('nav.help')}</SectionLabel>
           {canInstall && (
             <Item
               icon={Download}
@@ -166,7 +172,7 @@ export default function MobileDrawer({
             />
           )}
           {onOpenIntro && (
-            <Item icon={HelpCircle} label="Sprievodca" onClick={() => { onOpenIntro(); onClose(); }} />
+            <Item icon={HelpCircle} label={t('nav.guide')} onClick={() => { onOpenIntro(); onClose(); }} />
           )}
           <div className="px-3 mb-2 mt-2">
             <LanguageSwitcher className="w-full justify-center" />

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Check, Zap, Sparkles, Key, Loader2 } from 'lucide-react';
 import { usePlanStore } from '@/store/usePlanStore';
 import { redirectToCheckout } from '@/lib/stripe';
+import { useTranslation } from '@/i18n/i18nContext';
 
 export default function PricingModal({ isOpen, onClose }) {
   const { plan, upgradePlan, activateLicenseKey } = usePlanStore();
@@ -11,6 +12,8 @@ export default function PricingModal({ isOpen, onClose }) {
   const [promoCode, setPromoCode] = useState('');
   const [promoMsg, setPromoMsg] = useState(null);
   const [loadingPlan, setLoadingPlan] = useState(null);
+  const { t } = useTranslation();
+  const isTestMode = !import.meta.env?.VITE_STRIPE_PUBLIC_KEY && !import.meta.env?.VITE_STRIPE_PUBLISHABLE_KEY;
 
   const handleSelectPlan = async (selectedPlan) => {
     if (selectedPlan === 'free') {
@@ -49,12 +52,17 @@ export default function PricingModal({ isOpen, onClose }) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl bg-slate-950 border-slate-800 text-slate-100 p-6 overflow-y-auto max-h-[90vh]">
         <DialogHeader className="text-center sm:text-center space-y-2">
+          {isTestMode && (
+            <div className="mx-auto px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
+              {t('pricing.testMode')}
+            </div>
+          )}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold mx-auto">
             <Zap className="h-3.5 w-3.5" />
-            <span>ForenzDetectiv Licencie pre Advokátov a Vyšetrovateľov</span>
+            <span>{t('pricing.badge')}</span>
           </div>
           <DialogTitle className="text-2xl sm:text-3xl font-black text-white">
-            Získajte neobmedzenú AI analýzu spisov
+            {t('pricing.title')}
           </DialogTitle>
           <DialogDescription className="text-slate-400 text-sm max-w-xl mx-auto">
             Objavte skryté nezrovnalosti, vytvorte súdne PDF protokoly so SHA-256 hashóm a vyhodnocujte zložité kauzy v sekundách.

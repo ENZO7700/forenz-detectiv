@@ -10,9 +10,11 @@ import {
   Zap
 } from 'lucide-react';
 import { useForenzStore } from '@/store/useForenzStore';
+import { useTranslation } from '@/i18n/i18nContext';
 
 export default function WelcomeIntroModal({ open, onClose }) {
   const loadDemoCase = useForenzStore((s) => s.loadDemoCase);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -37,21 +39,9 @@ export default function WelcomeIntroModal({ open, onClose }) {
   };
 
   const features = [
-    {
-      icon: FileSearch,
-      title: 'AI extrakcia výpovedí',
-      desc: 'OCR a detekcia osôb, tvrdení a citácií zo spisu.'
-    },
-    {
-      icon: ShieldAlert,
-      title: 'Detekcia rozporov',
-      desc: 'Automatické porovnanie výpovedí naprieč dokumentmi.'
-    },
-    {
-      icon: MapPin,
-      title: 'Alibi mapa',
-      desc: 'Haversine kontrola fyzikálne nemožných presunov.'
-    }
+    { icon: FileSearch, title: t('welcome.feat1Title'), desc: t('welcome.feat1Desc') },
+    { icon: ShieldAlert, title: t('welcome.feat2Title'), desc: t('welcome.feat2Desc') },
+    { icon: MapPin, title: t('welcome.feat3Title'), desc: t('welcome.feat3Desc') }
   ];
 
   return (
@@ -73,14 +63,14 @@ export default function WelcomeIntroModal({ open, onClose }) {
               </div>
             </div>
             <div>
-              <h2 className="text-base font-bold text-white tracking-wide">ForenzDetectiv</h2>
-              <p className="text-xs text-slate-400">Rýchly štart · 1 tip</p>
+              <h2 className="text-base font-bold text-white tracking-wide">{t('app.title')}</h2>
+              <p className="text-xs text-slate-400">{t('welcome.guide')}</p>
             </div>
           </div>
           <button
             onClick={handleFinish}
             className="p-2 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 text-slate-400 hover:text-white transition-colors"
-            aria-label="Zavrieť"
+            aria-label={t('actions.close')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -89,10 +79,10 @@ export default function WelcomeIntroModal({ open, onClose }) {
         <div className="p-5 sm:p-6 space-y-5">
           <div>
             <h3 className="text-xl sm:text-2xl font-extrabold text-white leading-tight">
-              Odhaľte rozpory a nemožné alibi za minúty
+              {t('welcome.title')}
             </h3>
             <p className="text-sm text-slate-300 mt-2 leading-relaxed">
-              Nahrajte výpovede alebo spustite demo spis BA–KE a pozrite si mapu fyzikálne nemožného presunu.
+              {t('welcome.subtitle')}
             </p>
           </div>
 
@@ -122,20 +112,20 @@ export default function WelcomeIntroModal({ open, onClose }) {
             onClick={handleFinish}
             className="text-xs sm:text-sm text-slate-400 hover:text-slate-200 px-3 py-2 transition-colors font-medium"
           >
-            Preskočiť
+            {t('welcome.skip')}
           </button>
           <div className="flex items-center gap-2">
             <button
               onClick={handleDemo}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-semibold text-xs sm:text-sm transition-colors"
             >
-              <Sparkles className="w-4 h-4" /> Spustiť demo
+              <Sparkles className="w-4 h-4" /> {t('welcome.demo')}
             </button>
             <button
               onClick={handleFinish}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all"
             >
-              <CheckCircle2 className="w-4 h-4" /> Pokračovať
+              <CheckCircle2 className="w-4 h-4" /> {t('welcome.continue')}
             </button>
           </div>
         </div>

@@ -22,10 +22,16 @@ const getStoredUserId = () => {
   return uid;
 };
 
+const getCaseCount = () => {
+  if (typeof window === 'undefined') return 0;
+  return Number(localStorage.getItem('forenz_case_count') || '0') || 0;
+};
+
 export const usePlanStore = create((set, get) => ({
   plan: getStoredPlan(), // 'free' | 'pro' | 'agency'
   userId: getStoredUserId(),
-  referralCreditsDays: 0,
+  referralCreditsDays: Number(typeof window !== 'undefined' ? localStorage.getItem('forenz_referral_credits') || '0' : '0') || 0,
+  caseCount: getCaseCount(),
   pricingModalOpen: false,
   paywallReason: null,
 
@@ -38,16 +44,26 @@ export const usePlanStore = create((set, get) => ({
     set({ plan: newPlan, pricingModalOpen: false, paywallReason: null });
   },
 
-  canCreateCase: (currentCaseCount = 0) => {
-    const { plan } = get();
+  incrementCaseCount: () => {
+    const next = get().caseCount + 1;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('forenz_case_count', String(next));
+    }
+    set({ caseCount: next });
+    return next;
+  },
+
+  canCreateCase: (currentCaseCount) => {
+    const { plan, caseCount } = get();
     if (plan === 'pro' || plan === 'agency') return true;
-    return currentCaseCount < 2; // Free limit: 2 cases
+    const count = typeof currentCaseCount === 'number' ? currentCaseCount : caseCount;
+    return count < 2;
   },
 
   canAddDocument: (currentDocCount = 0) => {
     const { plan } = get();
     if (plan === 'pro' || plan === 'agency') return true;
-    return currentDocCount < 5; // Free limit: 5 documents per case
+    return currentDocCount < 5;
   },
 
   activateLicenseKey: (key) => {
@@ -70,8 +86,19 @@ export const usePlanStore = create((set, get) => ({
     if (typeof window === 'undefined') return;
     const urlParams = new URLSearchParams(window.location.search);
     const ref = urlParams.get('ref');
-    if (ref) {
-      localStorage.setItem('forenz_incoming_ref', ref);
-    }
+    if (!ref) return;
+
+    localStorage.setItem('forenz_incoming_ref', ref);
+    const alreadyGranted = localStorage.getItem('forenz_referral_rewarded');
+    if (alreadyGranted) return;
+
+    // First-visit referral reward: 30 days Pro credit
+    localStorage.setItem('forenz_referral_rewarded', '1');
+    localStorage.setItem('forenz_referral_credits', '30');
+    localStorage.setItem('forenz_user_plan', 'pro');
+    set({
+      referralCreditsDays: 30,
+      plan: 'pro'
+    });
   }
 }));

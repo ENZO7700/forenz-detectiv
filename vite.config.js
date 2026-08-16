@@ -10,9 +10,17 @@ const __dirname = path.dirname(__filename);
 // https://vite.dev/config/
 export default defineConfig({
   server: {
-    host: 'localhost',
+    // Windows/Brave: host "localhost" binds IPv6-only (::1); WS then flakes.
+    // Pin IPv4 so HTTP + HMR WebSocket share the same reachable endpoint.
+    host: '127.0.0.1',
     port: 5173,
-    strictPort: false
+    strictPort: true,
+    hmr: {
+      protocol: 'ws',
+      host: '127.0.0.1',
+      port: 5173,
+      clientPort: 5173
+    }
   },
   plugins: [
     base44({

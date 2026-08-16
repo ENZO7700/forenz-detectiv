@@ -6,7 +6,7 @@
   },
   "nav": {
     "dashboard": "Přehled případu",
-    "graph": "Graf vztahů",
+    "graph": "Pavouk vztahů",
     "map": "Alibi mapa",
     "identity": "Propojené identity",
     "timeline": "Časová osa",
@@ -16,13 +16,69 @@
     "trust": "Bezpečnost & LEA",
     "pricing": "Ceník",
     "referral": "Pozvat kolegu",
-    "exportPdf": "Exportovat PDF"
+    "exportPdf": "Exportovat PDF",
+    "workspace": "Pracovní prostor",
+    "account": "Účet & Důvěra",
+    "help": "Nápověda & Nastavení",
+    "guide": "Průvodce",
+    "spider": "Pavouk",
+    "case": "Spis",
+    "alibi": "Alibi",
+    "sherlock": "Sherlock"
   },
   "hero": {
-    "headline": "ForenzDetectiv — Odhalte skryté rozpory a nemožná alibi",
-    "subheadline": "První specializovaná AI pro analýzu vyšetřovacích spisů a výpovědí se 100% citací ze zdroje.",
-    "uploadCta": "Nahrát spis / výpověď (PDF, foto, text)",
-    "demoCta": "Vyzkoušet Demo spis: Kauza Praha – Brno"
+    "pill": "Slovenská / česká forenzní analýza spisů",
+    "headlineBefore": "Odhalte skryté",
+    "headlineMid": "rozpory",
+    "headlineAnd": "a",
+    "headlineEnd": "nemožná alibi",
+    "subheadline": "První platforma pro vyšetřovatele a advokáty, která ve spisu automaticky najde rozpory mezi výpověďmi s doslovnou citací ze zdroje a geospatiální kontrolou.",
+    "dropTitle": "Přetáhněte sem 1 nebo více zápisů najednou",
+    "dropScanning": "Zpracovávám výpověď...",
+    "dropHint": "Podpora PDF a dokumentů do 50 MB (50 000 KB), fotografie svědectví (OCR), textové soubory",
+    "uploadCta": "Nahrát spis / výpovědi (PDF / Foto)",
+    "demoTitle": "Nemáte u sebe spis?",
+    "demoBadge": "1-Klik Demo",
+    "demoDesc": "Vyzkoušejte reálnou kauzu: Praha 15:00 ➡️ Brno 15:35 (Alibi paradox)",
+    "demoCta": "Spustit Demo spis",
+    "pilotLink": "Chci firemní 14denní pilot / ceník →",
+    "badgeContradictions": "Křížové rozpory",
+    "badgeCitations": "100% citace ze zdroje",
+    "badgeMap": "CZ/SK Alibi mapa",
+    "badgeHaversine": "Haversine kalkulace",
+    "badgeSandbox": "Lokální sandbox",
+    "badgeGdpr": "GDPR & RLS bezpečnost",
+    "badgePdf": "Soudní PDF export",
+    "badgeSha": "SHA-256 hash integrity"
+  },
+  "quickTip": {
+    "label": "Rychlý tip:",
+    "text": "Nahrajte alespoň 2 výpovědi pro automatické porovnání rozporů a alibi.",
+    "demo": "Demo",
+    "close": "Zavřít tip"
+  },
+  "welcome": {
+    "guide": "Rychlý start · 1 tip",
+    "title": "Odhalte rozpory a nemožná alibi za minuty",
+    "subtitle": "Nahrajte výpovědi nebo spusťte demo spis a podívejte se na mapu fyzikálně nemožného přesunu.",
+    "skip": "Přeskočit",
+    "demo": "Spustit demo",
+    "continue": "Pokračovat",
+    "feat1Title": "AI extrakce výpovědí",
+    "feat1Desc": "OCR a detekce osob, tvrzení a citací ze spisu.",
+    "feat2Title": "Detekce rozporů",
+    "feat2Desc": "Automatické porovnání výpovědí napříč dokumenty.",
+    "feat3Title": "Alibi mapa",
+    "feat3Desc": "Haversine kontrola fyzikálně nemožných přesunů."
+  },
+  "paywall": {
+    "later": "Později",
+    "activate": "Aktivovat Pro"
+  },
+  "pricing": {
+    "badge": "ForenzDetectiv Licence pro Advokáty a Vyšetřovatele",
+    "title": "Získejte neomezenou AI analýzu spisů",
+    "testMode": "Testovací režim — Stripe klíč není nastaven"
   },
   "legal": {
     "case": "Vyšetřovací spis",
@@ -45,5 +101,10 @@
     "cancel": "Zrušit",
     "save": "Uložit",
     "anonymize": "Anonymizovat"
+  },
+  "pdf": {
+    "caseLabel": "KAUZA",
+    "dateLabel": "DATUM",
+    "protocolTitle": "Soudní PDF protokol"
   }
 }
