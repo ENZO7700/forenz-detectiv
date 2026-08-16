@@ -15,12 +15,14 @@ import { initSentry } from '@/lib/sentry';
 import { initAnalytics } from '@/lib/analytics';
 import { I18nProvider } from '@/i18n/i18nContext';
 import { usePlanStore } from '@/store/usePlanStore';
+import { captureUtmParameters } from '@/utils/utmTracker';
 
 export default function App() {
   useEffect(() => {
     initSentry();
     initAnalytics();
     usePlanStore.getState().captureReferralCode();
+    captureUtmParameters();
   }, []);
 
   return (

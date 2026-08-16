@@ -8,6 +8,7 @@ import { generateCaseIntegrityDigest } from '@/utils/cryptoUtils';
 export default function PdfExportDialog({
   isOpen,
   onClose,
+  onExported = null,
   documents = [],
   persons = [],
   relationships = [],
@@ -53,6 +54,7 @@ export default function PdfExportDialog({
         options,
         customSha256: sha256
       });
+      onExported?.();
       onClose();
     } catch (err) {
       console.error('Chyba pri generovaní PDF protokolu:', err);

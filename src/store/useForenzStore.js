@@ -56,7 +56,7 @@ export const useForenzStore = create((set, get) => ({
   leftCollapsed: false,
   rightCollapsed: false,
   searchOpen: false,
-  introOpen: typeof window !== 'undefined' ? !localStorage.getItem('forenz_intro_seen') : false,
+  introOpen: false,
   graphFilter: 'all', // 'all' | 'key_hubs' | 'suspects' | 'conflicts'
 
   // 3. Nastavovače stavu
@@ -98,7 +98,7 @@ export const useForenzStore = create((set, get) => ({
     }, 4000);
   },
 
-  // 3.1 Okamžité načítanie Demo spisu (BA-KE / Praha-Brno Alibi paradox)
+  // 3.1 Demo spis s krátkou „analýza“ pauzou (aha moment)
   // Paywall bypass — demo je ukážka, nie produkčný upload.
   loadDemoCase: () => {
     const lang = typeof window !== 'undefined' ? localStorage.getItem('forenz_lang') : 'sk';
@@ -123,32 +123,38 @@ export const useForenzStore = create((set, get) => ({
       demo.persons[0] ||
       null;
 
-    set({
-      documents: demo.documents,
-      persons: demo.persons,
-      relationships: demo.relationships,
-      locations: demo.locations,
-      events: demo.events,
-      claims: demo.claims,
-      redFlags: demo.redFlags,
-      flaggedPassages: demo.flaggedPassages,
-      vehicles: demo.vehicles,
-      contradictions: demo.contradictions,
-      overrides: demo.overrides,
-      selectedDocId: null,
-      selectedPerson: alibiPerson,
-      selectedEdge: null,
-      activeView: 'map',
-      loading: false
-    });
+    set({ scanning: true, loading: true });
+    get().showToast(isCs ? 'Analyzuji demo spis…' : 'Analyzujem demo spis…');
 
-    trackDemoLaunched(caseId);
-    trackContradictionDetected(demo.contradictions.length, true);
-    get().showToast(
-      isCs
-        ? 'Ukázka rozporu: Podívejte se na citaci ze zdroje a mapu nemožného přesunu.'
-        : 'Ukážka rozporu: Pozrite si citáciu zo zdroja a mapu nemožného presunu.'
-    );
+    setTimeout(() => {
+      set({
+        documents: demo.documents,
+        persons: demo.persons,
+        relationships: demo.relationships,
+        locations: demo.locations,
+        events: demo.events,
+        claims: demo.claims,
+        redFlags: demo.redFlags,
+        flaggedPassages: demo.flaggedPassages,
+        vehicles: demo.vehicles,
+        contradictions: demo.contradictions,
+        overrides: demo.overrides,
+        selectedDocId: null,
+        selectedPerson: alibiPerson,
+        selectedEdge: null,
+        activeView: 'map',
+        loading: false,
+        scanning: false
+      });
+
+      trackDemoLaunched(caseId);
+      trackContradictionDetected(demo.contradictions.length, true);
+      get().showToast(
+        isCs
+          ? 'Ukázka rozporu: Podívejte se na citaci ze zdroje a mapu nemožného přesunu.'
+          : 'Ukážka rozporu: Pozrite si citáciu zo zdroja a mapu nemožného presunu.'
+      );
+    }, 1400);
   },
 
   // 3.2 Vyčistenie prípadu (pre návrat na čistý Home)

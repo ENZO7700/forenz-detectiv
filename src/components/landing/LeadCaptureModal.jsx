@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Building2, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { getStoredUtmParameters } from '@/utils/utmTracker';
+import { trackEvent } from '@/lib/analytics';
 
 export default function LeadCaptureModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
@@ -25,7 +26,22 @@ export default function LeadCaptureModal({ isOpen, onClose }) {
       submittedAt: new Date().toISOString()
     };
 
-    console.info('[B2B LEAD CAPTURED]', payload);
+    try {
+      const existing = JSON.parse(localStorage.getItem('forenz_leads') || '[]');
+      existing.unshift(payload);
+      localStorage.setItem('forenz_leads', JSON.stringify(existing.slice(0, 50)));
+    } catch {
+      // ignore storage failures
+    }
+
+    trackEvent('lead_captured', {
+      source: 'pilot_modal',
+      has_email: !!formData.email,
+      lawyers_count: formData.lawyersCount,
+      utm_source: utmParams.utm_source || 'direct'
+    });
+
+    console.info('[B2B LEAD CAPTURED]', { ...payload, email: '[REDACTED]', name: '[REDACTED]' });
 
     setTimeout(() => {
       setLoading(false);

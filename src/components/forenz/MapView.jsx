@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { resolveLocationCoords } from '../../../base44/shared/geospatialEngine.ts';
 import { MapPin, AlertTriangle, Filter } from 'lucide-react';
+import { trackAlibiChecked } from '@/lib/analytics';
+import { useAuditStore } from '@/store/useAuditStore';
 
 const createCustomIcon = (color, label) => {
   return L.divIcon({
@@ -103,13 +105,27 @@ export default function MapView({
                 [coordsB.lat, coordsB.lng]
               ],
               explanation: c.explanation || c.description,
-              subject: c.person || c.entity_ref || claimA?.subject || 'Podozrivá osoba'
+              subject: c.person || c.entity_ref || claimA?.subject || 'Podozrivá osoba',
+              speedKmh: c.requiredSpeedKmH || c.speed_kmh || 0,
+              distanceKm: c.distanceKm || c.distance_km || 0
             });
           }
         }
       });
     return routes;
   }, [contradictions, claims]);
+
+  const trackedAlibiRef = useRef(false);
+  useEffect(() => {
+    if (trackedAlibiRef.current || impossibleRoutes.length === 0) return;
+    trackedAlibiRef.current = true;
+    const first = impossibleRoutes[0];
+    trackAlibiChecked('impossible', first.speedKmh || 0, first.distanceKm || 0);
+    useAuditStore.getState().logAction('CONTRADICTION_FLAGGED', {
+      type: 'alibi_impossible',
+      count: impossibleRoutes.length
+    });
+  }, [impossibleRoutes]);
 
   // Všetci unikátni aktéri s trasou
   const subjectsWithRoutes = useMemo(() => {

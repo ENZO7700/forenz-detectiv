@@ -1,15 +1,17 @@
 import React from 'react';
 import { Network, Layers, BarChart3, Search, MapPin } from 'lucide-react';
-
-const TABS = [
-  { key: 'graph', label: 'Pavúk', icon: Network },
-  { key: 'archive', label: 'Spis', icon: Layers },
-  { key: 'map', label: 'Alibi', icon: MapPin },
-  { key: 'timeline', label: 'Časová os', icon: BarChart3 },
-  { key: 'sherlock', label: 'Sherlock', icon: Search }
-];
+import { useTranslation } from '@/i18n/i18nContext';
 
 export default function MobileBottomNav({ activeView, onTabChange, onSherlock }) {
+  const { t } = useTranslation();
+  const TABS = [
+    { key: 'graph', label: t('nav.spider'), icon: Network },
+    { key: 'archive', label: t('nav.case'), icon: Layers },
+    { key: 'map', label: t('nav.alibi'), icon: MapPin },
+    { key: 'timeline', label: t('nav.timeline'), icon: BarChart3 },
+    { key: 'sherlock', label: t('nav.sherlock'), icon: Search }
+  ];
+
   const isActive = (key) => {
     if (key === 'sherlock') return activeView === 'sherlock';
     return activeView === key;

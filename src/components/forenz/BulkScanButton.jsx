@@ -10,10 +10,10 @@ export default function BulkScanButton({ onBulkScan, scanning, progress }) {
     e.target.value = '';
   };
 
-  const label = scanning && progress ? `${progress.done}/${progress.total}` : 'Hromadne (≤100)';
+  const label = scanning && progress ? `${progress.done}/${progress.total}` : 'Hromadne (≤20/100)';
   const title = scanning && progress
     ? `Done ${progress.done} · Analýza ${progress.analyzing || 0} · Chyba ${progress.failed || 0} / ${progress.total}`
-    : 'Hromadne nahrať až 100 výpovedí';
+    : 'Hromadne nahrať výpovede (mobil ≤20, desktop ≤100)';
 
   return (
     <>

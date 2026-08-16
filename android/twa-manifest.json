@@ -1,0 +1,26 @@
+{
+  "packageId": "sk.forenzdetectiv.twa",
+  "host": "forenzdetectiv.sk",
+  "name": "ForenzDetectiv: AI rozpory",
+  "launcherName": "ForenzDetectiv",
+  "display": "standalone",
+  "themeColor": "#020617",
+  "navigationColor": "#020617",
+  "backgroundColor": "#020617",
+  "startUrl": "/",
+  "iconUrl": "/icons/icon-512.png",
+  "maskableIconUrl": "/icons/icon-512.png",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap",
+  "webManifestUrl": "https://forenzdetectiv.sk/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": { "enabled": false },
+    "locationDelegation": { "enabled": false }
+  },
+  "alphaDependencies": { "enabled": false },
+  "enableNotifications": false,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 21
+}

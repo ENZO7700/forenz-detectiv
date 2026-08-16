@@ -24,10 +24,11 @@ import PricingModal from '@/components/pricing/PricingModal';
 import PaywallGate from '@/components/pricing/PaywallGate';
 import TrustPackModal from '@/components/trust/TrustPackModal';
 import ReferralModal from '@/components/referral/ReferralModal';
-import { exportForensicCasePdf } from '@/lib/pdfExporter';
+import AuditLogViewer from '@/components/audit/AuditLogViewer';
+import PdfExportDialog from '@/components/export/PdfExportDialog';
 import { withAiRetry } from '@/lib/aiRetry';
-import { trackFileUploaded, trackContradictionViewed, trackPdfExported } from '@/lib/analytics';
-import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin, Trash2, Gift, Zap } from 'lucide-react';
+import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated } from '@/lib/analytics';
+import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin, Trash2, Gift, Zap, ScrollText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileDrawer from '@/components/forenz/MobileDrawer';
 import MobileBottomNav from '@/components/forenz/MobileBottomNav';
@@ -36,6 +37,7 @@ import IdentityPanel from '@/components/forenz/IdentityPanel';
 import CollapsibleSidebar from '@/components/forenz/CollapsibleSidebar';
 import { useForenzStore } from '@/store/useForenzStore';
 import { usePlanStore } from '@/store/usePlanStore';
+import { useAuditStore } from '@/store/useAuditStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { appParams } from '@/lib/app-params';
 
@@ -99,6 +101,9 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const [toast, setToast] = useState(null);
   const [trustOpen, setTrustOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [pdfExportOpen, setPdfExportOpen] = useState(false);
+  const [pdfExportScope, setPdfExportScope] = useState('selected'); // 'selected' | 'all'
   const replayRef = useRef(null);
   const pulseRef = useRef(null);
   const isMobile = useIsMobile();
@@ -108,10 +113,12 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const paywallReason = usePlanStore((s) => s.paywallReason);
   const setPricingModalOpen = usePlanStore((s) => s.setPricingModalOpen);
   const canAddDocument = usePlanStore((s) => s.canAddDocument);
+  const logAction = useAuditStore((s) => s.logAction);
 
   const openPaywall = useCallback((reason) => {
+    logAction('PAYWALL_OPENED', { reason });
     setPricingModalOpen(false, reason);
-  }, [setPricingModalOpen]);
+  }, [setPricingModalOpen, logAction]);
 
   const fetchStoreData = useForenzStore((s) => s.fetchData);
   const fetchData = useCallback(() => fetchStoreData(scope, initialData), [fetchStoreData, scope, initialData]);
@@ -233,7 +240,18 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     }
     setScanning(true);
     try {
+      if (documents.length === 0) {
+        if (!usePlanStore.getState().canCreateCase()) {
+          openPaywall('limit_cases');
+          setScanning(false);
+          return;
+        }
+        usePlanStore.getState().incrementCaseCount();
+        trackCaseCreated('upload', 1);
+        logAction('CASE_CREATED', { source: 'upload' });
+      }
       trackFileUploaded(file.name?.split('.').pop() || 'unknown', Math.round(file.size / 1024));
+      logAction('DOC_UPLOADED', { file_type: file.name?.split('.').pop() || 'unknown', size_kb: Math.round(file.size / 1024) });
       // LOAD / PREPARE → UPLOAD → RELEASE local memory → ANALYZE FROM STORAGE
       const uploadFile = await prepareFileForUpload(file);
       const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadFile });
@@ -320,6 +338,18 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     setScanning(true);
     setBulkProgress({ total: cappedBatch.length, done: 0, analyzing: 0, failed: 0 });
     try {
+      if (documents.length === 0) {
+        if (!usePlanStore.getState().canCreateCase()) {
+          openPaywall('limit_cases');
+          setScanning(false);
+          setBulkProgress(null);
+          return;
+        }
+        usePlanStore.getState().incrementCaseCount();
+        trackCaseCreated('bulk_upload', cappedBatch.length);
+        logAction('CASE_CREATED', { source: 'bulk_upload', file_count: cappedBatch.length });
+      }
+      logAction('DOC_UPLOADED', { source: 'bulk', file_count: cappedBatch.length });
       // Pipeline jeden-dokument-na-workera: preprocess → upload → create → analyze,
       // potom sa lokálna pamäť (base64/blob) uvoľní. Žiadny queue držiaci 100 base64.
       await mapWithAdaptiveConcurrency(cappedBatch, 4, 6, async (file) => {
@@ -518,26 +548,8 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       openPaywall('pro_feature');
       return;
     }
-    try {
-      const canvas = document.querySelector('.relative.flex-1 canvas');
-      await exportForensicCasePdf({
-        documents: selectedDocId ? documents.filter((d) => d.id === selectedDocId) : documents,
-        persons: visiblePersons,
-        relationships: visibleEdges,
-        redFlags: visibleRedFlags,
-        flaggedPassages: visibleFlaggedPassages,
-        claims: visibleClaims,
-        events: visibleEvents,
-        contradictions: visibleContradictions,
-        graphCanvasElement: canvas,
-        scopeTitle: selectedDocId ? `Výpoveď: ${documents.find((d) => d.id === selectedDocId)?.title || selectedDocId}` : 'Celý prípad'
-      });
-      trackPdfExported(1, true);
-      showToast('PDF report bol úspešne vygenerovaný.');
-    } catch (err) {
-      console.error('Export do PDF zlyhal:', err);
-      showToast('Export do PDF zlyhal: ' + (err.message || ''));
-    }
+    setPdfExportScope('selected');
+    setPdfExportOpen(true);
   };
 
   const handleExportAll = async () => {
@@ -545,26 +557,18 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       openPaywall('pro_feature');
       return;
     }
-    try {
-      const canvas = document.querySelector('.relative.flex-1 canvas');
-      await exportForensicCasePdf({
-        documents,
-        persons,
-        relationships,
-        redFlags,
-        flaggedPassages,
-        claims,
-        events,
-        contradictions,
-        graphCanvasElement: canvas,
-        scopeTitle: 'Kompletný vyšetrovací archív'
-      });
-      trackPdfExported(documents.length, true);
-      showToast('Kompletný archívny PDF report bol úspešne vygenerovaný.');
-    } catch (err) {
-      console.error('Export archívu do PDF zlyhal:', err);
-      showToast('Export archívu zlyhal: ' + (err.message || ''));
-    }
+    setPdfExportScope('all');
+    setPdfExportOpen(true);
+  };
+
+  const handlePdfDialogClose = () => {
+    setPdfExportOpen(false);
+  };
+
+  const handlePdfExported = () => {
+    logAction('PDF_EXPORTED', { scope: pdfExportScope });
+    trackPdfExported(pdfExportScope === 'all' ? documents.length : 1, true);
+    showToast('PDF report bol úspešne vygenerovaný.');
   };
 
   // Replay controls
@@ -685,6 +689,15 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           >
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span className="hidden xl:inline">Trust</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAuditOpen(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm transition-colors"
+            title="Audit log"
+          >
+            <ScrollText className="w-4 h-4 text-amber-400" />
+            <span className="hidden xl:inline">Audit</span>
           </button>
           <button
             type="button"
@@ -1052,6 +1065,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           onOpenPricing={() => setPricingModalOpen(true)}
           onOpenTrust={() => setTrustOpen(true)}
           onOpenReferral={() => setReferralOpen(true)}
+          onOpenAudit={() => setAuditOpen(true)}
           plan={plan}
           alertCount={redFlags.length + contradictions.length}
         />
@@ -1101,6 +1115,29 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       <ReferralModal
         isOpen={referralOpen}
         onClose={() => setReferralOpen(false)}
+      />
+
+      <AuditLogViewer
+        isOpen={auditOpen}
+        onClose={() => setAuditOpen(false)}
+      />
+
+      <PdfExportDialog
+        isOpen={pdfExportOpen}
+        onClose={handlePdfDialogClose}
+        onExported={handlePdfExported}
+        documents={pdfExportScope === 'all' ? documents : (selectedDocId ? documents.filter((d) => d.id === selectedDocId) : documents)}
+        persons={pdfExportScope === 'all' ? persons : visiblePersons}
+        relationships={pdfExportScope === 'all' ? relationships : visibleEdges}
+        redFlags={pdfExportScope === 'all' ? redFlags : visibleRedFlags}
+        contradictions={pdfExportScope === 'all' ? contradictions : visibleContradictions}
+        events={pdfExportScope === 'all' ? events : visibleEvents}
+        graphCanvasElement={typeof document !== 'undefined' ? document.querySelector('.relative.flex-1 canvas') : null}
+        scopeTitle={
+          pdfExportScope === 'all'
+            ? 'Kompletný vyšetrovací archív'
+            : (selectedDocId ? `Výpoveď: ${documents.find((d) => d.id === selectedDocId)?.title || selectedDocId}` : 'Celý prípad')
+        }
       />
     </div>
   );

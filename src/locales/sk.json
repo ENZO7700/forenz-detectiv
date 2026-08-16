@@ -6,7 +6,7 @@
   },
   "nav": {
     "dashboard": "Prehľad prípadu",
-    "graph": "Graf vzťahov",
+    "graph": "Pavúk vzťahov",
     "map": "Alibi mapa",
     "identity": "Prepojené identity",
     "timeline": "Časová os",
@@ -16,13 +16,69 @@
     "trust": "Bezpečnosť & LEA",
     "pricing": "Cenník",
     "referral": "Pozvať kolegu",
-    "exportPdf": "Exportovať PDF"
+    "exportPdf": "Exportovať PDF",
+    "workspace": "Pracovný priestor",
+    "account": "Účet & Dôvera",
+    "help": "Nápoveda & Nastavenia",
+    "guide": "Sprievodca",
+    "spider": "Pavúk",
+    "case": "Spis",
+    "alibi": "Alibi",
+    "sherlock": "Sherlock"
   },
   "hero": {
-    "headline": "ForenzDetectiv — Odhaľte skryté rozpory a nemožné alibi",
-    "subheadline": "Prvá slovenská AI pre analýzu vyšetrovacích spisov a výpovedí so 100% citáciou zo zdroja.",
-    "uploadCta": "Nahrať spis / výpoveď (PDF, foto, text)",
-    "demoCta": "Vyskúšať Demo spis: Kauza Bratislava – Košice"
+    "pill": "Slovenská forenzná analýza spisov",
+    "headlineBefore": "Odhaľte skryté",
+    "headlineMid": "rozpory",
+    "headlineAnd": "a",
+    "headlineEnd": "nemožné alibi",
+    "subheadline": "Prvá platforma pre vyšetrovateľov a advokátov, ktorá v spise automaticky nájde protirečenia medzi výpoveďami s doslovným citátom zo zdroja a geospatiálnou kontrolou.",
+    "dropTitle": "Pretiahnite sem 1 alebo viacero zápisníc naraz",
+    "dropScanning": "Spracovávam výpoveď...",
+    "dropHint": "Podpora PDF a dokumentov do 50 MB (50 000 KB), fotografie svedectiev (OCR), textové súbory",
+    "uploadCta": "Nahrať spis / výpovede (PDF / Foto)",
+    "demoTitle": "Nemáte pri sebe spis?",
+    "demoBadge": "1-Klik Demo",
+    "demoDesc": "Vyskúšajte reálnu kauzu: Bratislava 14:15 ➡️ Košice 14:55 (Alibi paradox 675 km/h)",
+    "demoCta": "Spustiť Demo spis",
+    "pilotLink": "Chcem firemný 14-dňový pilot / cenník →",
+    "badgeContradictions": "Krížové rozpory",
+    "badgeCitations": "100% citácie zo zdroja",
+    "badgeMap": "SK Alibi mapa",
+    "badgeHaversine": "Haversine kalkulácia",
+    "badgeSandbox": "Lokálny sandbox",
+    "badgeGdpr": "GDPR & RLS bezpečnosť",
+    "badgePdf": "Súdny PDF export",
+    "badgeSha": "SHA-256 hash integrity"
+  },
+  "quickTip": {
+    "label": "Rýchly tip:",
+    "text": "Nahrajte aspoň 2 výpovede pre automatické porovnanie rozporov a alibi.",
+    "demo": "Demo",
+    "close": "Zavrieť tip"
+  },
+  "welcome": {
+    "guide": "Rýchly štart · 1 tip",
+    "title": "Odhaľte rozpory a nemožné alibi za minúty",
+    "subtitle": "Nahrajte výpovede alebo spustite demo spis BA–KE a pozrite si mapu fyzikálne nemožného presunu.",
+    "skip": "Preskočiť",
+    "demo": "Spustiť demo",
+    "continue": "Pokračovať",
+    "feat1Title": "AI extrakcia výpovedí",
+    "feat1Desc": "OCR a detekcia osôb, tvrdení a citácií zo spisu.",
+    "feat2Title": "Detekcia rozporov",
+    "feat2Desc": "Automatické porovnanie výpovedí naprieč dokumentmi.",
+    "feat3Title": "Alibi mapa",
+    "feat3Desc": "Haversine kontrola fyzikálne nemožných presunov."
+  },
+  "paywall": {
+    "later": "Neskôr",
+    "activate": "Aktivovať Pro"
+  },
+  "pricing": {
+    "badge": "ForenzDetectiv Licencie pre Advokátov a Vyšetrovateľov",
+    "title": "Získajte neobmedzenú AI analýzu spisov",
+    "testMode": "Testovací režim — Stripe kľúč nie je nastavený"
   },
   "legal": {
     "case": "Vyšetrovací spis",
@@ -45,5 +101,10 @@
     "cancel": "Zrušiť",
     "save": "Uložiť",
     "anonymize": "Anonymizovať"
+  },
+  "pdf": {
+    "caseLabel": "KAUZA",
+    "dateLabel": "DÁTUM",
+    "protocolTitle": "Súdny PDF protokol"
   }
 }
