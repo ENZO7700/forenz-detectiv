@@ -17,7 +17,7 @@ export default function ScanButton({ onScan, scanning }) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,application/pdf"
+        accept="image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.webp,.txt,.docx,.doc,.odt"
         data-testid="scan-file-input"
         aria-label="Nahrať fotografickú výpoveď alebo PDF"
         className="sr-only"

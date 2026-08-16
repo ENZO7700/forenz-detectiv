@@ -20,7 +20,7 @@ export default function BulkScanButton({ onBulkScan, scanning, progress }) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,application/pdf,.pdf,.txt"
+        accept="image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.webp,.txt,.docx,.doc,.odt"
         multiple
         data-testid="bulk-file-input"
         aria-label="Hromadne nahrať výpovede a PDF spisy (do 50 MB / súbor)"

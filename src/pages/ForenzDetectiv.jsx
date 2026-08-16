@@ -50,6 +50,7 @@ const EventTimeline = lazy(() => import('@/components/forenz/EventTimeline'));
 
 export default function ForenzDetectiv({ readOnly = false, scope = null, sharedBy = null, initialData = null }) {
   const documents = useForenzStore((s) => s.documents);
+  const setDocuments = useForenzStore((s) => s.setDocuments);
   const persons = useForenzStore((s) => s.persons);
   const relationships = useForenzStore((s) => s.relationships);
   const redFlags = useForenzStore((s) => s.redFlags);
