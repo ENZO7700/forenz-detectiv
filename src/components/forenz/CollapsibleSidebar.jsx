@@ -2,14 +2,13 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-// Liquid Glass kolabujúci sidebar — desktop animácia šírky + mliečna bublina pri zbalení.
 export default function CollapsibleSidebar({ side, collapsed, onToggle, expandedWidth, bubbleIcon: Icon, bubbleLabel, children }) {
   return (
     <>
-      {/* Mobilné zobrazenie: vždy viditeľné, vertikálne skladowané */}
+      {/* Mobilné zobrazenie */}
       <div className="lg:hidden">{children}</div>
 
-      {/* Desktop: kolabujúci panel s Liquid Glass ťahadlom */}
+      {/* Desktop: kolabujúci panel s ťahadlom */}
       <motion.div
         animate={{ width: collapsed ? 0 : expandedWidth }}
         transition={{ type: 'spring', stiffness: 200, damping: 30 }}
@@ -22,7 +21,7 @@ export default function CollapsibleSidebar({ side, collapsed, onToggle, expanded
         </div>
       </motion.div>
 
-      {/* Plávajúca mliečna bublina pri zbalenom stave */}
+      {/* Plávajúca bublina pri zbalenom stave */}
       <AnimatePresence>
         {collapsed && (
           <motion.button
@@ -31,7 +30,7 @@ export default function CollapsibleSidebar({ side, collapsed, onToggle, expanded
             exit={{ scale: 0.6, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 200, damping: 30 }}
             onClick={onToggle}
-            className={`hidden lg:flex absolute top-4 z-30 items-center gap-1.5 px-3 py-2 rounded-full bg-white/70 backdrop-blur-3xl border border-white shadow-xl text-blue-700 text-xs font-semibold hover:bg-white/90 transition-colors ${side === 'left' ? 'left-4' : 'right-4'}`}
+            className={`hidden lg:flex absolute top-4 z-30 items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/95 backdrop-blur-md border border-slate-700/80 shadow-2xl text-blue-400 text-xs font-semibold hover:bg-slate-800 transition-colors ${side === 'left' ? 'left-4' : 'right-4'}`}
           >
             {side === 'left' ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
             {Icon && <Icon className="w-3.5 h-3.5" />}
@@ -47,7 +46,7 @@ function Handle({ side, onToggle }) {
   return (
     <button
       onClick={onToggle}
-      className="w-4 shrink-0 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white/40 rounded-lg transition-colors"
+      className="w-4 shrink-0 flex items-center justify-center text-slate-500 hover:text-blue-400 hover:bg-slate-800/80 rounded-lg transition-colors"
       title="Zbaliť panel"
     >
       {side === 'left' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}

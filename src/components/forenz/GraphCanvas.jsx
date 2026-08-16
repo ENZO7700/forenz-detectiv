@@ -514,10 +514,10 @@ export default function GraphCanvas({
 
   if (!graphData.nodes.length) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white/60 dark:bg-slate-900 backdrop-blur-3xl border-[1.5px] border-white dark:border-white/10 rounded-[32px] text-blue-400 min-h-0 m-2">
+      <div className="flex-1 flex items-center justify-center bg-slate-900 border border-slate-800 rounded-2xl text-blue-400 min-h-0 m-2">
         <div className="text-center px-6">
-          <div className="text-lg text-blue-500 font-medium">Žiadne osoby na zobrazenie</div>
-          <div className="text-sm mt-1 text-slate-500">Naskenujte A4 výpoveď pre začatie interaktívnej analýzy grafu.</div>
+          <div className="text-base text-slate-200 font-semibold">Žiadne osoby na zobrazenie v grafe</div>
+          <div className="text-xs mt-1 text-slate-400">Naskenujte alebo nahrajte výpoveď pre vytvorenie interaktívneho pavúka vzťahov.</div>
         </div>
       </div>
     );
@@ -526,14 +526,14 @@ export default function GraphCanvas({
   return (
     <div
       ref={containerRef}
-      className="relative flex-1 bg-white/60 dark:bg-slate-900 backdrop-blur-3xl border-[1.5px] border-white dark:border-white/10 rounded-[32px] shadow-xl overflow-hidden min-h-0 w-full h-full"
+      className="relative flex-1 bg-slate-950 border border-slate-800 rounded-2xl shadow-xl overflow-hidden min-h-0 w-full h-full"
     >
       <ForceGraph2D
         ref={fgRef}
         width={dimensions.width}
         height={dimensions.height}
         graphData={graphData}
-        backgroundColor={dark ? '#0f172a' : '#f8fafc'}
+        backgroundColor="#090d16"
         nodeCanvasObject={paintNode}
         nodeCanvasObjectMode={() => 'replace'}
         linkCanvasObject={paintLink}
@@ -541,7 +541,7 @@ export default function GraphCanvas({
         linkDirectionalParticles={2}
         linkDirectionalParticleSpeed={0.005}
         linkDirectionalParticleWidth={2.5}
-        linkDirectionalParticleColor={() => (dark ? '#60a5fa' : '#003DA5')}
+        linkDirectionalParticleColor={() => '#60a5fa'}
         onNodeClick={handleNodeClick}
         onNodeHover={(node) => setHoverId(node ? node.id : null)}
         onLinkClick={(link) => onSelectEdge && onSelectEdge(link)}
@@ -553,42 +553,42 @@ export default function GraphCanvas({
         cooldownTicks={100}
       />
 
-      {/* Ovládacie tlačidlá Zoomu (Liquid Glass) */}
-      <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
+      {/* Ovládacie tlačidlá Zoomu */}
+      <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-20">
         <button
           onClick={handleZoomIn}
-          className="w-10 h-10 rounded-2xl liquid-glass-panel hover:bg-white/90 dark:hover:bg-slate-800 text-blue-700 dark:text-blue-400 flex items-center justify-center shadow-glass transition-all hover:scale-105"
+          className="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-blue-400 border border-slate-800 flex items-center justify-center shadow-md transition-all"
           title="Priblížiť"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           onClick={handleZoomOut}
-          className="w-10 h-10 rounded-2xl liquid-glass-panel hover:bg-white/90 dark:hover:bg-slate-800 text-blue-700 dark:text-blue-400 flex items-center justify-center shadow-glass transition-all hover:scale-105"
+          className="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-blue-400 border border-slate-800 flex items-center justify-center shadow-md transition-all"
           title="Oddialiť"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
           onClick={handleZoomFit}
-          className="w-10 h-10 rounded-2xl liquid-glass-panel hover:bg-white/90 dark:hover:bg-slate-800 text-blue-700 dark:text-blue-400 flex items-center justify-center shadow-glass transition-all hover:scale-105"
+          className="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-blue-400 border border-slate-800 flex items-center justify-center shadow-md transition-all"
           title="Vycentrovať graf"
         >
           <Maximize2 className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Legenda typov osôb (Liquid Glass) */}
-      <div className="absolute bottom-3 left-3 flex flex-wrap gap-3 text-xs px-4 py-2.5 rounded-3xl liquid-glass-panel shadow-glass z-20">
-        <Legend color={dark ? '#f87171' : '#ee1c25'} label="Podozrivý" shape="oct" />
-        <Legend color={dark ? '#60a5fa' : '#0b3b8c'} label="Svedok" shape="circle" />
-        <Legend color={dark ? '#94a3b8' : '#64748b'} label="Obeť" shape="tri" />
-        <Legend color={dark ? '#38bdf8' : '#0284c7'} label="Alibi" shape="square" />
+      {/* Legenda typov osôb */}
+      <div className="absolute bottom-3 left-3 flex flex-wrap gap-3 text-xs px-3.5 py-2 rounded-xl bg-slate-900/95 border border-slate-800 shadow-md z-20 text-slate-300">
+        <Legend color="#f87171" label="Podozrivý" shape="oct" />
+        <Legend color="#60a5fa" label="Svedok" shape="circle" />
+        <Legend color="#94a3b8" label="Obeť" shape="tri" />
+        <Legend color="#38bdf8" label="Alibi" shape="square" />
       </div>
 
       {/* Focus Mode info */}
       {focusId && (
-        <div className="absolute top-3 left-3 px-3.5 py-2 rounded-2xl liquid-glass-panel text-xs text-blue-700 dark:text-blue-300 shadow-glass z-20">
+        <div className="absolute top-3 left-3 px-3 py-1.5 rounded-xl bg-slate-900/95 border border-slate-800 text-xs text-blue-400 shadow-md z-20">
           Focus Mode — stlačte <strong>Esc</strong> pre zrušenie
         </div>
       )}

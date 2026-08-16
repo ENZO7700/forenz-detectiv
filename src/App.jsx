@@ -13,7 +13,7 @@ import { AuthProvider } from '@/lib/AuthContext';
 
 export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <PwaInstallProvider>
         <AuthProvider>
           <QueryClientProvider client={queryClientInstance}>

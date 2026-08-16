@@ -508,25 +508,26 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   }
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
+    <div className="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
       {sharedBy && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-violet-600/15 border-b border-violet-600/30 text-violet-200 text-sm">
-          <ShieldCheck className="w-4 h-4" />
+        <div className="flex items-center gap-2 px-4 py-2 bg-violet-950/60 border-b border-violet-800/50 text-violet-200 text-sm">
+          <ShieldCheck className="w-4 h-4 text-violet-400" />
           <span>Zdieľaný prípad od <strong>{sharedBy}</strong> · len na čítanie</span>
         </div>
       )}
 
-      <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-white/40 dark:border-white/10 liquid-glass-panel shrink-0">
-        <button onClick={() => setMobileMenuOpen(true)} className="text-blue-700 dark:text-blue-400 hover:text-blue-900 p-1" aria-label="Menu">
+      {/* Mobile Header */}
+      <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-slate-800 bg-slate-900 shrink-0">
+        <button onClick={() => setMobileMenuOpen(true)} className="text-slate-300 hover:text-white p-1" aria-label="Menu">
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex-1 flex items-center justify-center gap-2">
-          <Network className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-          <h1 className="text-sm font-bold text-blue-800 dark:text-blue-300">ForenzDetectiv</h1>
+          <Network className="w-4 h-4 text-blue-400" />
+          <h1 className="text-sm font-semibold text-slate-100">ForenzDetectiv</h1>
         </div>
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
-          <button className="relative text-blue-700 dark:text-blue-400 hover:text-blue-900 p-1" aria-label="Notifikácie">
+          <button className="relative text-slate-300 hover:text-white p-1" aria-label="Notifikácie">
             <Bell className="w-5 h-5" />
             {(redFlags.length + contradictions.length) > 0 && (
               <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] text-white flex items-center justify-center font-bold">
@@ -538,69 +539,70 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         </div>
       </header>
 
-      <header className="hidden lg:flex items-center gap-3 px-4 py-3 border-b border-white/40 dark:border-white/10 liquid-glass-panel shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-red-600 p-0.5 flex items-center justify-center shadow-glass-sm">
+      {/* Desktop Header */}
+      <header className="hidden lg:flex items-center gap-3 px-4 py-3 border-b border-slate-800 bg-slate-900 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 p-0.5 flex items-center justify-center shadow-sm">
             <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-              <Network className="w-4 h-4 text-white" />
+              <Network className="w-4 h-4 text-blue-400" />
             </div>
           </div>
-          <h1 className="text-base font-bold text-blue-900 dark:text-white tracking-tight">ForenzDetectiv</h1>
+          <h1 className="text-base font-semibold text-slate-100 tracking-tight">ForenzDetectiv</h1>
         </div>
-        <span className="text-xs text-blue-700/80 dark:text-blue-400/80 font-medium hidden sm:inline">
+        <span className="text-xs text-slate-400 font-medium hidden sm:inline">
           {documents.length} výpovedí · {persons.length} osôb · {relationships.length} vzťahov · {redFlags.length} varovaní · {flaggedPassages.length} zvýraznení
         </span>
         <div className="ml-auto flex items-center gap-2 shrink-0">
           <ThemeToggle />
           <button
             onClick={() => setSearchOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl liquid-glass-card text-slate-700 dark:text-slate-200 text-sm shadow-glass-sm"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm shadow-sm transition-colors"
             title="Rýchle vyhľadávanie v prípade (Ctrl+K)"
           >
-            <SearchIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <SearchIcon className="w-4 h-4 text-blue-400" />
             <span className="hidden sm:inline">Hľadať</span>
-            <kbd className="hidden md:inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-700 text-slate-500 dark:text-slate-400">Ctrl+K</kbd>
+            <kbd className="hidden md:inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-700">Ctrl+K</kbd>
           </button>
           <button
             onClick={() => setIntroOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-blue-600/15 via-white/50 to-red-600/15 dark:from-blue-600/25 dark:via-slate-800/50 dark:to-red-600/25 text-slate-800 dark:text-slate-100 border border-blue-200/60 dark:border-white/10 hover:bg-white/90 dark:hover:bg-slate-700 transition-all text-sm shadow-glass-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-sm shadow-sm transition-colors"
             title="Sprievodca systémom ForenzDetectiv (3 kroky)"
           >
-            <HelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <HelpCircle className="w-4 h-4 text-blue-400" />
             <span className="hidden sm:inline font-medium">Sprievodca</span>
           </button>
           {!readOnly && (
             <>
               <button
                 onClick={() => setShowStats((s) => !s)}
-                className={`inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm transition-colors ${
-                  showStats ? 'bg-blue-600/20 text-blue-700 border border-blue-200/40' : 'bg-white/40 text-slate-600 border border-white hover:bg-white/70'
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm transition-colors border ${
+                  showStats ? 'bg-blue-600/20 text-blue-400 border-blue-500/40' : 'bg-slate-800 text-slate-200 border-slate-700/80 hover:bg-slate-700'
                 }`}
                 title="Zobraziť/skryť štatistiky"
               >
-                <BarChart3 className="w-4 h-4" />
+                <BarChart3 className="w-4 h-4 text-blue-400" />
                 <span className="hidden sm:inline">Štatistiky</span>
               </button>
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/40 text-slate-600 border border-white hover:bg-white/70 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-colors text-sm shadow-sm"
                 title="Dashboard so štatistikami"
               >
-                <LayoutDashboard className="w-4 h-4" />
+                <LayoutDashboard className="w-4 h-4 text-indigo-400" />
                 <span className="hidden sm:inline">Dashboard</span>
               </Link>
               <button
                 onClick={() => setActiveView('identity')}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/40 text-slate-600 border border-white hover:bg-white/70 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-colors text-sm shadow-sm"
                 title="Správa identít"
               >
-                <Users className="w-4 h-4" />
+                <Users className="w-4 h-4 text-cyan-400" />
                 <span className="hidden sm:inline">Identity</span>
               </button>
               <button
                 onClick={handleShare}
                 disabled={!documents.length}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-blue-600/10 text-blue-700 border border-blue-200/40 hover:bg-blue-600/20 disabled:opacity-50 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-600/20 text-blue-300 border border-blue-500/40 hover:bg-blue-600/30 disabled:opacity-40 transition-colors text-sm"
               >
                 <Share2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Zdieľať</span>
@@ -608,7 +610,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
               {activeShare && (
                 <button
                   onClick={handleRevokeShare}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-red-600/10 text-red-700 border border-red-200/40 hover:bg-red-600/20 transition-colors text-sm"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-950/60 text-red-300 border border-red-800/60 hover:bg-red-900/60 transition-colors text-sm"
                   title="Zneplatniť aktívny zdieľaný link"
                 >
                   <Ban className="w-4 h-4" />
@@ -618,18 +620,18 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
               <button
                 onClick={handleExport}
                 disabled={!persons.length}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/40 text-slate-600 border border-white hover:bg-white/70 disabled:opacity-50 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 disabled:opacity-40 transition-colors text-sm shadow-sm"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-4 h-4 text-emerald-400" />
                 <span className="hidden sm:inline">Report PDF</span>
               </button>
               <button
                 onClick={handleExportAll}
                 disabled={!documents.length}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/40 text-slate-600 border border-white hover:bg-white/70 disabled:opacity-50 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 disabled:opacity-40 transition-colors text-sm shadow-sm"
                 title="Hromadný export všetkých prípadov do jedného PDF"
               >
-                <Archive className="w-4 h-4" />
+                <Archive className="w-4 h-4 text-amber-400" />
                 <span className="hidden sm:inline">Archív PDF</span>
               </button>
               <BulkScanButton onBulkScan={handleBulkScan} scanning={scanning} progress={bulkProgress} />
@@ -640,8 +642,8 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       </header>
 
       {bulkProgress && (
-        <div className="px-4 py-1.5 bg-white/70 backdrop-blur-3xl border-b border-white flex items-center gap-3 text-xs text-blue-600 shrink-0">
-          <span className="shrink-0 tabular-nums whitespace-nowrap">
+        <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center gap-3 text-xs text-slate-300 shrink-0">
+          <span className="shrink-0 tabular-nums whitespace-nowrap text-slate-400">
             {bulkProgress.done} ✓ · {bulkProgress.analyzing} ⏳ · {bulkProgress.failed} ✕ / {bulkProgress.total}
           </span>
           <div className="flex-1 h-1.5 rounded bg-slate-800 overflow-hidden flex">
@@ -662,51 +664,62 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         />
       )}
 
-      <div className="hidden lg:flex shrink-0 items-center gap-1 px-4 py-2 border-b border-white bg-white/70 backdrop-blur-3xl">
+      {/* Navigation View Tabs */}
+      <div className="hidden lg:flex shrink-0 items-center gap-1.5 px-4 py-2 border-b border-slate-800 bg-slate-900">
         <button
           onClick={() => setActiveView('graph')}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
-            activeView === 'graph' ? 'bg-blue-600/15 text-blue-700 border border-blue-200/40' : 'bg-white/40 text-slate-600 border border-white hover:bg-white/70'
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            activeView === 'graph'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
           }`}
         >
           <Network className="w-3.5 h-3.5" />
-          Pavúk
+          Pavúk vzťahov
         </button>
         <button
           onClick={() => setActiveView('archive')}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
-            activeView === 'archive' ? 'bg-blue-600/15 text-blue-700 border border-blue-200/40' : 'bg-white/40 text-slate-600 border border-white hover:bg-white/70'
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            activeView === 'archive'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          Kartotéka
+          Kartotéka & Spisy
         </button>
         <button
           onClick={() => setActiveView('identity')}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
-            activeView === 'identity' ? 'bg-blue-600/15 text-blue-700 border border-blue-200/40' : 'bg-white/40 text-slate-600 border border-white hover:bg-white/70'
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            activeView === 'identity'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
           }`}
         >
           <Users className="w-3.5 h-3.5" />
-          Identity
+          Prepojené identity
         </button>
         <button
           onClick={() => setActiveView('timeline')}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
-            activeView === 'timeline' ? 'bg-blue-600/15 text-blue-700 border border-blue-200/40' : 'bg-white/40 text-slate-600 border border-white hover:bg-white/70'
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            activeView === 'timeline'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
           }`}
         >
           <Clock className="w-3.5 h-3.5" />
-          Timeline
+          Časová os (Timeline)
         </button>
         <button
           onClick={() => setActiveView('map')}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
-            activeView === 'map' ? 'bg-blue-600/15 text-blue-700 border border-blue-200/40' : 'bg-white/40 text-slate-600 border border-white hover:bg-white/70'
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            activeView === 'map'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
           }`}
         >
           <MapPin className="w-3.5 h-3.5" />
-          Mapa
+          Geografická mapa
         </button>
       </div>
 

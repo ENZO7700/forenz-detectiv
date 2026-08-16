@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileText, CheckCircle2, Clock, XCircle, Percent, Users, Link2, AlertTriangle, Flag } from 'lucide-react';
 
-export default function StatsBar({ documents, persons, relationships, redFlags, flaggedPassages }) {
+export default function StatsBar({ documents = [], persons = [], relationships = [], redFlags = [], flaggedPassages = [] }) {
   const byStatus = { pending: 0, analyzing: 0, done: 0, error: 0 };
   documents.forEach((d) => { byStatus[d.status] = (byStatus[d.status] || 0) + 1; });
   const successBase = byStatus.done + byStatus.error;
@@ -20,17 +20,17 @@ export default function StatsBar({ documents, persons, relationships, redFlags, 
   ];
 
   return (
-    <div className="px-4 py-2.5 bg-white/70 backdrop-blur-3xl border-b border-white grid grid-cols-3 gap-2 shrink-0 lg:flex lg:flex-wrap lg:items-center">
+    <div className="px-4 py-2.5 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:items-center gap-2 shrink-0">
       {chips.map((c) => (
         <div
           key={c.label}
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/60 border border-white lg:w-auto whitespace-nowrap min-w-0"
+          className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800/90 hover:border-slate-700 transition-colors shadow-sm lg:w-auto whitespace-nowrap min-w-0"
         >
-          <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${c.color}1f` }}>
+          <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${c.color}22` }}>
             <c.icon className="w-3.5 h-3.5" style={{ color: c.color }} />
           </span>
-          <span className="text-slate-500 dark:text-slate-400 text-[11px] truncate">{c.label}</span>
-          <span className="font-semibold text-blue-700 tabular-nums ml-auto lg:ml-0">{c.value}</span>
+          <span className="text-slate-400 text-xs truncate">{c.label}</span>
+          <span className="font-semibold text-slate-100 tabular-nums ml-auto lg:ml-0 text-sm">{c.value}</span>
         </div>
       ))}
     </div>

@@ -2,13 +2,14 @@ import React from 'react';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import {
-  Network, Layers, BarChart3, Search, FolderOpen, Share2, Archive,
+  Network, Layers, Search, FolderOpen, Share2, Archive,
   Settings, UserCircle, LogOut, X, ShieldAlert, FileSearch, Scale,
-  Sun, Moon, Monitor, Users, HelpCircle, Clock, MapPin
+  Sun, Moon, Monitor, Users, HelpCircle, Clock, MapPin, LayoutDashboard
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 function initials(name) {
-  if (!name) return '?';
+  if (!name) return 'VY';
   return name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 }
 
@@ -16,14 +17,16 @@ function Item({ icon: Icon, label, active, onClick, badge }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm transition-colors text-left ${
-        active ? 'bg-blue-600/10 text-blue-700' : 'text-slate-600 hover:bg-white/60'
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-left ${
+        active
+          ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40 shadow-sm'
+          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-transparent'
       }`}
     >
-      <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-blue-700' : 'text-slate-400'}`} />
+      <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-blue-400' : 'text-slate-500'}`} />
       <span className="flex-1 truncate">{label}</span>
       {badge && (
-        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 font-medium">
+        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
           {badge}
         </span>
       )}
@@ -32,7 +35,7 @@ function Item({ icon: Icon, label, active, onClick, badge }) {
 }
 
 function SectionLabel({ children }) {
-  return <p className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold px-3 mt-4 mb-1.5">{children}</p>;
+  return <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold px-3 mt-4 mb-1.5">{children}</p>;
 }
 
 function ThemeSwitcher() {
@@ -44,17 +47,17 @@ function ThemeSwitcher() {
   ];
   return (
     <div className="px-3 mb-2 mt-1">
-      <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10">
+      <div className="flex p-1 rounded-xl bg-slate-950 border border-slate-800">
         {opts.map((o) => {
           const active = theme === o.value;
           return (
             <button
               key={o.value}
               onClick={() => setTheme(o.value)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                 active
-                  ? 'bg-white text-blue-700 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-slate-800 text-blue-400 shadow-sm border border-slate-700'
+                  : 'text-slate-500 hover:text-slate-300'
               }`}
             >
               <o.icon className="w-3.5 h-3.5" />
@@ -77,7 +80,7 @@ export default function MobileDrawer({ user, activeView, onNavigate, onClose, on
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
       {/* Panel */}
@@ -85,20 +88,20 @@ export default function MobileDrawer({ user, activeView, onNavigate, onClose, on
         initial={{ x: '-100%' }}
         animate={{ x: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="absolute left-0 top-0 h-full w-[80%] max-w-xs bg-white/80 backdrop-blur-2xl border-r border-white rounded-r-[28px] shadow-2xl flex flex-col"
+        className="absolute left-0 top-0 h-full w-[80%] max-w-xs bg-slate-900 border-r border-slate-800 rounded-r-2xl shadow-2xl flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-slate-200 dark:border-white/10">
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-white text-sm font-semibold shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
               {initials(user?.full_name || user?.email)}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-blue-800 truncate">{user?.full_name || 'Používateľ'}</p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{user?.email || ''}</p>
+              <p className="text-xs font-semibold text-slate-100 truncate">{user?.full_name || 'Hlavný Vyšetrovateľ'}</p>
+              <p className="text-[10px] text-slate-400 truncate">{user?.email || 'vysetrovatel@forenz.sk'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 shrink-0">
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -106,45 +109,44 @@ export default function MobileDrawer({ user, activeView, onNavigate, onClose, on
         {/* Scrollable nav */}
         <div className="flex-1 overflow-y-auto px-2 pb-2">
           <SectionLabel>Pracovný priestor</SectionLabel>
-          <Item icon={Network} label="Pavúk" active={activeView === 'graph'} onClick={() => go('graph')} />
-          <Item icon={Layers} label="Kartotéka" active={activeView === 'archive'} onClick={() => go('archive')} />
-          <Item icon={Clock} label="Timeline" active={activeView === 'timeline'} onClick={() => go('timeline')} />
+          <Item icon={Network} label="Pavúk vzťahov" active={activeView === 'graph'} onClick={() => go('graph')} />
+          <Item icon={Layers} label="Kartotéka & Spisy" active={activeView === 'archive'} onClick={() => go('archive')} />
+          <Item icon={Clock} label="Časová os (Timeline)" active={activeView === 'timeline'} onClick={() => go('timeline')} />
           <Item icon={MapPin} label="Geografická mapa" active={activeView === 'map'} onClick={() => go('map')} />
 
-          <SectionLabel>Prípady</SectionLabel>
-          <Item icon={FolderOpen} label="Všetky prípady" active={activeView === 'overview'} onClick={() => go('overview')} />
-          <Item icon={Share2} label="Zdieľané so mnou" onClick={onClose} />
-          <Item icon={Archive} label="Archív" active={activeView === 'archive'} onClick={() => go('archive')} />
-
-          <SectionLabel>Analýzy</SectionLabel>
-          <Item icon={Search} label="Sherlock" active={activeView === 'sherlock'} onClick={() => go('sherlock')} />
-          <Item icon={Scale} label="Rozpory" onClick={onClose} />
-          <Item icon={Users} label="Identity" active={activeView === 'identity'} onClick={() => go('identity')} />
-          <Item icon={FileSearch} label="Dôkazy" active={activeView === 'archive'} onClick={() => go('archive')} />
+          <SectionLabel>Prehľad & Štatistiky</SectionLabel>
+          <Link
+            to="/dashboard"
+            onClick={onClose}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 transition-all text-left"
+          >
+            <LayoutDashboard className="w-4 h-4 text-indigo-400" />
+            <span className="flex-1 truncate">Dashboard štatistík</span>
+          </Link>
+          <Item icon={Users} label="Prepojené identity" active={activeView === 'identity'} onClick={() => go('identity')} />
+          <Item icon={Archive} label="Archív spisov" active={activeView === 'archive'} onClick={() => go('archive')} />
 
           <SectionLabel>Nápoveda & Nastavenia</SectionLabel>
           {onOpenIntro && (
-            <Item icon={HelpCircle} label="Sprievodca systémom (Intro)" onClick={() => { onOpenIntro(); onClose(); }} />
+            <Item icon={HelpCircle} label="Sprievodca systémom (3 kroky)" onClick={() => { onOpenIntro(); onClose(); }} />
           )}
           <ThemeSwitcher />
-          <Item icon={Settings} label="Nastavenia" onClick={onClose} />
-          <Item icon={UserCircle} label="Účet & Profil" onClick={onClose} />
         </div>
 
         {/* Footer */}
-        <div className="px-3 py-3 border-t border-slate-200 dark:border-white/10">
+        <div className="px-3 py-3 border-t border-slate-800">
           {alertCount > 0 && (
-            <div className="mb-2 flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-500/10 text-red-600 dark:text-red-300 text-[11px]">
-              <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+            <div className="mb-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-red-950/60 border border-red-800/70 text-red-300 text-[10px] font-medium">
+              <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-red-400" />
               <span>{alertCount} aktívnych varovaní / rozporov</span>
             </div>
           )}
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-900/5 dark:hover:bg-white/5 transition-colors"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
           >
-            <LogOut className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-            <span>Odhlásiť sa</span>
+            <LogOut className="w-4 h-4 text-slate-500" />
+            <span>Resetovať reláciu</span>
           </button>
         </div>
       </motion.div>

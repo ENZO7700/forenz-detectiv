@@ -3,20 +3,19 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { resolveLocationCoords } from '../../../base44/shared/geospatialEngine.ts';
-import { MapPin, AlertTriangle, Clock, Navigation } from 'lucide-react';
+import { MapPin, AlertTriangle } from 'lucide-react';
 
-// Vytvorenie custom farebných markerov pre mapu
 const createCustomIcon = (color, label) => {
   return L.divIcon({
     className: 'custom-map-marker',
     html: `
       <div style="
         background: ${color};
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
-        border: 2.5px solid white;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+        border: 2px solid #0f172a;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -27,9 +26,9 @@ const createCustomIcon = (color, label) => {
         ${label || '•'}
       </div>
     `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -18]
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -16]
   });
 };
 
@@ -39,12 +38,10 @@ export default function MapView({
   contradictions = [],
   className = ''
 }) {
-  // 1. Získanie GPS bodov zo všetkých známych lokalít v spise
   const mapPoints = useMemo(() => {
     const points = [];
     const seen = new Set();
 
-    // Body z tabuľky Locations
     locations.forEach((loc) => {
       const coords = resolveLocationCoords(loc.name || loc.address);
       if (coords && !seen.has(loc.name)) {
@@ -61,7 +58,6 @@ export default function MapView({
       }
     });
 
-    // Body z tvrdení (claims)
     claims.forEach((c) => {
       if (c.location && !seen.has(c.location)) {
         const coords = resolveLocationCoords(c.location);
@@ -84,13 +80,11 @@ export default function MapView({
     return points;
   }, [locations, claims]);
 
-  // 2. Červené spojnice pre geospatiálne nemožné presuny
   const impossibleRoutes = useMemo(() => {
     const routes = [];
     contradictions
       .filter((c) => c.type === 'geospatial_impossible_travel' || c.type === 'geografická_nesúlad')
       .forEach((c) => {
-        // Skúsime nájsť body z claims
         const claimA = claims.find((cl) => cl.id === c.claim_a_id);
         const claimB = claims.find((cl) => cl.id === c.claim_b_id);
         if (claimA?.location && claimB?.location) {
@@ -112,24 +106,23 @@ export default function MapView({
     return routes;
   }, [contradictions, claims]);
 
-  // Stred mapy: Slovensko (Banská Bystrica)
   const defaultCenter = [48.7363, 19.1462];
 
   return (
-    <div className={`w-full h-full relative rounded-3xl overflow-hidden liquid-glass-panel shadow-glass flex flex-col ${className}`}>
+    <div className={`w-full h-full relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl flex flex-col ${className}`}>
       {/* Horná info lišta mapy */}
-      <div className="px-4 py-3 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/40 dark:border-white/10 flex items-center justify-between z-10">
+      <div className="px-4 py-3 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 flex items-center justify-between z-10 shrink-0">
         <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Geografická mapa vyšetrovania</h3>
+          <MapPin className="w-4 h-4 text-blue-400" />
+          <h3 className="text-xs font-semibold text-slate-100">Geografická mapa vyšetrovania</h3>
         </div>
         <div className="flex items-center gap-3 text-xs">
-          <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> {mapPoints.length} lokalít
+          <span className="flex items-center gap-1.5 text-blue-400 font-medium bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700">
+            <span className="w-2 h-2 rounded-full bg-blue-500" /> {mapPoints.length} lokalít
           </span>
           {impossibleRoutes.length > 0 && (
-            <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" /> {impossibleRoutes.length} nemožných presunov
+            <span className="flex items-center gap-1.5 text-red-400 font-semibold bg-red-950/60 px-2 py-0.5 rounded-lg border border-red-800">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" /> {impossibleRoutes.length} nemožných presunov
             </span>
           )}
         </div>
@@ -141,14 +134,13 @@ export default function MapView({
           center={defaultCenter}
           zoom={7}
           scrollWheelZoom={true}
-          style={{ width: '100%', height: '100%', minHeight: '360px' }}
+          style={{ width: '100%', height: '100%', minHeight: '360px', background: '#090d16' }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {/* Zobrazenie bodov na mape */}
           {mapPoints.map((pt) => (
             <Marker
               key={pt.id}
@@ -156,8 +148,8 @@ export default function MapView({
               icon={createCustomIcon(pt.color, pt.name.slice(0, 2).toUpperCase())}
             >
               <Popup>
-                <div className="p-1 min-w-[140px]">
-                  <h4 className="font-bold text-slate-900 text-sm">{pt.name}</h4>
+                <div className="p-1 min-w-[140px] text-slate-900">
+                  <h4 className="font-bold text-sm">{pt.name}</h4>
                   {pt.address && <p className="text-xs text-slate-600 mt-0.5">{pt.address}</p>}
                   {pt.subject && (
                     <p className="text-xs text-blue-700 font-medium mt-1">
@@ -169,7 +161,6 @@ export default function MapView({
             </Marker>
           ))}
 
-          {/* Zobrazenie červených trás pre nemožné alibi */}
           {impossibleRoutes.map((route) => (
             <Polyline
               key={route.id}
@@ -178,11 +169,11 @@ export default function MapView({
                 color: '#ef4444',
                 weight: 4,
                 dashArray: '6, 8',
-                opacity: 0.85
+                opacity: 0.9
               }}
             >
               <Popup>
-                <div className="p-2 max-w-xs">
+                <div className="p-2 max-w-xs text-slate-900">
                   <div className="flex items-center gap-1.5 text-red-600 font-bold text-xs mb-1">
                     <AlertTriangle className="w-4 h-4" /> Nemožné alibi: {route.subject}
                   </div>

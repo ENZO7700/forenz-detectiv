@@ -11,14 +11,14 @@ function isComplex(q) {
   return COMPLEX_KEYWORDS.some((k) => l.includes(k));
 }
 
-function localAnswer(question, persons, edges, redFlags) {
+function localAnswer(question, persons = [], edges = [], redFlags = []) {
   const q = question.toLowerCase();
   const timeMatch = q.match(/(\d{1,2})[:.](\d{2})/);
   const timeMin = timeMatch ? parseTimeToMinutes(`${timeMatch[1]}:${timeMatch[2]}`) : null;
 
   if (q.includes('alibi')) {
     const alibis = persons.filter((p) => p.type === 'alibi');
-    const relAlibis = edges.filter((e) => e.label.toLowerCase().includes('alibi'));
+    const relAlibis = edges.filter((e) => (e.label || '').toLowerCase().includes('alibi'));
     if (alibis.length || relAlibis.length) {
       const parts = [];
       if (alibis.length) parts.push('Alibi osoby: ' + alibis.map((p) => p.name + (p.details ? ` (${p.details})` : '')).join(', '));
@@ -59,7 +59,6 @@ function localAnswer(question, persons, edges, redFlags) {
   return s;
 }
 
-// Detekcia istoty z AI odpovede — ISTOTA: HIGH/VYSOKÁ, MEDIUM, LOW/NÍZKA.
 function parseConfidence(text) {
   const t = String(text || '');
   if (/ISTOTA[:\s]*(HIGH|VYSOK[AÁ])/i.test(t) || /\b(HIGH|VYSOK[AÁ])\b/i.test(t)) return 'high';
@@ -67,7 +66,7 @@ function parseConfidence(text) {
   return 'medium';
 }
 
-export default function SherlockChat({ persons, edges, redFlags, flaggedPassages = [], claims = [], events = [], contradictions = [], openSignal = 0 }) {
+export default function SherlockChat({ persons = [], edges = [], redFlags = [], flaggedPassages = [], claims = [], events = [], contradictions = [], openSignal = 0 }) {
   const [open, setOpen] = useState(false);
   const [showFlags, setShowFlags] = useState(true);
   const [messages, setMessages] = useState([]);
@@ -75,7 +74,6 @@ export default function SherlockChat({ persons, edges, redFlags, flaggedPassages
   const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
 
-  // Aditívny vstup z bottom navu — otvorí panel bez zmeny existujúcej FAB logiky.
   useEffect(() => {
     if (openSignal > 0) setOpen(true);
   }, [openSignal]);
@@ -124,8 +122,8 @@ export default function SherlockChat({ persons, edges, redFlags, flaggedPassages
     <>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="absolute bottom-4 right-4 z-30 w-12 h-12 rounded-full flex items-center justify-center shadow-xl transition bg-blue-600/10 text-blue-700 border border-blue-200/40 hover:bg-blue-600/20 backdrop-blur-3xl"
-        title="Sherlock AI"
+        className="absolute bottom-4 right-4 z-30 w-11 h-11 rounded-xl flex items-center justify-center shadow-xl transition-all bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 backdrop-blur-md"
+        title="Sherlock AI Forenzný Asistent"
       >
         {open ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
       </button>
@@ -137,38 +135,38 @@ export default function SherlockChat({ persons, edges, redFlags, flaggedPassages
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 16 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="absolute bottom-20 right-4 z-30 w-[18rem] h-[26rem] bg-white/80 backdrop-blur-3xl border-[1.5px] border-white rounded-[32px] shadow-2xl flex flex-col overflow-hidden"
+            className="absolute bottom-16 right-4 z-30 w-[20rem] sm:w-[22rem] h-[28rem] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
-            <div className="px-3 py-2 border-b border-white/60 flex items-center gap-2 bg-blue-50/40">
-              <Search className="w-4 h-4 text-blue-700" />
-              <span className="text-sm font-semibold text-blue-800">Sherlock 🔍</span>
-              <span className="ml-auto text-[10px] text-blue-500">AI nad prípadom</span>
+            <div className="px-3.5 py-2.5 border-b border-slate-800 flex items-center gap-2 bg-slate-900/90">
+              <Search className="w-4 h-4 text-blue-400" />
+              <span className="text-xs font-semibold text-slate-100">Sherlock AI Forenzný Asistent</span>
+              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">v1.2</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
               {flaggedPassages.length > 0 && (
-                <div className="mb-2 border border-amber-500/30 rounded-xl overflow-hidden">
+                <div className="mb-2 border border-amber-900/50 rounded-xl overflow-hidden bg-amber-950/20">
                   <button
                     onClick={() => setShowFlags((s) => !s)}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 text-amber-700 text-xs font-semibold"
+                    className="w-full flex items-center gap-2 px-3 py-1.5 bg-amber-900/40 text-amber-300 text-xs font-semibold"
                   >
                     <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                     <span>Varovné pasáže ({flaggedPassages.length})</span>
-                    <span className="ml-auto shrink-0">{showFlags ? 'skryť' : 'zobraziť'}</span>
+                    <span className="ml-auto shrink-0 text-[10px] text-amber-400/80">{showFlags ? 'skryť' : 'zobraziť'}</span>
                   </button>
                   {showFlags && (
-                    <div className="max-h-32 overflow-y-auto p-2 space-y-1.5 bg-amber-50/30">
+                    <div className="max-h-32 overflow-y-auto p-2 space-y-1.5">
                       {flaggedPassages.map((p) => (
                         <div
                           key={p.id}
                           className={`rounded-lg p-2 text-xs border-l-2 ${
-                            p.category === 'rozpor' ? 'border-red-500 bg-red-500/10' : 'border-amber-400 bg-amber-400/10'
+                            p.category === 'rozpor' ? 'border-red-500 bg-red-950/40' : 'border-amber-500 bg-amber-950/30'
                           }`}
                         >
-                          <span className={`font-semibold ${p.category === 'rozpor' ? 'text-red-600' : 'text-amber-700'}`}>
+                          <span className={`font-semibold ${p.category === 'rozpor' ? 'text-red-400' : 'text-amber-400'}`}>
                             {p.category === 'rozpor' ? 'Rozpor' : 'Neistota'}
                           </span>
-                          <p className="text-slate-700 italic mt-0.5">„{p.text}"</p>
-                          {p.explanation && <p className="text-slate-500 mt-1">{p.explanation}</p>}
+                          <p className="text-slate-300 italic mt-0.5">„{p.text}"</p>
+                          {p.explanation && <p className="text-slate-400 mt-1 text-[11px]">{p.explanation}</p>}
                         </div>
                       ))}
                     </div>
@@ -176,25 +174,25 @@ export default function SherlockChat({ persons, edges, redFlags, flaggedPassages
                 </div>
               )}
               {messages.length === 0 && (
-                <p className="text-xs text-blue-400 text-center mt-8 px-4">
-                  Pýtajte sa na prípad, napr. „Kto má alibi o 14:30?" alebo „Prečo sa názory svedkov líšia?"
+                <p className="text-xs text-slate-400 text-center mt-8 px-4 leading-relaxed">
+                  Pýtajte sa na prípad, napr. <span className="text-blue-400 font-medium">„Kto má alibi o 14:30?"</span> alebo <span className="text-blue-400 font-medium">„Prečo sa výpovede svedkov líšia?"</span>
                 </p>
               )}
               {messages.map((m, i) =>
                 m.role === 'user' ? (
                   <div key={i} className="flex justify-end">
-                    <div className="max-w-[85%] bg-blue-600/15 text-blue-800 text-sm rounded-2xl rounded-br-sm px-3 py-2 border border-blue-200/40">{m.text}</div>
+                    <div className="max-w-[85%] bg-blue-600 text-white text-xs rounded-xl rounded-br-sm px-3 py-2 shadow-sm font-medium">{m.text}</div>
                   </div>
                 ) : (
                   <div key={i} className="flex gap-2">
-                    <div className="w-7 h-7 rounded-full bg-blue-600/10 border border-blue-200/40 flex items-center justify-center shrink-0">
-                      <Search className="w-3.5 h-3.5 text-blue-700" />
+                    <div className="w-6 h-6 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <Search className="w-3 h-3 text-blue-400" />
                     </div>
-                    <div className="max-w-[85%] bg-blue-50/50 text-blue-900 text-sm rounded-2xl rounded-bl-sm px-3 py-2 whitespace-pre-wrap">
+                    <div className="max-w-[85%] bg-slate-800/80 border border-slate-700/80 text-slate-200 text-xs rounded-xl rounded-bl-sm px-3 py-2 whitespace-pre-wrap leading-relaxed shadow-sm">
                       {m.confidence === 'high' && (
-                        <div className="flex items-center gap-1.5 mb-1.5 pb-1.5 border-b border-blue-200/50">
-                          <ShieldCheck className="w-3.5 h-3.5 text-blue-700" />
-                          <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-700">Overená analýza</span>
+                        <div className="flex items-center gap-1.5 mb-1.5 pb-1 border-b border-slate-700">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-[9px] font-semibold uppercase tracking-wide text-emerald-400">Overená analýza</span>
                         </div>
                       )}
                       {m.text}
@@ -204,26 +202,26 @@ export default function SherlockChat({ persons, edges, redFlags, flaggedPassages
               )}
               {busy && (
                 <div className="flex gap-2">
-                  <div className="w-7 h-7 rounded-full bg-blue-600/10 border border-blue-200/40 flex items-center justify-center">
-                    <Loader2 className="w-3.5 h-3.5 text-blue-700 animate-spin" />
+                  <div className="w-6 h-6 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
+                    <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
                   </div>
-                  <div className="bg-blue-50/50 text-blue-500 text-sm rounded-2xl px-3 py-2">Sherlock premýšľa…</div>
+                  <div className="bg-slate-800/80 border border-slate-700/80 text-slate-400 text-xs rounded-xl px-3 py-2">Sherlock analyzuje fakty…</div>
                 </div>
               )}
               <div ref={endRef} />
             </div>
-            <div className="p-2 border-t border-white/60 flex gap-2">
+            <div className="p-2.5 border-t border-slate-800 bg-slate-900/90 flex gap-2">
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') send();
                 }}
-                placeholder="Napíš otázku…"
-                className="flex-1 bg-white/60 text-blue-900 text-sm rounded-full px-4 py-2 outline-none focus:ring-2 ring-blue-500 placeholder:text-blue-300"
+                placeholder="Napíšte otázku vyšetrovateľovi…"
+                className="flex-1 bg-slate-950 border border-slate-800 text-slate-100 text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 placeholder:text-slate-500"
               />
-              <button onClick={send} disabled={busy} className="w-9 h-9 rounded-full bg-blue-600/10 text-blue-700 border border-blue-200/40 hover:bg-blue-600/20 disabled:opacity-50 flex items-center justify-center shrink-0 transition-colors">
-                <Send className="w-4 h-4" />
+              <button onClick={send} disabled={busy} className="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50 flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                <Send className="w-3.5 h-3.5" />
               </button>
             </div>
           </motion.div>
