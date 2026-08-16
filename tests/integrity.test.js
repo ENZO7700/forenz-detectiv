@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 // 1. Import local test targets
@@ -434,5 +435,76 @@ describe('7. Search & PDF Engine Integrity', () => {
     // Overenie PDF Magic Bytes (%PDF-)
     const header = String.fromCharCode(...bytes.slice(0, 5));
     assert.equal(header, '%PDF-', 'PDF dokument musí začínať štandardnou hlavičkou %PDF-');
+  });
+});
+
+describe('8. Legal Source of Truth & Criminal Code Integrity (Zákon č. 300/2005 Z. z.)', () => {
+  const pdfPath = path.join(ROOT_DIR, 'docs', 'source-of-truth.pdf');
+  const manifestPath = path.join(ROOT_DIR, 'docs', 'legal', 'source-manifest.json');
+  const paragraphsPath = path.join(ROOT_DIR, 'docs', 'legal', 'paragraphs.json');
+  const structurePath = path.join(ROOT_DIR, 'docs', 'legal', 'structure.json');
+  const topicsPath = path.join(ROOT_DIR, 'docs', 'legal', 'topics.json');
+
+  const EXPECTED_HASH = 'c99954a3c25d3d9ed5721ee060e3c7371646d435a09d918a990b07580f61230e';
+  const CRITICAL_PARAS = [
+    '2', '8', '14', '20', '21', '22', '25', '26', '28', '29', '30',
+    '32', '34', '36', '37', '38', '39', '40', '41', '42', '43', '44',
+    '85', '86', '87', '144', '145', '189', '212', '221', '345', '346', '348'
+  ];
+
+  test('PDF source-of-truth.pdf existuje a zhoduje sa so SHA-256 hashóm', () => {
+    assert.ok(fs.existsSync(pdfPath), 'Súbor docs/source-of-truth.pdf musí existovať');
+    const buf = fs.readFileSync(pdfPath);
+    const hash = crypto.createHash('sha256').update(buf).digest('hex');
+    assert.equal(hash, EXPECTED_HASH, 'SHA-256 hash PDF súboru sa musí presne zhodovať s manifestom');
+  });
+
+  test('source-manifest.json obsahuje platné metadáta a overenú účinnosť predpisu', () => {
+    assert.ok(fs.existsSync(manifestPath), 'Manifest súbor docs/legal/source-manifest.json musí existovať');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    assert.equal(manifest.law_id, '300/2005');
+    assert.equal(manifest.sha256, EXPECTED_HASH);
+    assert.equal(manifest.page_count, 206);
+    assert.equal(manifest.effective_from, '2026-07-15');
+    assert.equal(manifest.effective_to, '2026-08-17');
+    assert.equal(manifest.paragraphs_count, 527);
+  });
+
+  test('paragraphs.json obsahuje 527 unikátnych paragrafov s neprázdnym textom a odsekmi', () => {
+    assert.ok(fs.existsSync(paragraphsPath), 'Súbor paragraphs.json musí existovať');
+    const paras = JSON.parse(fs.readFileSync(paragraphsPath, 'utf8'));
+    assert.equal(paras.length, 527, 'Trestný zákon SR musí obsahovať presne 527 extrahovaných paragrafov');
+
+    const seen = new Set();
+    for (const p of paras) {
+      assert.ok(!seen.has(p.paragraph), `Duplicitný paragraf § ${p.paragraph}`);
+      seen.add(p.paragraph);
+      assert.ok(p.text && p.text.trim().length > 0, `Paragraf § ${p.paragraph} nesmie mať prázdny text`);
+      assert.ok(p.source && p.source.pageStart >= 1 && p.source.pageEnd <= 206, `Neplatná strana v § ${p.paragraph}`);
+      assert.ok(Array.isArray(p.sections) && p.sections.length > 0, `§ ${p.paragraph} musí obsahovať aspoň 1 odsek`);
+    }
+  });
+
+  test('Všetkých 33 kritických forenzných paragrafov (§ 346, § 345, § 221, § 212 atď.) existuje', () => {
+    const paras = JSON.parse(fs.readFileSync(paragraphsPath, 'utf8'));
+    const paraMap = new Map(paras.map((p) => [p.paragraph, p]));
+
+    for (const num of CRITICAL_PARAS) {
+      const p = paraMap.get(num);
+      assert.ok(p, `Kritický paragraf § ${num} chýba v právnom datasete`);
+      assert.ok(p.sections.length >= 1, `§ ${num} musí mať definované odseky`);
+      assert.ok(p.source.pageStart >= 1, `§ ${num} musí mať platnú referenciu na stranu PDF`);
+    }
+  });
+
+  test('structure.json a topics.json zachovávajú hierarchiu a forenzné mapovanie', () => {
+    const structure = JSON.parse(fs.readFileSync(structurePath, 'utf8'));
+    assert.equal(structure.length, 3, 'Trestný zákon musí obsahovať 3 hlavné časti');
+
+    const topics = JSON.parse(fs.readFileSync(topicsPath, 'utf8'));
+    assert.ok(topics.length >= 10, 'Očakáva sa aspoň 10 forenzných tematických klastrov');
+    for (const t of topics) {
+      assert.ok(t.topic && t.paragraphs.length > 0, 'Každý topic musí mať definovaný identifikátor a paragrafy');
+    }
   });
 });

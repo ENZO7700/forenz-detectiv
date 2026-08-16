@@ -1,0 +1,422 @@
+[
+  {
+    "number": "PRVÁ",
+    "title": "PRVÁ ČASŤ - VŠEOBECNÁ ČASŤ",
+    "page": 1,
+    "hlavy": [
+      {
+        "number": "PRVÁ",
+        "title": "PRVÁ HLAVA - PÔSOBNOSŤ ZÁKONA A ZÁKLADY TRESTNEJ ZODPOVEDNOSTI",
+        "page": 1,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestný zákon a jeho pôsobnosť",
+            "page": 1,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Základy trestnej zodpovednosti",
+            "page": 3,
+            "oddiely": [
+              {
+                "number": "PRVÝ",
+                "title": "PRVÝ ODDIEL - POJEM A DRUHY TRESTNÉHO ČINU",
+                "page": 3
+              },
+              {
+                "number": "DRUHÝ",
+                "title": "DRUHÝ ODDIEL - PÁCHATEĽ, SPOLUPÁCHATEĽ A ÚČASTNÍK TRESTNÉHO ČINU",
+                "page": 6
+              },
+              {
+                "number": "TRETÍ",
+                "title": "TRETÍ ODDIEL - OKOLNOSTI VYLUČUJÚCE TRESTNÚ ZODPOVEDNOSŤ",
+                "page": 6
+              },
+              {
+                "number": "ŠTVRTÝ",
+                "title": "ŠTVRTÝ ODDIEL - OKOLNOSTI VYLUČUJÚCE PROTIPRÁVNOSŤ ČINU",
+                "page": 7
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "number": "DRUHÁ",
+        "title": "DRUHÁ HLAVA - SANKCIE",
+        "page": 9,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Druhy sankcií",
+            "page": 9,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Základné zásady ukladania sankcií",
+            "page": 10,
+            "oddiely": []
+          },
+          {
+            "number": "Tretí",
+            "title": "Tretí diel - Ukladanie a výkon jednotlivých trestov",
+            "page": 18,
+            "oddiely": []
+          },
+          {
+            "number": "Štvrtý",
+            "title": "Štvrtý diel - Premena zvyšku trestu odňatia slobody na trest domáceho väzenia, podmienečné",
+            "page": 29,
+            "oddiely": []
+          },
+          {
+            "number": "Piaty",
+            "title": "Piaty diel - Ochranné opatrenia",
+            "page": 33,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "TRETIA",
+        "title": "TRETIA HLAVA - ZÁNIK TRESTNOSTI A TRESTU",
+        "page": 39,
+        "diely": []
+      },
+      {
+        "number": "ŠTVRTÁ",
+        "title": "ŠTVRTÁ HLAVA - OSOBITNÉ USTANOVENIA O STÍHANÍ MLADISTVÝCH",
+        "page": 43,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestná zodpovednosť",
+            "page": 43,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Zánik trestnosti",
+            "page": 44,
+            "oddiely": []
+          },
+          {
+            "number": "Tretí",
+            "title": "Tretí diel - Ukladanie sankcií a výchovných opatrení mladistvému",
+            "page": 44,
+            "oddiely": []
+          },
+          {
+            "number": "Štvrtý",
+            "title": "Štvrtý diel - Ochranná výchova",
+            "page": 45,
+            "oddiely": []
+          },
+          {
+            "number": "Piaty",
+            "title": "Piaty diel - Výchovné opatrenia",
+            "page": 47,
+            "oddiely": []
+          },
+          {
+            "number": "Šiesty",
+            "title": "Šiesty diel - Tresty",
+            "page": 48,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "PIATA",
+        "title": "PIATA HLAVA - VÝKLAD POJMOV",
+        "page": 52,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Všeobecné pojmy",
+            "page": 52,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Osobitné kvalifikačné pojmy",
+            "page": 65,
+            "oddiely": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "number": "DRUHÁ",
+    "title": "DRUHÁ ČASŤ - OSOBITNÁ ČASŤ",
+    "page": 67,
+    "hlavy": [
+      {
+        "number": "PRVÁ",
+        "title": "PRVÁ HLAVA - TRESTNÉ ČINY PROTI ŽIVOTU A ZDRAVIU",
+        "page": 67,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestné činy proti životu",
+            "page": 67,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Trestné činy proti zdraviu",
+            "page": 71,
+            "oddiely": []
+          },
+          {
+            "number": "Tretí",
+            "title": "Tretí diel - Trestné činy ohrozujúce život alebo zdravie",
+            "page": 72,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "DRUHÁ",
+        "title": "DRUHÁ HLAVA - TRESTNÉ ČINY PROTI SLOBODE A ĽUDSKEJ DÔSTOJNOSTI",
+        "page": 81,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestné činy proti slobode",
+            "page": 81,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Trestné činy proti ľudskej dôstojnosti",
+            "page": 91,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "TRETIA",
+        "title": "TRETIA HLAVA - TRESTNÉ ČINY PROTI RODINE A MLÁDEŽI",
+        "page": 93,
+        "diely": []
+      },
+      {
+        "number": "ŠTVRTÁ",
+        "title": "ŠTVRTÁ HLAVA - TRESTNÉ ČINY PROTI MAJETKU",
+        "page": 96,
+        "diely": []
+      },
+      {
+        "number": "PIATA",
+        "title": "PIATA HLAVA - TRESTNÉ ČINY HOSPODÁRSKE",
+        "page": 117,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestné činy ohrozujúce trhovú ekonomiku",
+            "page": 117,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Trestné činy proti hospodárskej disciplíne",
+            "page": 121,
+            "oddiely": []
+          },
+          {
+            "number": "Tretí",
+            "title": "Tretí diel - Trestné činy proti mene a trestné činy daňové",
+            "page": 126,
+            "oddiely": []
+          },
+          {
+            "number": "Štvrtý",
+            "title": "Štvrtý diel - Trestné činy proti priemyselným právam a proti autorskému právu",
+            "page": 131,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "ŠIESTA",
+        "title": "ŠIESTA HLAVA - TRESTNÉ ČINY VŠEOBECNE NEBEZPEČNÉ A PROTI ŽIVOTNÉMU PROSTREDIU",
+        "page": 132,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestné činy všeobecne nebezpečné",
+            "page": 132,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Trestné činy proti životnému prostrediu",
+            "page": 139,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "SIEDMA",
+        "title": "SIEDMA HLAVA - TRESTNÉ ČINY PROTI REPUBLIKE",
+        "page": 146,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestné činy proti základom republiky",
+            "page": 146,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Trestné činy proti bezpečnosti republiky",
+            "page": 149,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "ÔSMA",
+        "title": "ÔSMA HLAVA - TRESTNÉ ČINY PROTI PORIADKU VO VEREJNÝCH VECIACH",
+        "page": 150,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestné činy proti výkonu právomoci orgánu verejnej moci",
+            "page": 150,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Trestné činy verejných činiteľov",
+            "page": 151,
+            "oddiely": []
+          },
+          {
+            "number": "Tretí",
+            "title": "Tretí diel - Korupcia",
+            "page": 153,
+            "oddiely": []
+          },
+          {
+            "number": "Štvrtý",
+            "title": "Štvrtý diel - Niektoré formy trestnej súčinnosti",
+            "page": 157,
+            "oddiely": []
+          },
+          {
+            "number": "Piaty",
+            "title": "Piaty diel - Iné formy rušenia činnosti orgánov verejnej moci",
+            "page": 158,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "DEVIATA",
+        "title": "DEVIATA HLAVA - TRESTNÉ ČINY PROTI INÝM PRÁVAM A SLOBODÁM",
+        "page": 166,
+        "diely": []
+      },
+      {
+        "number": "DESIATA",
+        "title": "DESIATA HLAVA - TRESTNÉ ČINY PROTI BRANNOSTI, PROTI CIVILNEJ SLUŽBE, PROTI SLUŽBE",
+        "page": 174,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestné činy proti brannosti",
+            "page": 174,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Trestné činy proti civilnej službe",
+            "page": 174,
+            "oddiely": []
+          },
+          {
+            "number": "Tretí",
+            "title": "Tretí diel - Trestné činy proti službe v ozbrojených silách",
+            "page": 175,
+            "oddiely": []
+          },
+          {
+            "number": "Štvrtý",
+            "title": "Štvrtý diel - Trestné činy proti obrane vlasti",
+            "page": 176,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "JEDENÁSTA",
+        "title": "JEDENÁSTA HLAVA - TRESTNÉ ČINY VOJENSKÉ",
+        "page": 176,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestné činy proti vojenskej podriadenosti a vojenskej cti",
+            "page": 176,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Trestné činy proti povinnosti konať vojenskú službu",
+            "page": 180,
+            "oddiely": []
+          },
+          {
+            "number": "Tretí",
+            "title": "Tretí diel - Trestné činy proti povinnostiam strážnej a dozornej služby",
+            "page": 181,
+            "oddiely": []
+          },
+          {
+            "number": "Štvrtý",
+            "title": "Štvrtý diel - Trestné činy ohrozujúce bojaschopnosť",
+            "page": 182,
+            "oddiely": []
+          }
+        ]
+      },
+      {
+        "number": "DVANÁSTA",
+        "title": "DVANÁSTA HLAVA - TRESTNÉ ČINY PROTI MIERU, PROTI ĽUDSKOSTI, TRESTNÉ ČINY TERORIZMU,",
+        "page": 183,
+        "diely": [
+          {
+            "number": "Prvý",
+            "title": "Prvý diel - Trestné činy proti mieru a ľudskosti, trestné činy terorizmu a extrémizmu",
+            "page": 183,
+            "oddiely": []
+          },
+          {
+            "number": "Druhý",
+            "title": "Druhý diel - Trestné činy vojnové",
+            "page": 193,
+            "oddiely": []
+          },
+          {
+            "number": "Tretí",
+            "title": "Tretí diel - Spoločné ustanovenia",
+            "page": 196,
+            "oddiely": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "number": "TRETIA",
+    "title": "TRETIA ČASŤ - SPOLOČNÉ, PRECHODNÉ A ZÁVEREČNÉ USTANOVENIA",
+    "page": 197,
+    "hlavy": []
+  }
+]

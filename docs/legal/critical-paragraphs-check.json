@@ -1,0 +1,332 @@
+[
+  {
+    "paragraph": "2",
+    "status": "FOUND",
+    "title": "Časová pôsobnosť",
+    "full_title": "§ 2 Časová pôsobnosť",
+    "sections_count": 3,
+    "page": 1,
+    "pageEnd": 1,
+    "text_sample": "Časová pôsobnosť (1) Trestnosť činu sa posudzuje a trest sa ukladá podľa zákona účinného v čase, keď bol čin spáchaný. Ak v čase medzi spáchaním činu a vynesení..."
+  },
+  {
+    "paragraph": "8",
+    "status": "FOUND",
+    "title": "Trestný čin",
+    "full_title": "§ 8 Trestný čin",
+    "sections_count": 1,
+    "page": 3,
+    "pageEnd": 3,
+    "text_sample": "Trestný čin Trestný čin je protiprávny čin, ktorého znaky sú uvedené v tomto zákone, ak tento zákon neustanovuje inak...."
+  },
+  {
+    "paragraph": "14",
+    "status": "FOUND",
+    "title": "Pokus trestného činu",
+    "full_title": "§ 14 Pokus trestného činu",
+    "sections_count": 4,
+    "page": 5,
+    "pageEnd": 5,
+    "text_sample": "Pokus trestného činu (1) Pokus trestného činu je konanie, ktoré bezprostredne smeruje k dokonaniu trestného činu, ktorého sa páchateľ dopustil v úmysle spáchať ..."
+  },
+  {
+    "paragraph": "20",
+    "status": "FOUND",
+    "title": "Spolupáchateľ",
+    "full_title": "§ 20 Spolupáchateľ",
+    "sections_count": 1,
+    "page": 6,
+    "pageEnd": 6,
+    "text_sample": "Spolupáchateľ Ak bol trestný čin spáchaný spoločným konaním dvoch alebo viacerých páchateľov (spolupáchatelia), zodpovedá každý z nich, ako keby trestný čin spá..."
+  },
+  {
+    "paragraph": "21",
+    "status": "FOUND",
+    "title": "Účastník",
+    "full_title": "§ 21 Účastník",
+    "sections_count": 2,
+    "page": 6,
+    "pageEnd": 6,
+    "text_sample": "Účastník (1) Účastník na dokonanom trestnom čine alebo na jeho pokuse je ten, kto úmyselne a) zosnoval alebo riadil spáchanie trestného činu (organizátor), b) n..."
+  },
+  {
+    "paragraph": "22",
+    "status": "FOUND",
+    "title": "Vek",
+    "full_title": "§ 22 Vek",
+    "sections_count": 2,
+    "page": 6,
+    "pageEnd": 7,
+    "text_sample": "Vek (1) Kto v čase spáchania činu inak trestného nedovŕšil štrnásty rok svojho veku, nie je trestne zodpovedný. (2) Pre trestný čin sexuálneho zneužívania podľa..."
+  },
+  {
+    "paragraph": "25",
+    "status": "FOUND",
+    "title": "Nutná obrana",
+    "full_title": "§ 25 Nutná obrana",
+    "sections_count": 4,
+    "page": 7,
+    "pageEnd": 7,
+    "text_sample": "Nutná obrana (1) Čin inak trestný, ktorým niekto odvracia priamo hroziaci alebo trvajúci útok na záujem chránený týmto zákonom, nie je trestným činom. (2) Nejde..."
+  },
+  {
+    "paragraph": "26",
+    "status": "FOUND",
+    "title": "Oprávnené použitie zbrane",
+    "full_title": "§ 26 Oprávnené použitie zbrane",
+    "sections_count": 2,
+    "page": 7,
+    "pageEnd": 7,
+    "text_sample": "Oprávnené použitie zbrane (1) Použitie zbrane v súlade so zákonom nie je trestným činom. (2) Za použitie zbrane v súlade so zákonom sa považuje aj jej použitie ..."
+  },
+  {
+    "paragraph": "28",
+    "status": "FOUND",
+    "title": "Výkon práva a povinnosti",
+    "full_title": "§ 28 Výkon práva a povinnosti",
+    "sections_count": 3,
+    "page": 8,
+    "pageEnd": 8,
+    "text_sample": "Výkon práva a povinnosti (1) Čin inak trestný nie je trestným činom, ak ide o výkon práva alebo povinnosti vyplývajúcich zo všeobecne záväzného právneho predpis..."
+  },
+  {
+    "paragraph": "29",
+    "status": "FOUND",
+    "title": "Súhlas poškodeného",
+    "full_title": "§ 29 Súhlas poškodeného",
+    "sections_count": 3,
+    "page": 8,
+    "pageEnd": 8,
+    "text_sample": "Súhlas poškodeného (1) Čin inak trestný nie je trestným činom, ak bol vykonaný so súhlasom poškodeného daným vopred alebo súčasne s činom. Súhlas poškodeného ne..."
+  },
+  {
+    "paragraph": "30",
+    "status": "FOUND",
+    "title": "Plnenie úlohy agenta",
+    "full_title": "§ 30 Plnenie úlohy agenta",
+    "sections_count": 3,
+    "page": 8,
+    "pageEnd": 9,
+    "text_sample": "Plnenie úlohy agenta (1) Čin inak trestný nie je trestným činom, ak ním agent ustanovený podľa osobitného predpisu pri odhaľovaní trestného činu a pri zisťovaní..."
+  },
+  {
+    "paragraph": "32",
+    "status": "FOUND",
+    "title": "Druhy trestov",
+    "full_title": "§ 32 Druhy trestov",
+    "sections_count": 1,
+    "page": 9,
+    "pageEnd": 9,
+    "text_sample": "Druhy trestov Za spáchané trestné činy môže súd uložiť páchateľovi, ktorý je fyzickou osobou, len a) trest odňatia slobody, b) trest domáceho väzenia, c) trest ..."
+  },
+  {
+    "paragraph": "34",
+    "status": "FOUND",
+    "title": "Zásady ukladania trestov",
+    "full_title": "§ 34 Zásady ukladania trestov",
+    "sections_count": 7,
+    "page": 10,
+    "pageEnd": 11,
+    "text_sample": "Zásady ukladania trestov (1) Trest má zabezpečiť ochranu spoločnosti pred páchateľom tým, že mu zabráni v páchaní ďalšej trestnej činnosti a vytvorí podmienky n..."
+  },
+  {
+    "paragraph": "36",
+    "status": "FOUND",
+    "title": "Poľahčujúcou okolnosťou je najmä to, že páchateľ",
+    "full_title": "§ 36 Poľahčujúcou okolnosťou je najmä to, že páchateľ",
+    "sections_count": 1,
+    "page": 12,
+    "pageEnd": 12,
+    "text_sample": "Poľahčujúcou okolnosťou je najmä to, že páchateľ a) spáchal trestný čin v ospravedlniteľnom silnom citovom rozrušení, b) spáchal trestný čin v dôsledku nedostat..."
+  },
+  {
+    "paragraph": "37",
+    "status": "FOUND",
+    "title": "Priťažujúcou okolnosťou je najmä to, že páchateľ",
+    "full_title": "§ 37 Priťažujúcou okolnosťou je najmä to, že páchateľ",
+    "sections_count": 1,
+    "page": 12,
+    "pageEnd": 13,
+    "text_sample": "Priťažujúcou okolnosťou je najmä to, že páchateľ a) spáchal trestný čin z obzvlášť zavrhnutiahodnej pohnútky, b) spáchal trestný čin ako odplatu voči inému za t..."
+  },
+  {
+    "paragraph": "38",
+    "status": "FOUND",
+    "title": null,
+    "full_title": "§ 38",
+    "sections_count": 6,
+    "page": 13,
+    "pageEnd": 13,
+    "text_sample": "(1) Na okolnosť, ktorá je zákonným znakom trestného činu, nemožno prihliadnuť ako na poľahčujúcu okolnosť, priťažujúcu okolnosť, okolnosť, ktorá podmieňuje ulož..."
+  },
+  {
+    "paragraph": "39",
+    "status": "FOUND",
+    "title": "Mimoriadne zníženie trestu",
+    "full_title": "§ 39 Mimoriadne zníženie trestu",
+    "sections_count": 5,
+    "page": 14,
+    "pageEnd": 15,
+    "text_sample": "Mimoriadne zníženie trestu (1) Ak súd vzhľadom na okolnosti prípadu alebo vzhľadom na pomery páchateľa má za to, že by použitie trestnej sadzby ustanovenej týmt..."
+  },
+  {
+    "paragraph": "40",
+    "status": "FOUND",
+    "title": "Upustenie od potrestania",
+    "full_title": "§ 40 Upustenie od potrestania",
+    "sections_count": 4,
+    "page": 15,
+    "pageEnd": 15,
+    "text_sample": "Upustenie od potrestania (1) Od potrestania páchateľa prečinu, ak ním nebola spôsobená smrť alebo ťažká ujma na zdraví, možno upustiť, ak a) páchateľ priznal sp..."
+  },
+  {
+    "paragraph": "41",
+    "status": "FOUND",
+    "title": "Úhrnný trest a spoločný trest",
+    "full_title": "§ 41 Úhrnný trest a spoločný trest",
+    "sections_count": 4,
+    "page": 16,
+    "pageEnd": 16,
+    "text_sample": "Úhrnný trest a spoločný trest (1) Ak súd odsudzuje páchateľa za dva alebo viac trestných činov, uloží mu úhrnný trest podľa toho zákonného ustanovenia, ktoré sa..."
+  },
+  {
+    "paragraph": "42",
+    "status": "FOUND",
+    "title": "Súhrnný trest",
+    "full_title": "§ 42 Súhrnný trest",
+    "sections_count": 3,
+    "page": 16,
+    "pageEnd": 17,
+    "text_sample": "Súhrnný trest (1) Ak súd odsudzuje páchateľa za trestný čin, ktorý spáchal skôr, ako bol súdom prvého stupňa vyhlásený odsudzujúci rozsudok za iný jeho trestný ..."
+  },
+  {
+    "paragraph": "43",
+    "status": "FOUND",
+    "title": "Ďalší trest",
+    "full_title": "§ 43 Ďalší trest",
+    "sections_count": 1,
+    "page": 17,
+    "pageEnd": 17,
+    "text_sample": "Ďalší trest Ak súd odsudzuje páchateľa za trestný čin, ktorý spáchal predtým, než bol trest uložený skorším rozsudkom vykonaný, a ukladá mu trest rovnakého druh..."
+  },
+  {
+    "paragraph": "44",
+    "status": "FOUND",
+    "title": "Upustenie od súhrnného trestu a ďalšieho trestu",
+    "full_title": "§ 44 Upustenie od súhrnného trestu a ďalšieho trestu",
+    "sections_count": 1,
+    "page": 17,
+    "pageEnd": 17,
+    "text_sample": "Upustenie od súhrnného trestu a ďalšieho trestu Súd upustí od uloženia súhrnného trestu podľa § 42 alebo od uloženia ďalšieho trestu podľa § 43, ak pokladá tres..."
+  },
+  {
+    "paragraph": "85",
+    "status": "FOUND",
+    "title": "Trestnosť trestných činov šírenia nebezpečnej ľudskej nákazlivej choroby podľa § 163,",
+    "full_title": "§ 85 Trestnosť trestných činov šírenia nebezpečnej ľudskej nákazlivej choroby podľa § 163,",
+    "sections_count": 1,
+    "page": 39,
+    "pageEnd": 39,
+    "text_sample": "Trestnosť trestných činov šírenia nebezpečnej ľudskej nákazlivej choroby podľa § 163, ohrozovania zdravia závadnými potravinami a inými predmetmi podľa § 168, b..."
+  },
+  {
+    "paragraph": "86",
+    "status": "FOUND",
+    "title": null,
+    "full_title": "§ 86",
+    "sections_count": 2,
+    "page": 39,
+    "pageEnd": 40,
+    "text_sample": "(1) Trestnosť trestného činu zaniká aj vtedy, ak ide o trestný čin a) zanedbania povinnej výživy podľa § 207, ak trestný čin nemal trvalo nepriaznivé následky a..."
+  },
+  {
+    "paragraph": "87",
+    "status": "FOUND",
+    "title": null,
+    "full_title": "§ 87",
+    "sections_count": 8,
+    "page": 40,
+    "pageEnd": 41,
+    "text_sample": "(1) Ak tento zákon neustanovuje inak, trestnosť činu zaniká uplynutím premlčacej doby, ktorá je a) tridsať rokov, ak ide o zločin, za ktorý tento zákon dovoľuje..."
+  },
+  {
+    "paragraph": "144",
+    "status": "FOUND",
+    "title": "Úkladná vražda",
+    "full_title": "§ 144 Úkladná vražda",
+    "sections_count": 3,
+    "page": 67,
+    "pageEnd": 67,
+    "text_sample": "Úkladná vražda (1) Kto iného úmyselne usmrtí s vopred uváženou pohnútkou, potrestá sa odňatím slobody na dvadsať rokov až dvadsaťpäť rokov. (2) Odňatím slobody ..."
+  },
+  {
+    "paragraph": "145",
+    "status": "FOUND",
+    "title": "Vražda",
+    "full_title": "§ 145 Vražda",
+    "sections_count": 3,
+    "page": 68,
+    "pageEnd": 68,
+    "text_sample": "Vražda (1) Kto iného úmyselne usmrtí, potrestá sa odňatím slobody na pätnásť rokov až dvadsať rokov. (2) Odňatím slobody na dvadsať rokov až dvadsaťpäť rokov al..."
+  },
+  {
+    "paragraph": "189",
+    "status": "FOUND",
+    "title": "Vydieranie",
+    "full_title": "§ 189 Vydieranie",
+    "sections_count": 4,
+    "page": 86,
+    "pageEnd": 87,
+    "text_sample": "Vydieranie (1) Kto iného násilím, hrozbou násilia alebo hrozbou inej ťažkej ujmy núti, aby niečo konal, opomenul alebo trpel, potrestá sa odňatím slobody na dva..."
+  },
+  {
+    "paragraph": "212",
+    "status": "FOUND",
+    "title": "Krádež",
+    "full_title": "§ 212 Krádež",
+    "sections_count": 4,
+    "page": 96,
+    "pageEnd": 97,
+    "text_sample": "Krádež (1) Kto si prisvojí cudziu vec tým, že sa jej zmocní a a) spôsobí tak malú škodu, b) čin spácha vlámaním, c) bezprostredne po čine sa pokúsi uchovať si v..."
+  },
+  {
+    "paragraph": "221",
+    "status": "FOUND",
+    "title": "Podvod",
+    "full_title": "§ 221 Podvod",
+    "sections_count": 4,
+    "page": 101,
+    "pageEnd": 101,
+    "text_sample": "Podvod (1) Kto na škodu cudzieho majetku seba alebo iného obohatí tým, že uvedie niekoho do omylu alebo využije niečí omyl, a spôsobí tak na cudzom majetku malú..."
+  },
+  {
+    "paragraph": "345",
+    "status": "FOUND",
+    "title": "Krivé obvinenie",
+    "full_title": "§ 345 Krivé obvinenie",
+    "sections_count": 3,
+    "page": 160,
+    "pageEnd": 160,
+    "text_sample": "Krivé obvinenie (1) Kto iného lživo obviní z trestného činu v úmysle privodiť jeho trestné stíhanie, potrestá sa odňatím slobody na jeden rok až päť rokov. (2) ..."
+  },
+  {
+    "paragraph": "346",
+    "status": "FOUND",
+    "title": "Krivá výpoveď a krivá prísaha",
+    "full_title": "§ 346 Krivá výpoveď a krivá prísaha",
+    "sections_count": 4,
+    "page": 160,
+    "pageEnd": 160,
+    "text_sample": "Krivá výpoveď a krivá prísaha (1) Kto ako svedok v konaní pred súdom alebo v trestnom konaní alebo na účely trestného konania v cudzine pred prokurátorom alebo ..."
+  },
+  {
+    "paragraph": "348",
+    "status": "FOUND",
+    "title": null,
+    "full_title": "§ 348",
+    "sections_count": 2,
+    "page": 161,
+    "pageEnd": 162,
+    "text_sample": "(1) Kto marí alebo podstatne sťažuje výkon rozhodnutia súdu alebo iného orgánu verejnej moci tým, že a) bez vážneho dôvodu nenastúpi výkon trestu odňatia slobod..."
+  }
+]

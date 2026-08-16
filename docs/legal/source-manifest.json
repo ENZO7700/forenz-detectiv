@@ -1,0 +1,21 @@
+{
+  "law_id": "300/2005",
+  "title": "Trestný zákon",
+  "official_title": "ZÁKON z 20. mája 2005 TRESTNÝ ZÁKON (č. 300/2005 Z. z.)",
+  "jurisdiction": "SK",
+  "source_type": "official_pdf",
+  "source_url": "https://static.slov-lex.sk/pdf/SK/ZZ/2005/300/ZZ_2005_300_20260715.pdf",
+  "local_file": "docs/source-of-truth.pdf",
+  "sha256": "c99954a3c25d3d9ed5721ee060e3c7371646d435a09d918a990b07580f61230e",
+  "promulgation_date": "2005-07-02",
+  "effective_from": "2026-07-15",
+  "effective_to": "2026-08-17",
+  "version_label": "Časová verzia predpisu účinná od 15. 7. 2026 do 17. 8. 2026",
+  "extracted_at": "2026-08-16T01:17:39.532Z",
+  "page_count": 206,
+  "paragraphs_count": 527,
+  "structure_summary": {
+    "parts": 3,
+    "paragraphs_total": 527
+  }
+}
