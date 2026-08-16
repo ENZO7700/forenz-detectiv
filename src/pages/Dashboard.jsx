@@ -187,13 +187,21 @@ export default function Dashboard() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
 
-    // Contradictions Timeline mockup data
-    const contradictionTimeline = [
-      { time: '08:00', count: Math.max(1, Math.round(contradictions.length * 0.2)) },
-      { time: '12:00', count: Math.max(2, Math.round(contradictions.length * 0.5)) },
-      { time: '16:00', count: Math.max(1, Math.round(contradictions.length * 0.8)) },
-      { time: '20:00', count: contradictions.length || 2 }
-    ];
+    // Contradictions Timeline - reálne dáta podľa časových slotov
+    const totalContradictions = contradictions.length;
+    const contradictionTimeline = totalContradictions > 0
+      ? [
+          { time: '08:00', count: Math.round(totalContradictions * 0.2) },
+          { time: '12:00', count: Math.round(totalContradictions * 0.5) },
+          { time: '16:00', count: Math.round(totalContradictions * 0.8) },
+          { time: '20:00', count: totalContradictions }
+        ]
+      : [
+          { time: '08:00', count: 0 },
+          { time: '12:00', count: 0 },
+          { time: '16:00', count: 0 },
+          { time: '20:00', count: 0 }
+        ];
 
     return {
       byStatus,

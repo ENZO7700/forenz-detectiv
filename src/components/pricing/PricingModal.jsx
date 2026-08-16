@@ -13,7 +13,6 @@ export default function PricingModal({ isOpen, onClose }) {
   const [promoMsg, setPromoMsg] = useState(null);
   const [loadingPlan, setLoadingPlan] = useState(null);
   const { t } = useTranslation();
-  const isTestMode = !import.meta.env?.VITE_STRIPE_PUBLIC_KEY && !import.meta.env?.VITE_STRIPE_PUBLISHABLE_KEY;
 
   const handleSelectPlan = async (selectedPlan) => {
     if (selectedPlan === 'free') {
@@ -52,11 +51,6 @@ export default function PricingModal({ isOpen, onClose }) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl bg-slate-950 border-slate-800 text-slate-100 p-6 overflow-y-auto max-h-[90vh]">
         <DialogHeader className="text-center sm:text-center space-y-2">
-          {isTestMode && (
-            <div className="mx-auto px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
-              {t('pricing.testMode')}
-            </div>
-          )}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold mx-auto">
             <Zap className="h-3.5 w-3.5" />
             <span>{t('pricing.badge')}</span>
