@@ -25,6 +25,21 @@ export default defineConfig({
     },
     dedupe: ['react', 'react-dom']
   },
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-pdf': ['pdf-lib', '@pdf-lib/fontkit'],
+          'vendor-maps': ['leaflet', 'react-leaflet'],
+          'vendor-charts': ['recharts'],
+          'vendor-motion': ['framer-motion', 'lucide-react'],
+          'vendor-graph': ['graphology', 'graphology-metrics', 'geolib']
+        }
+      }
+    }
+  },
   test: {
     globals: true,
     environment: 'jsdom',
