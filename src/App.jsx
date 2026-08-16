@@ -49,10 +49,10 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
+      <Route path="/shared/:token" element={<SharedCase />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/" element={<ForenzDetectiv />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/shared/:token" element={<SharedCase />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

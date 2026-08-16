@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
+import { LogIn, Mail, Lock, Loader2, AlertCircle, Info } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
@@ -14,8 +14,6 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  // Post-login destination (e.g. the MCP OAuth consent page sends users here
-  // with returnTo so the grant flow can resume). Same-origin paths only.
   const returnTo = safeReturnTo();
 
   const handleSubmit = async (e) => {
@@ -26,40 +24,44 @@ export default function Login() {
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = returnTo;
     } catch (err) {
-      setError(err.message || "Invalid email or password");
+      setError(err.message || "Nesprávny email alebo heslo.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", returnTo);
+    try {
+      base44.auth.loginWithProvider("google", returnTo);
+    } catch (err) {
+      setError("Google prihlásenie vyžaduje overenú doménu v Base44. Použite prihlásenie emailom a heslom.");
+    }
   };
 
   return (
     <AuthLayout
       icon={LogIn}
-      title="Welcome back"
-      subtitle="Log in to your account"
+      title="Vitajte v systéme"
+      subtitle="Prihláste sa do svojho vyšetrovacieho účtu"
       footer={
         <>
-          Don't have an account?{" "}
+          Ešte nemáte vytvorený účet?{" "}
           <Link
             to={"/register" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "")}
             className="text-primary font-medium hover:underline"
           >
-            Create one
+            Zaregistrujte sa
           </Link>
         </>
       }
     >
       <Button
         variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
+        className="w-full h-12 text-sm font-medium mb-4 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         onClick={handleGoogle}
       >
         <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
+        Pokračovať cez Google
       </Button>
 
       <div className="relative mb-6">
@@ -67,19 +69,20 @@ export default function Login() {
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
+          <span className="bg-card px-3 text-muted-foreground">alebo emailom</span>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          {error}
+        <div className="mb-4 p-3 rounded-xl bg-destructive/10 text-destructive text-sm flex items-start gap-2 border border-destructive/20">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div>{error}</div>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Emailová adresa</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -87,7 +90,7 @@ export default function Login() {
               type="email"
               autoComplete="email"
               autoFocus
-              placeholder="you@example.com"
+              placeholder="vysetrovatel@policia.sk"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12"
@@ -97,9 +100,9 @@ export default function Login() {
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Heslo</Label>
             <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-              Forgot password?
+              Zabudnuté heslo?
             </Link>
           </div>
           <div className="relative">
@@ -120,10 +123,10 @@ export default function Login() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Logging in...
+              Overujem prihlásenie...
             </>
           ) : (
-            "Log in"
+            "Prihlásiť sa"
           )}
         </Button>
       </form>
