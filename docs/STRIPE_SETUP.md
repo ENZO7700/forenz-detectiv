@@ -1,36 +1,36 @@
 # Stripe Setup — ForenzDetectiv Pro
 
-## Test mode (predvolené)
+## Fail-closed (produkcia)
 
-Ak nie je nastavený `VITE_STRIPE_PUBLIC_KEY` (ani `VITE_STRIPE_PUBLISHABLE_KEY`), aplikácia beží v **test mode**:
+Bez `VITE_STRIPE_PUBLIC_KEY` / `VITE_STRIPE_PUBLISHABLE_KEY` a bez `STRIPE_SECRET_KEY` v Base44 secrets:
 
-- [`src/lib/stripe.js`](../src/lib/stripe.js) simuluje úspešný checkout
-- [`PricingModal`](../src/components/pricing/PricingModal.jsx) zobrazí banner „Testovací režim“
-- Plán sa uloží do `localStorage` (`forenz_user_plan`)
+- [`src/lib/stripe.js`](../src/lib/stripe.js) **nezaktivuje** plán a vráti chybu
+- [`createCheckoutSession`](../base44/functions/createCheckoutSession/entry.ts) vráti **503** (žiadny mock checkout)
+- [`PricingModal`](../src/components/pricing/PricingModal.jsx) zobrazí chybovú hlášku — žiadny voľný upgrade
 
 ## Live mode
 
 1. Vytvor produkty v Stripe Dashboard:
    - Pro monthly / Pro yearly (−20 %)
    - Agency (voliteľné)
-2. Pridaj do `.env.local`:
+2. Pridaj do `.env.local` / Vercel env:
 
 ```bash
 VITE_STRIPE_PUBLIC_KEY=pk_live_...
 ```
 
-3. Implementuj backend endpoint `POST /api/create-checkout-session` (Base44 function), ktorý vráti `{ id: sessionId }`.
-4. Frontend volá `stripe.redirectToCheckout({ sessionId })`.
+3. Nastav Base44 secret `STRIPE_SECRET_KEY`.
+4. Frontend volá `createCheckoutSession` a redirectuje na `session.url`.
+5. Upgrade plánu až po overení platby (success URL / webhook) — nie v klientovi pred platbou.
 
 ## Licenčné kľúče (offline / B2B)
 
 Aktívne kľúče v [`usePlanStore`](../src/store/usePlanStore.js):
 
 - `PRO-LAWYER-2026` → Pro 365 dní
-- `DEMO-VIP` → Pro 90 dní
 - `ACADEMIA-SK` → Pro 180 dní
 - `AGENCY-PARTNER` → Agency 365 dní
 
 ## Referral
 
-Pri prvej návšteve s `?ref=USER_ID` sa udeľuje 30-dňový Pro kredit (`forenz_referral_rewarded`).
+`?ref=USER_ID` iba zaznamená referrer do `localStorage` (`forenz_incoming_ref`). **Neudeľuje** automatický Pro kredit.

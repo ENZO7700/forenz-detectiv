@@ -21,21 +21,22 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingPublicSettings(false);
       setAuthError(null);
-      
+
       const hasToken = !!(localStorage.getItem('base44_access_token') || localStorage.getItem('token') || appParams?.token);
       if (hasToken) {
         await checkUserAuth();
       } else {
-        setUser({ email: 'vysetrovatel@forenz.sk', full_name: 'Hlavný Vyšetrovateľ', role: 'admin' });
-        setIsAuthenticated(true);
+        setUser(null);
+        setIsAuthenticated(false);
         setIsLoadingAuth(false);
         setAuthChecked(true);
       }
     } catch (error) {
-      setUser({ email: 'vysetrovatel@forenz.sk', full_name: 'Hlavný Vyšetrovateľ', role: 'admin' });
-      setIsAuthenticated(true);
+      setUser(null);
+      setIsAuthenticated(false);
       setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
+      setAuthChecked(true);
     }
   };
 
@@ -43,16 +44,22 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
+      if (currentUser) {
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
       setIsLoadingAuth(false);
       setAuthChecked(true);
     } catch (error) {
       console.error('User auth check failed:', error);
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
+      setUser(null);
       setAuthChecked(true);
-      
+
       if (error.status === 401 || error.status === 403) {
         setAuthError({
           type: 'auth_required',
@@ -65,7 +72,7 @@ export const AuthProvider = ({ children }) => {
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
-    
+
     if (shouldRedirect) {
       base44.auth.logout(window.location.href);
     } else {
@@ -78,10 +85,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
-      isLoadingAuth, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
+      isLoadingAuth,
       isLoadingPublicSettings,
       authError,
       appPublicSettings,

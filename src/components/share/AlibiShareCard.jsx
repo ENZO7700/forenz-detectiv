@@ -6,19 +6,19 @@ export default function AlibiShareCard({
   anonymized = false,
   cardRef = null
 }) {
-  // Predvolené ukážkové dáta, ak rozpor nie je odovzdaný
+  // Reálne polia z rozporu — bez fake BA–KE ukážkových dát
   const data = {
-    locationA: contradiction?.locationA || contradiction?.locA || 'Bratislava (Staré Mesto)',
-    timeA: contradiction?.timeA || '14:15',
-    locationB: contradiction?.locationB || contradiction?.locB || 'Košice (Hlavná)',
-    timeB: contradiction?.timeB || '14:55',
-    distanceKm: contradiction?.distanceKm || 450,
-    intervalMinutes: contradiction?.intervalMinutes || 40,
-    requiredSpeedKmH: contradiction?.requiredSpeedKmH || 675,
-    personName: contradiction?.person || contradiction?.entity || 'Ing. Peter Kováč',
-    citationA: contradiction?.quoteA || '„Videl som obvineného v kaviarni v Bratislave o 14:15.“ (Výpoveď #1, s. 4)',
-    citationB: contradiction?.quoteB || '„O 14:55 som preberal tovar v sklade v Košiciach.“ (Výpoveď #4, s. 12)',
-    caseTitle: contradiction?.caseTitle || 'Kauza K-402/2026'
+    locationA: contradiction?.locationA || contradiction?.locA || '—',
+    timeA: contradiction?.timeA || '—',
+    locationB: contradiction?.locationB || contradiction?.locB || '—',
+    timeB: contradiction?.timeB || '—',
+    distanceKm: contradiction?.distanceKm ?? null,
+    intervalMinutes: contradiction?.intervalMinutes ?? null,
+    requiredSpeedKmH: contradiction?.requiredSpeedKmH ?? null,
+    personName: contradiction?.person || contradiction?.entity || contradiction?.personName || 'Podozrivá osoba',
+    citationA: contradiction?.quoteA || contradiction?.citationA || '',
+    citationB: contradiction?.quoteB || contradiction?.citationB || '',
+    caseTitle: contradiction?.caseTitle || 'Aktuálny spis'
   };
 
   const displayName = anonymized ? 'Podozrivá osoba [ANONYM]' : data.personName;
@@ -107,8 +107,12 @@ export default function AlibiShareCard({
               <div>
                 <p className="text-xs text-slate-400 uppercase tracking-wider font-mono">Požadovaná rýchlosť presunu</p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-red-400">{data.requiredSpeedKmH} km/h</span>
-                  <span className="text-xs text-slate-400 font-mono">({data.distanceKm} km za {data.intervalMinutes} min)</span>
+                  <span className="text-3xl font-black text-red-400">
+                    {data.requiredSpeedKmH != null ? `${data.requiredSpeedKmH} km/h` : '—'}
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    ({data.distanceKm != null ? `${data.distanceKm} km` : '—'} za {data.intervalMinutes != null ? `${data.intervalMinutes} min` : '—'})
+                  </span>
                 </div>
               </div>
             </div>

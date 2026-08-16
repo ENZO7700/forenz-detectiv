@@ -63,7 +63,7 @@ export default function Login() {
               id="email"
               type="email"
               autoComplete="email"
-              placeholder="larsenevans@proton.me"
+              placeholder="vas@email.sk"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12"

@@ -11,13 +11,9 @@ export default async function (req: any) {
 
     const stripeSecretKey = secrets.get('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
-      // Test / Simulated mode
       return Response.json({
-        id: `cs_test_mock_${Date.now()}`,
-        url: successUrl || '/?payment=success&plan=' + plan,
-        testMode: true,
-        message: 'Stripe Secret Key not configured in Base44 secrets. Simulated checkout created.'
-      });
+        error: 'Stripe Secret Key nie je nakonfigurovaný. Checkout nie je dostupný.'
+      }, { status: 503 });
     }
 
     const priceMap: Record<string, { name: string; amount: number }> = {
@@ -39,8 +35,8 @@ export default async function (req: any) {
     params.append('line_items[0][price_data][unit_amount]', String(item.amount));
     params.append('line_items[0][price_data][recurring][interval]', interval === 'year' ? 'year' : 'month');
     params.append('line_items[0][quantity]', '1');
-    params.append('success_url', successUrl || 'https://forenz.sk/?payment=success&session_id={CHECKOUT_SESSION_ID}');
-    params.append('cancel_url', cancelUrl || 'https://forenz.sk/?payment=cancelled');
+      params.append('success_url', successUrl || 'https://forenzdetectiv.sk/?payment=success&session_id={CHECKOUT_SESSION_ID}');
+      params.append('cancel_url', cancelUrl || 'https://forenzdetectiv.sk/?payment=cancelled');
     
     if (user?.email) {
       params.append('customer_email', user.email);

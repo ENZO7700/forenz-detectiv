@@ -183,11 +183,13 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   useEffect(() => {
     const hasToken = !!(localStorage.getItem('base44_access_token') || localStorage.getItem('token') || appParams?.token);
     if (hasToken) {
-      base44.auth.me().then(setCurrentUser).catch(() => {
-        setCurrentUser({ email: 'vysetrovatel@forenz.sk', full_name: 'Hlavný Vyšetrovateľ', role: 'admin' });
+      base44.auth.me().then((user) => {
+        setCurrentUser(user || null);
+      }).catch(() => {
+        setCurrentUser(null);
       });
     } else {
-      setCurrentUser({ email: 'vysetrovatel@forenz.sk', full_name: 'Hlavný Vyšetrovateľ', role: 'admin' });
+      setCurrentUser(null);
     }
   }, [setCurrentUser]);
 

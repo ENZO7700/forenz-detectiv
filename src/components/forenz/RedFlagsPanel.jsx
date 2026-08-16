@@ -21,16 +21,16 @@ export default function RedFlagsPanel({
 
   const handleShare = (rf) => {
     const contradictionData = {
-      locationA: rf.locationA || rf.locA || 'Bratislava',
-      timeA: rf.timeA || '14:15',
-      locationB: rf.locationB || rf.locB || 'Košice',
-      timeB: rf.timeB || '14:55',
-      distanceKm: rf.distanceKm || 450,
-      intervalMinutes: rf.intervalMinutes || 40,
-      requiredSpeedKmH: rf.requiredSpeedKmH || 675,
+      locationA: rf.locationA || rf.locA || '—',
+      timeA: rf.timeA || '—',
+      locationB: rf.locationB || rf.locB || '—',
+      timeB: rf.timeB || '—',
+      distanceKm: rf.distanceKm || null,
+      intervalMinutes: rf.intervalMinutes || null,
+      requiredSpeedKmH: rf.requiredSpeedKmH || null,
       personName: rf.person || rf.entity || 'Podozrivá osoba',
-      quoteA: rf.quoteA || rf.description || 'Výpoveď svedka #1',
-      quoteB: rf.quoteB || 'Nezlučiteľné alibi z kamerového záznamu',
+      quoteA: rf.quoteA || rf.description || '',
+      quoteB: rf.quoteB || '',
       caseTitle: rf.document_title || 'Aktuálny spis'
     };
     setSelectedContradiction(contradictionData);

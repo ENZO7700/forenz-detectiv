@@ -41,8 +41,6 @@ export default function LeadCaptureModal({ isOpen, onClose }) {
       utm_source: utmParams.utm_source || 'direct'
     });
 
-    console.info('[B2B LEAD CAPTURED]', { ...payload, email: '[REDACTED]', name: '[REDACTED]' });
-
     setTimeout(() => {
       setLoading(false);
       setSubmitted(true);
@@ -88,7 +86,7 @@ export default function LeadCaptureModal({ isOpen, onClose }) {
               <input
                 type="text"
                 required
-                placeholder="JUDr. Martin Kováč"
+                placeholder="JUDr. Meno Priezvisko"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
