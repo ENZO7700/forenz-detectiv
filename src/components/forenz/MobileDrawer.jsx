@@ -2,8 +2,7 @@ import React from 'react';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import {
-  Network, Layers, Search, FolderOpen, Share2, Archive,
-  Settings, UserCircle, LogOut, X, ShieldAlert, FileSearch, Scale,
+  Network, Layers, Archive, LogOut, X, ShieldAlert,
   Sun, Moon, Monitor, Users, HelpCircle, Clock, MapPin, LayoutDashboard
 } from 'lucide-react';
 import { Link } from 'react-router-dom';

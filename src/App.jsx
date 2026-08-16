@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from 'next-themes';
 import { PwaInstallProvider } from '@/lib/pwaInstall';
@@ -10,27 +10,37 @@ import ForenzDetectiv from './pages/ForenzDetectiv';
 import SharedCase from './pages/SharedCase';
 import Dashboard from './pages/Dashboard';
 import { AuthProvider } from '@/lib/AuthContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { initSentry } from '@/lib/sentry';
+import { initAnalytics } from '@/lib/analytics';
 
 export default function App() {
+  useEffect(() => {
+    initSentry();
+    initAnalytics();
+  }, []);
+
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <PwaInstallProvider>
-        <AuthProvider>
-          <QueryClientProvider client={queryClientInstance}>
-            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <ScrollToTop />
-              <Routes>
-                {/* Priamy prístup do ForenzDetectiv bez nutnosti prihlasovania */}
-                <Route path="/" element={<ForenzDetectiv />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/shared/:token" element={<SharedCase />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-              <Toaster />
-            </Router>
-          </QueryClientProvider>
-        </AuthProvider>
-      </PwaInstallProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <PwaInstallProvider>
+          <AuthProvider>
+            <QueryClientProvider client={queryClientInstance}>
+              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <ScrollToTop />
+                <Routes>
+                  {/* Priamy prístup do ForenzDetectiv bez nutnosti prihlasovania */}
+                  <Route path="/" element={<ForenzDetectiv />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/shared/:token" element={<SharedCase />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+                <Toaster />
+              </Router>
+            </QueryClientProvider>
+          </AuthProvider>
+        </PwaInstallProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

@@ -1,5 +1,6 @@
-import React from 'react';
-import { ShieldAlert, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { ShieldAlert, AlertTriangle, Share2 } from 'lucide-react';
+import ShareModal from '@/components/share/ShareModal';
 
 const CATEGORY_LABEL = {
   časová_nesúlad: 'Časový nesúlad',
@@ -11,6 +12,28 @@ const CATEGORY_LABEL = {
 };
 
 export default function RedFlagsPanel({ redFlags = [] }) {
+  const [selectedContradiction, setSelectedContradiction] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const handleShare = (rf) => {
+    // Pripravíme štruktúru rozporu z red flagu
+    const contradictionData = {
+      locationA: rf.locationA || rf.locA || 'Bratislava',
+      timeA: rf.timeA || '14:15',
+      locationB: rf.locationB || rf.locB || 'Košice',
+      timeB: rf.timeB || '14:55',
+      distanceKm: rf.distanceKm || 450,
+      intervalMinutes: rf.intervalMinutes || 40,
+      requiredSpeedKmH: rf.requiredSpeedKmH || 675,
+      personName: rf.person || rf.entity || 'Podozrivá osoba',
+      quoteA: rf.quoteA || rf.description || 'Výpoveď svedka #1',
+      quoteB: rf.quoteB || 'Nezlučiteľné alibi z kamerového záznamu',
+      caseTitle: rf.document_title || 'Aktuálny spis'
+    };
+    setSelectedContradiction(contradictionData);
+    setShareOpen(true);
+  };
+
   return (
     <div className="flex-1 overflow-y-auto bg-slate-900 border-t border-slate-800">
       <div className="px-4 py-3 sticky top-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 flex items-center gap-2 z-10">
@@ -48,19 +71,31 @@ export default function RedFlagsPanel({ redFlags = [] }) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-slate-200 leading-snug">{rf.description}</p>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase tracking-wider ${
-                        isCritical
-                          ? 'bg-red-900/60 text-red-300 border border-red-800'
-                          : 'bg-amber-900/60 text-amber-300 border border-amber-800'
-                      }`}>
-                        {CATEGORY_LABEL[rf.category] || rf.category}
-                      </span>
-                      {rf.document_title && (
-                        <span className="text-[10px] text-slate-400 truncate max-w-[140px] font-mono">
-                          {rf.document_title}
+                    <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase tracking-wider ${
+                          isCritical
+                            ? 'bg-red-900/60 text-red-300 border border-red-800'
+                            : 'bg-amber-900/60 text-amber-300 border border-amber-800'
+                        }`}>
+                          {CATEGORY_LABEL[rf.category] || rf.category}
                         </span>
-                      )}
+                        {rf.document_title && (
+                          <span className="text-[10px] text-slate-400 truncate max-w-[140px] font-mono">
+                            {rf.document_title}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => handleShare(rf)}
+                        className="flex items-center gap-1 text-[10px] font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded transition-colors"
+                        title="Zdieľať kartu alibi / rozporu"
+                      >
+                        <Share2 className="w-3 h-3" />
+                        <span>Karta</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -69,6 +104,14 @@ export default function RedFlagsPanel({ redFlags = [] }) {
           })
         )}
       </div>
+
+      {shareOpen && (
+        <ShareModal
+          isOpen={shareOpen}
+          onClose={() => setShareOpen(false)}
+          contradiction={selectedContradiction}
+        />
+      )}
     </div>
   );
 }

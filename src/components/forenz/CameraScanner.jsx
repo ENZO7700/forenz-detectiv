@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Camera, X, RefreshCw, Check, AlertCircle, Zap } from 'lucide-react';
+import { Camera, RefreshCw, Check, AlertCircle } from 'lucide-react';
 import { requestCameraStream, captureFrameFromVideo, stopCameraStream } from '@/lib/camera';
 import LiquidGlassModal from '@/components/ui/LiquidGlassModal';
 import LiquidGlassButton from '@/components/ui/LiquidGlassButton';

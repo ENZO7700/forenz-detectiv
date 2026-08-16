@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { base44 } from '@/api/base44Client';
 import { saveCaseOffline, getCaseOffline } from '@/lib/offlineDb';
 import { calculateGraphMetrics } from '@/lib/graphMetrics';
+import { DEMO_CASE_DATA } from '@/data/demoCaseData';
+import { trackDemoLaunched, trackContradictionDetected } from '@/lib/analytics';
 
 export const useForenzStore = create((set, get) => ({
   // 1. Dátové entity
@@ -76,6 +78,52 @@ export const useForenzStore = create((set, get) => ({
     setTimeout(() => {
       if (get().toast === msg) set({ toast: '' });
     }, 4000);
+  },
+
+  // 3.1 Okamžité načítanie Demo spisu (BA-KE Alibi paradox)
+  loadDemoCase: () => {
+    set({
+      documents: DEMO_CASE_DATA.documents,
+      persons: DEMO_CASE_DATA.persons,
+      relationships: DEMO_CASE_DATA.relationships,
+      locations: DEMO_CASE_DATA.locations,
+      events: DEMO_CASE_DATA.events,
+      claims: DEMO_CASE_DATA.claims,
+      redFlags: DEMO_CASE_DATA.redFlags,
+      flaggedPassages: DEMO_CASE_DATA.flaggedPassages,
+      vehicles: DEMO_CASE_DATA.vehicles,
+      contradictions: DEMO_CASE_DATA.contradictions,
+      overrides: DEMO_CASE_DATA.overrides,
+      selectedDocId: null,
+      selectedPerson: null,
+      selectedEdge: null,
+      activeView: 'archive',
+      loading: false
+    });
+
+    trackDemoLaunched('ba-ke');
+    trackContradictionDetected(DEMO_CASE_DATA.contradictions.length, true);
+    get().showToast('⚡ Demo spis BA-KE načítaný: Nájdené 2 kritické rozpory');
+  },
+
+  // 3.2 Vyčistenie prípadu (pre návrat na čistý Home)
+  clearCase: () => {
+    set({
+      documents: [],
+      persons: [],
+      relationships: [],
+      locations: [],
+      events: [],
+      claims: [],
+      redFlags: [],
+      flaggedPassages: [],
+      vehicles: [],
+      contradictions: [],
+      overrides: [],
+      selectedDocId: null,
+      selectedPerson: null,
+      selectedEdge: null
+    });
   },
 
   // 4. Centralizovaný asynchrónny fetch dát (s offline fallbackom)

@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "ForenzDetectiv",
+    "subtitle": "Kriminalistická & Právní AI Analýza Spisů",
+    "tagline": "Odhalte skryté rozpory a nemožná alibi"
+  },
+  "nav": {
+    "dashboard": "Přehled případu",
+    "graph": "Graf vztahů",
+    "map": "Alibi mapa",
+    "contradictions": "Rozpory",
+    "archive": "Digitální kartotéka",
+    "audit": "Audit Log",
+    "trust": "Bezpečnost & LEA",
+    "pricing": "Ceník",
+    "referral": "Pozvat kolegu",
+    "exportPdf": "Exportovat PDF"
+  },
+  "hero": {
+    "headline": "ForenzDetectiv — Odhalte skryté rozpory a nemožná alibi",
+    "subheadline": "První specializovaná AI pro analýzu vyšetřovacích spisů a výpovědí se 100% citací ze zdroje.",
+    "uploadCta": "Nahrát spis / výpověď (PDF, foto, text)",
+    "demoCta": "Vyzkoušet Demo spis: Kauza Praha – Brno"
+  },
+  "legal": {
+    "case": "Vyšetřovací spis",
+    "testimony": "Výpověď",
+    "witness": "Svědek",
+    "suspect": "Podezřelý / Obviněný",
+    "victim": "Poškozený",
+    "investigator": "Vyšetřovatel",
+    "contradiction": "Rozpor",
+    "alibi": "Alibi",
+    "impossibleAlibi": "Geograficky nemožné alibi",
+    "courtProtocol": "Soudní protokol",
+    "sha256Digest": "Kryptografický SHA-256 otisk"
+  },
+  "actions": {
+    "scan": "Spustit analýzu",
+    "export": "Exportovat",
+    "share": "Sdílet",
+    "close": "Zavřít",
+    "cancel": "Zrušit",
+    "save": "Uložit",
+    "anonymize": "Anonymizovat"
+  }
+}

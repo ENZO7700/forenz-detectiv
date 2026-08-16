@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ScanLine, Loader2, Camera, UploadCloud } from 'lucide-react';
+import { Loader2, Camera, UploadCloud } from 'lucide-react';
 import CameraScanner from '@/components/forenz/CameraScanner';
 
 export default function ScanButton({ onScan, scanning }) {

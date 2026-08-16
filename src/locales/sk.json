@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "ForenzDetectiv",
+    "subtitle": "Kriminalistická & Právna AI Analýza Spisov",
+    "tagline": "Odhaľte skryté rozpory a nemožné alibi"
+  },
+  "nav": {
+    "dashboard": "Prehľad prípadu",
+    "graph": "Graf vzťahov",
+    "map": "Alibi mapa",
+    "contradictions": "Rozpory",
+    "archive": "Digitálna kartotéka",
+    "audit": "Audit Log",
+    "trust": "Bezpečnosť & LEA",
+    "pricing": "Cenník",
+    "referral": "Pozvať kolegu",
+    "exportPdf": "Exportovať PDF"
+  },
+  "hero": {
+    "headline": "ForenzDetectiv — Odhaľte skryté rozpory a nemožné alibi",
+    "subheadline": "Prvá slovenská AI pre analýzu vyšetrovacích spisov a výpovedí so 100% citáciou zo zdroja.",
+    "uploadCta": "Nahrať spis / výpoveď (PDF, foto, text)",
+    "demoCta": "Vyskúšať Demo spis: Kauza Bratislava – Košice"
+  },
+  "legal": {
+    "case": "Vyšetrovací spis",
+    "testimony": "Výpoveď",
+    "witness": "Svedok",
+    "suspect": "Podozrivý / Obvinený",
+    "victim": "Poškodený",
+    "investigator": "Vyšetrovateľ",
+    "contradiction": "Rozpor",
+    "alibi": "Alibi",
+    "impossibleAlibi": "Geograficky nemožné alibi",
+    "courtProtocol": "Súdny protokol",
+    "sha256Digest": "Kryptografický SHA-256 odtlačok"
+  },
+  "actions": {
+    "scan": "Spustiť analýzu",
+    "export": "Exportovať",
+    "share": "Zdieľať",
+    "close": "Zavrieť",
+    "cancel": "Zrušiť",
+    "save": "Uložiť",
+    "anonymize": "Anonymizovať"
+  }
+}

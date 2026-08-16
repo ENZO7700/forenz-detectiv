@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { fileToNormalizedBase64, base64DataUrlToBlobFile } from '@/lib/imageProcessor';
@@ -8,19 +8,21 @@ import DocumentList from '@/components/forenz/DocumentList';
 import ScanButton from '@/components/forenz/ScanButton';
 import BulkScanButton from '@/components/forenz/BulkScanButton';
 import StatsBar from '@/components/forenz/StatsBar';
-import GraphCanvas from '@/components/forenz/GraphCanvas';
 import PersonPanel from '@/components/forenz/PersonPanel';
 import TimeSlider from '@/components/forenz/TimeSlider';
 import RedFlagsPanel from '@/components/forenz/RedFlagsPanel';
 import SherlockChat from '@/components/forenz/SherlockChat';
-import ArchiveView from '@/components/forenz/ArchiveView';
-import EventTimeline from '@/components/forenz/EventTimeline';
-import MapView from '@/components/forenz/MapView';
 import QuickSearchDialog from '@/components/forenz/QuickSearchDialog';
 import WelcomeIntroModal from '@/components/forenz/WelcomeIntroModal';
+import QuickTip from '@/components/forenz/QuickTip';
+import HomeHero from '@/components/forenz/HomeHero';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { ViewSkeleton } from '@/components/ui/SkeletonViews';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { exportForensicCasePdf } from '@/lib/pdfExporter';
-import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin } from 'lucide-react';
+import { withAiRetry } from '@/lib/aiRetry';
+import { trackFileUploaded, trackContradictionViewed, trackPdfExported } from '@/lib/analytics';
+import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileDrawer from '@/components/forenz/MobileDrawer';
 import MobileBottomNav from '@/components/forenz/MobileBottomNav';
@@ -29,6 +31,12 @@ import IdentityPanel from '@/components/forenz/IdentityPanel';
 import CollapsibleSidebar from '@/components/forenz/CollapsibleSidebar';
 import { useForenzStore } from '@/store/useForenzStore';
 import { appParams } from '@/lib/app-params';
+
+// Lazy-loaded ťažké moduly pre rýchly počiatočný štart aplikácie
+const GraphCanvas = lazy(() => import('@/components/forenz/GraphCanvas'));
+const MapView = lazy(() => import('@/components/forenz/MapView'));
+const ArchiveView = lazy(() => import('@/components/forenz/ArchiveView'));
+const EventTimeline = lazy(() => import('@/components/forenz/EventTimeline'));
 
 export default function ForenzDetectiv({ readOnly = false, scope = null, sharedBy = null, initialData = null }) {
   const documents = useForenzStore((s) => s.documents);
@@ -78,6 +86,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const setReplaying = useForenzStore((s) => s.setReplaying);
   const activeEdgeId = useForenzStore((s) => s.activeEdgeId);
   const setActiveEdgeId = useForenzStore((s) => s.setActiveEdgeId);
+  const clearCase = useForenzStore((s) => s.clearCase);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -192,6 +201,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const handleScan = async (file) => {
     setScanning(true);
     try {
+      trackFileUploaded(file.name?.split('.').pop() || 'unknown', Math.round(file.size / 1024));
       // LOAD → PREPROCESS → UPLOAD preprocessed → RELEASE local memory → ANALYZE FROM STORAGE
       const base64 = await fileToNormalizedBase64(file);
       const outFile = base64DataUrlToBlobFile(base64, file.name);
@@ -203,16 +213,27 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       });
       await fetchData();
       try {
-        await base44.functions.invoke('analyzeDocument', {
-          documentId: doc.id,
-          documentTitle: file.name
-        });
+        await withAiRetry(
+          () => base44.functions.invoke('analyzeDocument', {
+            documentId: doc.id,
+            documentTitle: file.name
+          }),
+          {
+            maxRetries: 3,
+            initialDelayMs: 1200,
+            onRetry: ({ attempt }) => {
+              showToast(`AI server je vyťažený, opakujem pokus (${attempt}/3)...`);
+            }
+          }
+        );
       } catch (err) {
         console.error('Analýza zlyhala:', err);
+        showToast('Analýza zlyhala: ' + (err?.message || 'Server neodpovedá'));
       }
       await fetchData();
     } catch (e) {
       console.error(e);
+      showToast('Nahrávanie zlyhalo');
     } finally {
       setScanning(false);
     }
@@ -225,12 +246,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     try {
       // Pipeline jeden-dokument-na-workera: preprocess → upload → create → analyze,
       // potom sa lokálna pamäť (base64/blob) uvoľní. Žiadny queue držiaci 100 base64.
-      await mapWithAdaptiveConcurrency(batch, 6, 8, async (file) => {
+      await mapWithAdaptiveConcurrency(batch, 4, 6, async (file) => {
         let base64 = await fileToNormalizedBase64(file);
         let outFile = base64DataUrlToBlobFile(base64, file.name);
         const { file_url } = await base44.integrations.Core.UploadFile({ file: outFile });
-        // Explicitné uvoľnenie lokálnej pamäte — GC môže zahodiť base64/blob pred
-        // ďalším dokumentom (pre 100 dokumentov ~ rozdiel 2 GB vs 200 MB heap).
         base64 = null;
         outFile = null;
         const doc = await base44.entities.Document.create({
@@ -240,10 +259,13 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         });
         setBulkProgress((p) => ({ ...p, analyzing: p.analyzing + 1 }));
         try {
-          const res = await base44.functions.invoke('analyzeDocument', {
-            documentId: doc.id,
-            documentTitle: file.name
-          });
+          const res = await withAiRetry(
+            () => base44.functions.invoke('analyzeDocument', {
+              documentId: doc.id,
+              documentTitle: file.name
+            }),
+            { maxRetries: 2, initialDelayMs: 1000 }
+          );
           if (res?.data?.ok) {
             setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
           } else {
@@ -268,7 +290,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       await base44.entities.Document.update(doc.id, { status: 'pending', last_error: '' });
       setBulkProgress({ total: 1, done: 0, analyzing: 1, failed: 0 });
       try {
-        const res = await base44.functions.invoke('analyzeDocument', { documentId: doc.id, documentTitle: doc.title });
+        const res = await withAiRetry(
+          () => base44.functions.invoke('analyzeDocument', { documentId: doc.id, documentTitle: doc.title }),
+          { maxRetries: 3, initialDelayMs: 1200 }
+        );
         setBulkProgress(null);
         if (!res?.data?.ok) showToast('Analýza opäť zlyhala: ' + (res?.data?.error || ''));
       } catch (err) {
@@ -407,6 +432,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     const p = persons.find((pp) => pp.document_id === docId && pp.name === contr.entity_ref);
     setSelectedPerson(p || null);
     setActiveView('graph');
+    trackContradictionViewed(contr?.type || 'contradiction');
   }, [persons]);
 
   const handleJumpToArchive = useCallback((documentId) => {
@@ -429,6 +455,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         graphCanvasElement: canvas,
         scopeTitle: selectedDocId ? `Výpoveď: ${documents.find((d) => d.id === selectedDocId)?.title || selectedDocId}` : 'Celý prípad'
       });
+      trackPdfExported(1, true);
       showToast('PDF report bol úspešne vygenerovaný.');
     } catch (err) {
       console.error('Export do PDF zlyhal:', err);
@@ -451,6 +478,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         graphCanvasElement: canvas,
         scopeTitle: 'Kompletný vyšetrovací archív'
       });
+      trackPdfExported(documents.length, true);
       showToast('Kompletný archívny PDF report bol úspešne vygenerovaný.');
     } catch (err) {
       console.error('Export archívu do PDF zlyhal:', err);
@@ -635,6 +663,20 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                 <Archive className="w-4 h-4 text-amber-400" />
                 <span className="hidden sm:inline">Archív PDF</span>
               </button>
+              {documents.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('Naozaj chcete zavrieť aktuálny spis a vrátiť sa na domovskú obrazovku?')) {
+                      clearCase();
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-sm shadow-sm transition-colors"
+                  title="Zavrieť spis a prejsť na Domov"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="hidden xl:inline">Nový spis</span>
+                </button>
+              )}
               <BulkScanButton onBulkScan={handleBulkScan} scanning={scanning} progress={bulkProgress} />
               <ScanButton onScan={handleScan} scanning={scanning} />
             </>
@@ -724,133 +766,154 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         </button>
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeView}
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.97 }}
-          transition={{ duration: 0.22, ease: 'easeOut' }}
-          className="flex-1 flex min-h-0 overflow-hidden"
-        >
-      {activeView === 'map' ? (
-        <div className="flex-1 p-2 lg:p-4 min-h-0 flex flex-col">
-          <MapView
-            locations={locations}
-            claims={claims}
-            contradictions={contradictions}
-          />
-        </div>
-      ) : activeView === 'timeline' ? (
-        <EventTimeline
-          events={visibleEvents}
-          contradictions={visibleContradictions}
-          persons={visiblePersons}
-          selectedPerson={selectedPerson}
-          onSelectPerson={handleJumpToPerson}
-        />
-      ) : activeView === 'archive' ? (
-        <ArchiveView
-          documents={documents}
-          persons={persons}
-          relationships={relationships}
-          redFlags={redFlags}
-          flaggedPassages={flaggedPassages}
-          claims={claims}
-          events={events}
-          locations={locations}
-          vehicles={vehicles}
-          contradictions={contradictions}
-          selectedDocId={selectedDocId}
-          onSelectDoc={setSelectedDocId}
-          onJumpToPerson={handleJumpToPerson}
-          onJumpToEdge={handleJumpToEdge}
-          onJumpToContradiction={handleJumpToContradiction}
-          readOnly={readOnly}
-        />
-      ) : activeView === 'overview' ? (
-        <MobileDashboard
-          documents={documents}
-          persons={persons}
-          relationships={relationships}
-          redFlags={redFlags}
-          contradictions={contradictions}
-          onSelectPerson={handleJumpToPerson}
-        />
-      ) : activeView === 'identity' ? (
-        <IdentityPanel overrides={overrides} persons={persons} onRevokeOverride={handleRevokeOverride} />
+      {/* Ak nie je nahratý žiadny dokument, zobraz prominentný HomeHero s 1-tap Demo a Drag&Drop */}
+      {documents.length === 0 && !loading ? (
+        <HomeHero onScan={handleScan} scanning={scanning} />
       ) : (
-        <div className="relative flex-1 flex flex-col lg:flex-row overflow-hidden p-2 lg:p-3 gap-2 lg:gap-3">
-          <CollapsibleSidebar
-            side="left"
-            collapsed={leftCollapsed}
-            onToggle={() => setLeftCollapsed((c) => !c)}
-            expandedWidth={272}
-            bubbleIcon={FileText}
-            bubbleLabel={documents.length}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeView}
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="flex-1 flex min-h-0 overflow-hidden"
           >
-            <DocumentList
-              documents={documents}
-              selectedDocId={selectedDocId}
-              onSelect={setSelectedDocId}
-              onDelete={readOnly ? null : handleDelete}
-              onRetry={readOnly ? null : handleRetryAnalysis}
-            />
-          </CollapsibleSidebar>
-
-          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-            <GraphCanvas
-              persons={visiblePersons}
-              graphEdges={visibleEdges}
-              mergedEdges={visibleMerged}
-              selectedPersonId={selectedPerson?.id}
-              onSelectPerson={handleSelectPerson}
-              selectedEdgeId={selectedEdge?.id}
-              onSelectEdge={handleSelectEdge}
-              onShowEvidence={handleJumpToArchive}
-              maxTime={maxTime}
-              timeEnabled={timeEnabled}
-              activeEdgeId={activeEdgeId}
-              flaggedPassages={flaggedPassages}
-              overrides={overrides}
-              onCreateOverrides={handleCreateOverrides}
-              readOnly={readOnly}
-            />
-            <TimeSlider
-              min={timeBounds.min}
-              max={timeBounds.max}
-              value={maxTime}
-              onChange={setMaxTime}
-              replaying={replaying}
-              onToggleReplay={() => (replaying ? stopReplay() : startReplay())}
-            />
-          </div>
-
-          <CollapsibleSidebar
-            side="right"
-            collapsed={rightCollapsed}
-            onToggle={() => setRightCollapsed((c) => !c)}
-            expandedWidth={336}
-            bubbleIcon={ShieldAlert}
-            bubbleLabel={redFlags.length + contradictions.length}
-          >
-            <div className="relative w-full h-full flex flex-col bg-white/70 backdrop-blur-3xl border-[1.5px] border-white rounded-[32px] shadow-xl overflow-hidden min-w-0 max-h-[35vh] lg:max-h-none">
-              <PersonPanel
-                person={selectedPerson}
-                edge={selectedEdge}
-                onShowEvidence={handleJumpToArchive}
-                onClose={() => {
-                  setSelectedPerson(null);
-                  setSelectedEdge(null);
-                }}
+            {activeView === 'map' ? (
+              <div className="flex-1 p-2 lg:p-4 min-h-0 flex flex-col">
+                <ErrorBoundary isWidget={true}>
+                  <Suspense fallback={<ViewSkeleton type="map" label="Načítavam Alibi mapu..." />}>
+                    <MapView
+                      locations={locations}
+                      claims={claims}
+                      contradictions={contradictions}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              </div>
+            ) : activeView === 'timeline' ? (
+              <ErrorBoundary isWidget={true}>
+                <Suspense fallback={<ViewSkeleton type="timeline" label="Načítavam časovú os..." />}>
+                  <EventTimeline
+                    events={visibleEvents}
+                    contradictions={visibleContradictions}
+                    persons={visiblePersons}
+                    selectedPerson={selectedPerson}
+                    onSelectPerson={handleJumpToPerson}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            ) : activeView === 'archive' ? (
+              <ErrorBoundary isWidget={true}>
+                <Suspense fallback={<ViewSkeleton type="archive" label="Načítavam kartotéku spisov..." />}>
+                  <ArchiveView
+                    documents={documents}
+                    persons={persons}
+                    relationships={relationships}
+                    redFlags={redFlags}
+                    flaggedPassages={flaggedPassages}
+                    claims={claims}
+                    events={events}
+                    locations={locations}
+                    vehicles={vehicles}
+                    contradictions={contradictions}
+                    selectedDocId={selectedDocId}
+                    onSelectDoc={setSelectedDocId}
+                    onJumpToPerson={handleJumpToPerson}
+                    onJumpToEdge={handleJumpToEdge}
+                    onJumpToContradiction={handleJumpToContradiction}
+                    readOnly={readOnly}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            ) : activeView === 'overview' ? (
+              <MobileDashboard
+                documents={documents}
+                persons={persons}
+                relationships={relationships}
+                redFlags={redFlags}
+                contradictions={contradictions}
+                onSelectPerson={handleJumpToPerson}
               />
-              <RedFlagsPanel redFlags={visibleRedFlags} />
-            </div>
-          </CollapsibleSidebar>
-        </div>
+            ) : activeView === 'identity' ? (
+              <IdentityPanel overrides={overrides} persons={persons} onRevokeOverride={handleRevokeOverride} />
+            ) : (
+              <div className="relative flex-1 flex flex-col lg:flex-row overflow-hidden p-2 lg:p-3 gap-2 lg:gap-3">
+                <CollapsibleSidebar
+                  side="left"
+                  collapsed={leftCollapsed}
+                  onToggle={() => setLeftCollapsed((c) => !c)}
+                  expandedWidth={272}
+                  bubbleIcon={FileText}
+                  bubbleLabel={documents.length}
+                >
+                  <DocumentList
+                    documents={documents}
+                    selectedDocId={selectedDocId}
+                    onSelect={setSelectedDocId}
+                    onDelete={readOnly ? null : handleDelete}
+                    onRetry={readOnly ? null : handleRetryAnalysis}
+                  />
+                </CollapsibleSidebar>
+
+                <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+                  <ErrorBoundary isWidget={true}>
+                    <Suspense fallback={<ViewSkeleton type="graph" label="Generujem pavúka vzťahov..." />}>
+                      <GraphCanvas
+                        persons={visiblePersons}
+                        graphEdges={visibleEdges}
+                        mergedEdges={visibleMerged}
+                        selectedPersonId={selectedPerson?.id}
+                        onSelectPerson={handleSelectPerson}
+                        selectedEdgeId={selectedEdge?.id}
+                        onSelectEdge={handleSelectEdge}
+                        onShowEvidence={handleJumpToArchive}
+                        maxTime={maxTime}
+                        timeEnabled={timeEnabled}
+                        activeEdgeId={activeEdgeId}
+                        flaggedPassages={flaggedPassages}
+                        overrides={overrides}
+                        onCreateOverrides={handleCreateOverrides}
+                        readOnly={readOnly}
+                      />
+                    </Suspense>
+                  </ErrorBoundary>
+                  <TimeSlider
+                    min={timeBounds.min}
+                    max={timeBounds.max}
+                    value={maxTime}
+                    onChange={setMaxTime}
+                    replaying={replaying}
+                    onToggleReplay={() => (replaying ? stopReplay() : startReplay())}
+                  />
+                </div>
+
+                <CollapsibleSidebar
+                  side="right"
+                  collapsed={rightCollapsed}
+                  onToggle={() => setRightCollapsed((c) => !c)}
+                  expandedWidth={336}
+                  bubbleIcon={ShieldAlert}
+                  bubbleLabel={redFlags.length + contradictions.length}
+                >
+                  <div className="relative w-full h-full flex flex-col bg-white/70 backdrop-blur-3xl border-[1.5px] border-white rounded-[32px] shadow-xl overflow-hidden min-w-0 max-h-[35vh] lg:max-h-none">
+                    <PersonPanel
+                      person={selectedPerson}
+                      edge={selectedEdge}
+                      onShowEvidence={handleJumpToArchive}
+                      onClose={() => {
+                        setSelectedPerson(null);
+                        setSelectedEdge(null);
+                      }}
+                    />
+                    <RedFlagsPanel redFlags={visibleRedFlags} />
+                  </div>
+                </CollapsibleSidebar>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       )}
-        </motion.div>
-      </AnimatePresence>
 
       {/* Sherlock AI Chat - Globálne plávajúce okno dostupné vo všetkých pohľadoch */}
       <SherlockChat
@@ -899,6 +962,8 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         onSelectDoc={handleJumpToArchive}
         onSelectEvent={() => setActiveView('timeline')}
       />
+
+      <QuickTip />
 
       <WelcomeIntroModal
         open={introOpen}
