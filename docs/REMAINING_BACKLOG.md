@@ -4,7 +4,7 @@ Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo gated, PDF chunking, 
 
 **Zámerné rozhodnutia (neotvárať znova):**
 
-- Demo CTA / `loadDemoCase` len s `VITE_ENABLE_DEMO=true` (alebo E2E `__FORENZ_E2E_DEMO__`) — produkcia bez synthetic cases
+- Produkt **bez** demo/synthetic case (žiadne `loadDemoCase`, BA–KE CTA, `VITE_ENABLE_DEMO`)
 - Graph / Sherlock systémové stringy ostávajú SK v tejto vlne
 - Do `assetlinks.json` sa nedáva fake SHA-256 — len fingerprint z reálneho keystore
 
@@ -29,8 +29,8 @@ Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo gated, PDF chunking, 
 | Stripe test mode + docs | Done | live Checkout → RB-05 |
 | Looker / Ads **docs** | Done | live dashboard → RB-04 / RB-07 |
 | PDF page-chunking + Document schema push | Done | **PROMPT-OPS-01** |
-| Demo production gate (`VITE_ENABLE_DEMO`) | Done | **PROMPT-OPS-01** |
-| Master E2E (Playwright S01–S12) | Done | merge `cursor/e2e-master-hardening` |
+| Demo production gate (`VITE_ENABLE_DEMO`) | Removed | Hard-delete demo case + CTA |
+| Master E2E (Playwright S01–S12) | Done | upload-first (no demo bootstrap) |
 | Lokálny CI gate | Done | focused + lint/typecheck/build |
 | `trackContradictionDetected` mimo demo | Done | **RB-03** |
 | Stripe `createCheckoutSession` | Done | **RB-05** |
@@ -91,7 +91,7 @@ flowchart TD
 
 **Title:** `fix(analytics): fire contradiction_detected outside demo load`
 
-**Why:** `trackContradictionDetected` sa dnes volá len v [`src/store/useForenzStore.js`](../src/store/useForenzStore.js) pri `loadDemoCase`. Reálna detekcia rozporov North Star funnel skresľuje.
+**Why:** North Star funnel — overiť, že `trackContradictionDetected` beží po reálnej detekcii rozporov (nie po demo).
 
 **Acceptance:**
 

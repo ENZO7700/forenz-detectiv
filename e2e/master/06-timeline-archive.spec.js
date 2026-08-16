@@ -1,23 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { launchDemo } from '../helpers.js';
+import { expectUploadFirstHome } from '../helpers.js';
 
-test.describe('S06/S07 — Timeline & Archive', () => {
-  test('S06 Timeline tab po demo', async ({ page }) => {
-    await launchDemo(page);
-    await page.getByRole('button', { name: /Časová os \(Timeline\)/i }).click();
-    await expect(
-      page.locator('input[type="range"]')
-        .or(page.getByRole('slider'))
-        .or(page.getByText(/Prehrať|Replay|udalosť|Timeline/i))
-        .first()
-    ).toBeVisible({ timeout: 20_000 });
+test.describe('S06/S07 — Timeline & Archive (empty workspace)', () => {
+  test('S06 Empty home — žiadny timeline bez spisu', async ({ page }) => {
+    await expectUploadFirstHome(page);
+    await expect(page.getByRole('button', { name: /Nahrať spis|Nahrát spis/i }).first()).toBeVisible();
   });
 
-  test('S07 Archív / Kartotéka po demo', async ({ page }) => {
-    await launchDemo(page);
-    await page.getByRole('button', { name: /Kartotéka & Spisy/i }).click();
-    await expect(page.getByText(/Kartotéka|výpoveď|dokument|spis|Demo|BA|KE/i).first()).toBeVisible({
-      timeout: 15_000
-    });
+  test('S07 Empty home — kartotéka až po uploade', async ({ page }) => {
+    await expectUploadFirstHome(page);
+    await expect(page.locator('input[type="file"]').first()).toBeAttached();
   });
 });

@@ -112,12 +112,10 @@ export function trackFileUploaded(fileType, sizeKb) {
   trackEvent('file_uploaded', { file_type: fileType, size_kb: sizeKb });
 }
 
-export function trackContradictionDetected(count, hasAlibiConflict = false, isDemo = false, caseId = null) {
+export function trackContradictionDetected(count, hasAlibiConflict = false) {
   trackEvent('contradiction_detected', {
     count,
-    has_alibi_conflict: hasAlibiConflict,
-    is_demo: isDemo,
-    case_id: caseId ? `case_${String(caseId).substring(0, 8)}` : undefined
+    has_alibi_conflict: hasAlibiConflict
   });
 }
 
@@ -134,10 +132,6 @@ export function trackAlibiChecked(status, speedKmh = 0, distanceKm = 0) {
     speed_kmh: Math.round(speedKmh),
     distance_km: Math.round(distanceKm)
   });
-}
-
-export function trackDemoLaunched(caseId = 'ba-ke') {
-  trackEvent('demo_launched', { case_id: caseId });
 }
 
 export function trackPdfExported(pageCount = 1, withHash = true) {

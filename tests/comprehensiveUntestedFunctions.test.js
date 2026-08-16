@@ -10,7 +10,6 @@ import {
   trackFileUploaded,
   trackPdfExported,
   trackCaseCreated,
-  trackDemoLaunched,
   sanitizeAnalyticsProps
 } from '../src/lib/analytics.js';
 
@@ -163,7 +162,6 @@ describe('5. Telemetry & Sanitization Functions (src/lib/analytics.js)', () => {
       trackFileUploaded('pdf', 1024);
       trackPdfExported('full_report', 5);
       trackCaseCreated('hero_upload', 2);
-      trackDemoLaunched('demo-case-sk');
     });
   });
 

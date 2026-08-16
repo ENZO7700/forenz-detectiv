@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { sanitizeAnalyticsProps } from '../../src/lib/analytics.js';
-import { gotoApp, dismissQuickTipIfPresent, launchDemo } from '../helpers.js';
+import { gotoApp, dismissQuickTipIfPresent, expectUploadFirstHome } from '../helpers.js';
 
 test.describe('S12 — Telemetria & GDPR sanitizácia', () => {
-  test('sanitizeAnalyticsProps stripuje PII (unit v browser-less Node cez import)', async () => {
+  test('sanitizeAnalyticsProps stripuje PII', async () => {
     const clean = sanitizeAnalyticsProps({
       name: 'Ján Novák',
       source_quote: 'Bol som v Bratislave',
@@ -18,7 +18,7 @@ test.describe('S12 — Telemetria & GDPR sanitizácia', () => {
     expect(clean.count).toBe(2);
   });
 
-  test('Po demo/upload akciách žiadny PostHog payload s citáciou v network (ak beží)', async ({ page }) => {
+  test('Po návšteve Home žiadny PostHog payload s citáciou (ak beží)', async ({ page }) => {
     const leaked = [];
     page.on('request', (req) => {
       const url = req.url();
@@ -29,11 +29,8 @@ test.describe('S12 — Telemetria & GDPR sanitizácia', () => {
       }
     });
 
-    await gotoApp(page);
-    await dismissQuickTipIfPresent(page);
-    await launchDemo(page);
-    await page.waitForTimeout(1500);
-
+    await expectUploadFirstHome(page);
+    await page.waitForTimeout(800);
     expect(leaked).toEqual([]);
   });
 });

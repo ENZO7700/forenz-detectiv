@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { prepareFileForUpload } from '@/lib/imageProcessor';
 import {
@@ -33,7 +34,7 @@ import PdfExportDialog from '@/components/export/PdfExportDialog';
 import { saveDocumentOffline, saveCaseOffline } from '@/lib/offlineDb';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated } from '@/lib/analytics';
-import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin } from 'lucide-react';
+import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin, Search, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileDrawer from '@/components/forenz/MobileDrawer';
 import MobileBottomNav from '@/components/forenz/MobileBottomNav';
@@ -102,6 +103,31 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const activeEdgeId = useForenzStore((s) => s.activeEdgeId);
   const setActiveEdgeId = useForenzStore((s) => s.setActiveEdgeId);
   const clearCase = useForenzStore((s) => s.clearCase);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Synchronizácia URL query parametra ?view= s activeView
+  useEffect(() => {
+    const viewParam = searchParams.get('view');
+    if (viewParam && ['hero', 'graph', 'archive', 'map', 'timeline', 'identity', 'overview', 'sherlock'].includes(viewParam)) {
+      if (viewParam === 'sherlock') {
+        setSherlockSignal((s) => s + 1);
+      } else {
+        setActiveView(viewParam);
+      }
+    }
+  }, [searchParams, setActiveView, setSherlockSignal]);
+
+  const handleViewChange = useCallback((view) => {
+    if (view === 'sherlock') {
+      setSherlockSignal((s) => s + 1);
+      return;
+    }
+    setActiveView(view);
+    const newParams = new URLSearchParams(window.location.search);
+    newParams.set('view', view);
+    setSearchParams(newParams, { replace: true });
+  }, [setActiveView, setSherlockSignal, setSearchParams]);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -263,7 +289,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       if (uploadFileForOffline) {
         try {
           await saveDocumentOffline(doc, uploadFileForOffline);
-        } catch (_) {
+        } catch {
           /* ignore offline save errors */
         }
       }
@@ -377,11 +403,14 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     } catch (e) {
       console.error(e);
       const msg = String(e?.message || '');
-      if (/Failed to fetch dynamically imported module|Loading module|\/\.vite\/deps\//i.test(msg)) {
-        showToast('Dev server sa odpojil — obnov stránku na http://127.0.0.1:5173 a skús znova.');
-      } else {
-        showToast('Nahrávanie zlyhalo');
-      }
+      const isDevViteDisconnect =
+        import.meta.env.DEV &&
+        /Failed to fetch dynamically imported module|Loading module|\/\.vite\/deps\//i.test(msg);
+      showToast(
+        isDevViteDisconnect
+          ? 'Dev server sa odpojil — obnov stránku na http://127.0.0.1:5173 a skús znova.'
+          : 'Nahrávanie zlyhalo'
+      );
     } finally {
       setScanning(false);
       setBulkProgress(null);
@@ -819,71 +848,112 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         />
       )}
 
-      {/* Navigation View Tabs */}
-      <div className="hidden lg:flex shrink-0 items-center gap-1.5 px-4 py-2 border-b border-slate-800 bg-slate-900">
-        <button
-          onClick={() => setActiveView('graph')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'graph'
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+      {/* Navigation View Tabs (Desktop & Tablet) */}
+      <div className="hidden lg:flex shrink-0 items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => handleViewChange('graph')}
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              activeView === 'graph'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
             }`}
-        >
-          <Network className="w-3.5 h-3.5" />
-          Pavúk vzťahov
-        </button>
-        <button
-          onClick={() => setActiveView('archive')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'archive'
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+          >
+            <Network className="w-3.5 h-3.5 text-amber-400" />
+            Pavúk vzťahov
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleViewChange('archive')}
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              activeView === 'archive'
+                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
             }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          Kartotéka & Spisy
-        </button>
-        <button
-          onClick={() => setActiveView('identity')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'identity'
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+          >
+            <Layers className="w-3.5 h-3.5 text-blue-400" />
+            Spis & Kartotéka
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleViewChange('map')}
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              activeView === 'map'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
             }`}
-        >
-          <Users className="w-3.5 h-3.5" />
-          Prepojené identity
-        </button>
-        <button
-          onClick={() => setActiveView('timeline')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'timeline'
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+          >
+            <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+            Alibi & Mapa
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleViewChange('timeline')}
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              activeView === 'timeline'
+                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
             }`}
-        >
-          <Clock className="w-3.5 h-3.5" />
-          Časová os (Timeline)
-        </button>
-        <button
-          onClick={() => setActiveView('map')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'map'
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+          >
+            <Clock className="w-3.5 h-3.5 text-indigo-400" />
+            Časová os
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleViewChange('sherlock')}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent transition-all"
+            title="Otvoriť Sherlock AI vyšetrovacieho asistenta"
+          >
+            <Search className="w-3.5 h-3.5 text-amber-400" />
+            Sherlock AI
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleViewChange('identity')}
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              activeView === 'identity'
+                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
             }`}
-        >
-          <MapPin className="w-3.5 h-3.5" />
-          Geografická mapa
-        </button>
+          >
+            <Users className="w-3.5 h-3.5 text-purple-400" />
+            Prepojené identity
+          </button>
+        </div>
+
+        {/* Upload / Home CTA button on right side of tab bar */}
+        <div className="flex items-center gap-2">
+          {documents.length > 0 && (
+            <button
+              type="button"
+              onClick={() => handleViewChange('hero')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-medium transition-all shadow-sm"
+              title="Nahrať nový spis / Dropzone"
+            >
+              <Upload className="w-3.5 h-3.5 text-amber-400" />
+              <span>Nahrať spis</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Empty workspace: upload-first HomeHero (no production demo injection) */}
-      {documents.length === 0 && !loading ? (
+      {/* Main Workspace View: HomeHero if on hero view, otherwise render the selected view */}
+      {documents.length === 0 && !loading && (activeView === 'hero' || !activeView) ? (
         <HomeHero onScan={handleScan} onBulkScan={handleBulkScan} scanning={scanning} />
       ) : (
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}
-            initial={{ opacity: 0, scale: 0.97 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             className="flex-1 flex min-h-0 overflow-hidden"
           >
             {activeView === 'map' ? (
@@ -1048,7 +1118,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         <MobileDrawer
           user={currentUser}
           activeView={activeView}
-          onNavigate={setActiveView}
+          onNavigate={handleViewChange}
           onClose={() => setMobileMenuOpen(false)}
           onLogout={handleLogout}
           onOpenIntro={() => setIntroOpen(true)}
@@ -1061,7 +1131,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         />
       )}
 
-      <MobileBottomNav activeView={activeView} onTabChange={setActiveView} onSherlock={handleSherlockTab} />
+      <MobileBottomNav activeView={activeView} onTabChange={handleViewChange} onSherlock={handleSherlockTab} />
 
       <QuickSearchDialog
         open={searchOpen}

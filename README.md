@@ -114,12 +114,11 @@ Skopíruj [`.env.example`](.env.example) → `.env.local`:
 |----------|------|
 | `VITE_SENTRY_DSN` | Error tracking (silent fallback bez DSN) |
 | `VITE_POSTHOG_KEY` / `VITE_POSTHOG_HOST` | Product analytics EU |
-| `VITE_STRIPE_PUBLIC_KEY` | Live Stripe; bez kľúča = test mode + lokálny upgrade |
-| `VITE_ENABLE_DEMO` | Len lokálne (`true`). V produkcii **nesmie** byť zapnuté — demo by skresľovalo investigator dáta |
+| `VITE_STRIPE_PUBLIC_KEY` | Live Stripe; bez kľúča = test mode + lokálny upgrade (nie demo spis) |
 
-### Demo vs produkcia
-- Produkčné buildy **neinjectujú** demo kauzu BA–KE/Praha–Brno do store/IndexedDB/analytics ako reálne dáta.
-- Primárny tok je vždy **upload → analýza**. Lokálne demo CTA sa zobrazí len pri `VITE_ENABLE_DEMO=true`.
+### Upload-first produkcia
+- Produkt **neobsahuje** demo/synthetic case (žiadne BA–KE CTA, žiadne `VITE_ENABLE_DEMO`).
+- Primárny tok je vždy **upload → chunk → AI analýza → rozpory**.
 - Stripe test mode ostáva env-gated (bez publishable key) a **nie je** demo spisom.
 
 ### Spustenie testov & Kontrola kvality

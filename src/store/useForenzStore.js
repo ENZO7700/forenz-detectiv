@@ -1,25 +1,7 @@
 import { create } from 'zustand';
 import { base44 } from '../api/base44Client.js';
 import { saveCaseOffline, getCaseOffline } from '../lib/offlineDb.js';
-import { isDemoEnabled } from '../lib/demoFlag.js';
-import { trackDemoLaunched, trackContradictionDetected } from '../lib/analytics.js';
-
-function normalizeDemoCase(raw, caseId) {
-  return {
-    documents: raw.documents || [],
-    persons: raw.persons || [],
-    relationships: raw.relationships || [],
-    locations: raw.locations || [],
-    events: raw.events || [],
-    claims: raw.claims || [],
-    redFlags: raw.redFlags || [],
-    flaggedPassages: raw.flaggedPassages || [],
-    vehicles: raw.vehicles || [],
-    contradictions: raw.contradictions || [],
-    overrides: raw.overrides || [],
-    caseId
-  };
-}
+import { trackContradictionDetected } from '../lib/analytics.js';
 
 export const useForenzStore = create((set, get) => ({
   // 1. Dátové entity
@@ -101,74 +83,7 @@ export const useForenzStore = create((set, get) => ({
     }, 4000);
   },
 
-  // 3.1 Local-only demo (VITE_ENABLE_DEMO=true). Production never injects synthetic cases.
-  loadDemoCase: async () => {
-    if (!isDemoEnabled()) {
-      get().showToast('Nahrajte reálny spis — demo režim nie je v produkcii zapnutý.');
-      return;
-    }
-
-    const lang = typeof window !== 'undefined' ? localStorage.getItem('forenz_lang') : 'sk';
-    const isCs = lang === 'cs';
-    const [{ DEMO_CASE_DATA }, { CZ_DEMO_CASE }] = await Promise.all([
-      import('../data/demoCaseData.js'),
-      import('../data/czDemoCaseData.js')
-    ]);
-    const raw = isCs ? CZ_DEMO_CASE : DEMO_CASE_DATA;
-    const caseId = isCs ? 'praha-brno' : 'ba-ke';
-    const demo = normalizeDemoCase(raw, caseId);
-
-    const alibiPerson =
-      demo.persons.find((p) =>
-        (demo.redFlags || []).some((f) =>
-          (f.type || '').toLowerCase().includes('alibi') &&
-          (f.person_id === p.id || f.entity_ref === p.name || f.person_name === p.name)
-        )
-      ) ||
-      demo.persons.find((p) =>
-        (demo.contradictions || []).some((c) =>
-          (c.type || '').toLowerCase().includes('alibi') &&
-          (c.entity_ref === p.name || c.person_id === p.id)
-        )
-      ) ||
-      demo.persons[0] ||
-      null;
-
-    set({ scanning: true, loading: true });
-    get().showToast(isCs ? 'Načítávám lokální demo spis…' : 'Načítavam lokálny demo spis…');
-
-    setTimeout(() => {
-      set({
-        documents: demo.documents,
-        persons: demo.persons,
-        relationships: demo.relationships,
-        locations: demo.locations,
-        events: demo.events,
-        claims: demo.claims,
-        redFlags: demo.redFlags,
-        flaggedPassages: demo.flaggedPassages,
-        vehicles: demo.vehicles,
-        contradictions: demo.contradictions,
-        overrides: demo.overrides,
-        selectedDocId: null,
-        selectedPerson: alibiPerson,
-        selectedEdge: null,
-        activeView: 'map',
-        loading: false,
-        scanning: false
-      });
-
-      trackDemoLaunched(caseId);
-      trackContradictionDetected(demo.contradictions.length, true, true, caseId);
-      get().showToast(
-        isCs
-          ? 'Lokální demo (nie produkčné dáta): mapa nemožného přesunu.'
-          : 'Lokálne demo (nie produkčné dáta): mapa nemožného presunu.'
-      );
-    }, 400);
-  },
-
-  // 3.2 Vyčistenie prípadu (pre návrat na čistý Home)
+  // 3.1 Vyčistenie prípadu (pre návrat na čistý Home)
   clearCase: () => {
     set({
       documents: [],

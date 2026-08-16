@@ -10,7 +10,7 @@ test.describe('S01 — Onboarding, Guest Mode & IndexedDB', () => {
     await expect(page.locator('body')).toContainText(/ForenzDetectiv/i);
     await expect(page.locator('.bg-slate-950').first()).toBeVisible();
     await expect(page.getByRole('button', { name: /Nahrať spis|Nahrát spis/i }).first()).toBeVisible();
-    // Demo CTA covered in S03 (requires __FORENZ_E2E_DEMO__)
+    await expect(page.getByRole('button', { name: /Demo|demo spis/i })).toHaveCount(0);
   });
 
   test('IndexedDB ForenzDetectiv_OfflineDB v2 so store-mi', async ({ page }) => {

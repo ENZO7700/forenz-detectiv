@@ -1,31 +1,23 @@
 import { test, expect } from '@playwright/test';
-import { launchDemo } from '../helpers.js';
+import { expectUploadFirstHome, gotoApp, dismissQuickTipIfPresent } from '../helpers.js';
 
-test.describe('S03/S04 — Graph + Alibi Map (demo BA–KE)', () => {
-  test('Demo spustí mapu s alibi paradoxom (Bratislava / Košice)', async ({ page }) => {
-    await launchDemo(page);
-    await expect(
-      page.locator('text=/Bratislava|Košice|nemožn|alibi|KRITICK|rozpor/i').first()
-    ).toBeVisible({ timeout: 20_000 });
+test.describe('S03/S04 — Graph + Map (upload-first, no demo)', () => {
+  test('Empty home: upload CTA, žiadne demo tlačidlá', async ({ page }) => {
+    await expectUploadFirstHome(page);
+    await expect(page.getByText(/Bratislava|Košice demo|Spustiť Demo/i)).toHaveCount(0);
   });
 
-  test('Prepnutie na Pavúk vzťahov po demo', async ({ page }) => {
-    await launchDemo(page);
-    // Exact desktop tab label (avoid hidden mobile "Pavúk")
-    await page.getByRole('button', { name: 'Pavúk vzťahov', exact: true }).click();
-    await expect(page.locator('canvas').first()).toBeVisible({ timeout: 20_000 });
-  });
-
-  test('Filtrovanie / taby grafu sú klikateľné', async ({ page }) => {
-    await launchDemo(page);
-    await page.getByRole('button', { name: 'Pavúk vzťahov', exact: true }).click();
-    await expect(page.locator('canvas').first()).toBeVisible({ timeout: 20_000 });
-    const filterCandidates = page.locator('button').filter({
-      hasText: /Kľúčoví|Rozpory|Aktéri|Filter|Všetci/i
+  test('Desktop header + pricing dostupné bez načítaného spisu', async ({ page }) => {
+    await gotoApp(page);
+    await dismissQuickTipIfPresent(page);
+    await expect(page.getByTitle('Licencie a plány').or(page.getByRole('button', { name: /Free|Pro/i })).first()).toBeVisible({
+      timeout: 15_000
     });
-    if ((await filterCandidates.count()) > 0) {
-      await filterCandidates.first().click();
-    }
-    await expect(page.locator('canvas').first()).toBeVisible();
+  });
+
+  test('Geospatial / map UI je pokryté unit testami — empty state nemá mapu', async ({ page }) => {
+    await expectUploadFirstHome(page);
+    // Map tab sa zobrazí až po dokumentoch; empty home = HomeHero
+    await expect(page.locator('input[type="file"]').first()).toBeAttached();
   });
 });

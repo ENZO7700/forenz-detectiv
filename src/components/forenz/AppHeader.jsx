@@ -197,6 +197,7 @@ export default function AppHeader({
             {/* Statistics Toggle */}
             <button
               type="button"
+              data-stats-toggle
               onClick={() => setShowStats?.((s) => !s)}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
                 showStats

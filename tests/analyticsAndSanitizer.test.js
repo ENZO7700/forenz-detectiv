@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizeAnalyticsProps, trackEvent, trackContradictionViewed, trackDemoLaunched } from '../src/lib/analytics.js';
+import { sanitizeAnalyticsProps, trackEvent, trackContradictionViewed, trackCaseCreated } from '../src/lib/analytics.js';
 import { sanitizeDiagnosticData } from '../src/lib/sentry.js';
 import { validateUploadSize, MAX_FILE_SIZE_BYTES, PIPELINE_STEPS, PDF_PAGE_CHUNKING_IMPLEMENTED } from '../src/lib/documentPipeline.js';
 
@@ -53,7 +53,7 @@ describe('Privacy & Telemetry Sanitization Tests', () => {
     assert.doesNotThrow(() => {
       trackEvent('case_created', { file_count: 3 });
       trackContradictionViewed('alibi_impossible', 12);
-      trackDemoLaunched('ba-ke');
+      trackCaseCreated('upload', 1);
     });
   });
 });

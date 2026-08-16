@@ -7,23 +7,19 @@ import {
   AlertTriangle,
   ArrowRight,
   Scale,
-  Files,
-  Zap
+  Files
 } from 'lucide-react';
 import { useForenzStore } from '@/store/useForenzStore';
 import LeadCaptureModal from '@/components/landing/LeadCaptureModal';
 import { useTranslation } from '@/i18n/i18nContext';
-import { isDemoEnabled } from '@/lib/demoFlag';
 import { MAX_FILE_SIZE_BYTES, validateUploadSize } from '@/lib/documentPipeline';
 
 export default function HomeHero({ onScan, onBulkScan = null, scanning = false }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [leadOpen, setLeadOpen] = useState(false);
-  const loadDemoCase = useForenzStore((s) => s.loadDemoCase);
   const showToast = useForenzStore((s) => s.showToast);
   const { t } = useTranslation();
-  const demoOn = isDemoEnabled();
 
   const handleFiles = (fileList) => {
     if (!fileList || fileList.length === 0) return;
@@ -171,29 +167,6 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
         >
           {t('hero.pipelineHint')}
         </motion.p>
-
-        {demoOn && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
-            className="w-full max-w-2xl mt-4"
-          >
-            <div className="p-4 rounded-2xl bg-slate-900 border border-dashed border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-left">
-                <h4 className="text-sm font-semibold text-amber-300">{t('hero.demoTitle')}</h4>
-                <p className="text-xs text-slate-400">{t('hero.demoDesc')}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => loadDemoCase()}
-                className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 text-xs font-semibold"
-              >
-                <Zap className="w-3.5 h-3.5" /> {t('hero.demoCta')} <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </motion.div>
-        )}
 
         <motion.div
           initial={{ opacity: 0 }}

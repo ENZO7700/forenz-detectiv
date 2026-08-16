@@ -61,6 +61,7 @@ export default function StatsBar({
   useEffect(() => {
     if (!open) return undefined;
     const onPointer = (e) => {
+      if (e.target.closest?.('[data-stats-toggle]')) return;
       if (panelRef.current && !panelRef.current.contains(e.target)) {
         setOpen(false);
       }

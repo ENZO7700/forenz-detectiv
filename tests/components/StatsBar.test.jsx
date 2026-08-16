@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import StatsBar from '@/components/forenz/StatsBar';
 
 describe('StatsBar floating drawer', () => {
@@ -10,6 +10,14 @@ describe('StatsBar floating drawer', () => {
     redFlags: [{ id: 'rf1' }],
     flaggedPassages: [],
   };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('renders FAB toggle while collapsed and expands metrics on click', () => {
     const onOpenChange = vi.fn();
@@ -25,5 +33,28 @@ describe('StatsBar floating drawer', () => {
     expect(screen.getByTestId('stats-drawer')).toBeInTheDocument();
     expect(screen.getByText('Dokumenty')).toBeInTheDocument();
     expect(screen.getByText('Úspešnosť')).toBeInTheDocument();
+  });
+
+  it('outside pointerdown closes, but data-stats-toggle does not', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <div>
+        <button type="button" data-stats-toggle>
+          Header stats
+        </button>
+        <div data-testid="outside-node">Outside</div>
+        <StatsBar {...props} open onOpenChange={onOpenChange} />
+      </div>
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    fireEvent.pointerDown(screen.getByText('Header stats'));
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+    fireEvent.pointerDown(screen.getByTestId('outside-node'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

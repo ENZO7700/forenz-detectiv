@@ -1,17 +1,14 @@
 /**
  * Shared helpers for Master E2E (PROMPT scenarios 01–12).
+ * Product has no demo case — tests use empty Home / real upload gates.
  */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 export async function gotoApp(page, pathName = '/') {
-  await page.addInitScript(() => {
-    window.__FORENZ_E2E_DEMO__ = true;
-  });
   await page.goto(pathName, { waitUntil: 'domcontentloaded' });
-  // Mobile header h1 is in DOM but CSS-hidden on desktop — assert via body text
   await expect(page.locator('body')).toContainText(/ForenzDetectiv|ForenzDetektív/i, { timeout: 30_000 });
 }
 
@@ -22,23 +19,14 @@ export async function dismissQuickTipIfPresent(page) {
   }
 }
 
-export async function launchDemo(page) {
+/** Empty-state home: upload CTA must be present; no demo buttons. */
+export async function expectUploadFirstHome(page) {
   await gotoApp(page);
   await dismissQuickTipIfPresent(page);
-  const demoBtn = page.getByRole('button', {
-    name: /Lokálne demo|Lokální demo|Načítať lokálne demo|Načíst lokální demo|Spustiť Demo spis|Spustit demo|Demo spis/i
-  }).first();
-  const visible = await demoBtn.isVisible().catch(() => false);
-  if (!visible) {
-    test.skip(true, 'Demo CTA vypnuté (produkčná čistota). Zapnite VITE_ENABLE_DEMO=true pre lokálne demo E2E.');
-  }
-  await demoBtn.click();
-  // Desktop nav tabs appear after demo documents load
-  await expect(
-    page.getByRole('button', { name: 'Pavúk vzťahov', exact: true })
-      .or(page.getByRole('button', { name: /^Pavúk$/i }))
-      .first()
-  ).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('button', { name: /Nahrať spis|Nahrát spis/i }).first()).toBeVisible({
+    timeout: 15_000
+  });
+  await expect(page.getByRole('button', { name: /Demo|demo spis|lokálne demo|lokální demo/i })).toHaveCount(0);
 }
 
 export async function openIndexedDbMeta(page) {
@@ -96,7 +84,6 @@ export async function openPricingModal(page) {
     await planBtn.click();
     return;
   }
-  // Desktop Free badge in header
   const freeBtn = page.getByTitle('Licencie a plány');
   if (await freeBtn.isVisible().catch(() => false)) {
     await freeBtn.click();

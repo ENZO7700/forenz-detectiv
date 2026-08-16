@@ -10,7 +10,7 @@
  * 5. analyzeDocument / runAnalysis — Pixtral extraction → entity write
  * 6. runContradictionDetection — cross-document claims / alibi checks
  *
- * Demo case remains gated behind VITE_ENABLE_DEMO (see demoFlag.js).
+ * No synthetic demo cases ship with the product — upload-only.
  */
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;

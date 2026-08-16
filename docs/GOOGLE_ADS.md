@@ -26,7 +26,7 @@ https://forenzdetectiv.sk/?utm_source=google&utm_medium=cpc&utm_campaign=sk_fore
 - [ ] Brand: „ForenzDetectiv“, „forenzný detektív AI“
 - [ ] Intent: „analýza výpovedí“, „detekcia rozporov spis“, „nemožné alibi“
 - [ ] Negatives: job boards, student essays, unrelated „detektív“
-- [ ] Landing: `/` s MiniPlayground + CTA „Chcem pilot“
+- [ ] Landing: `/` s upload CTA + „Chcem pilot“
 - [ ] Conversion (proxy): PostHog `lead_captured` + `case_created` (nie PII)
 
 ### CZ — Search

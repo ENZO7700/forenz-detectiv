@@ -30,15 +30,10 @@ export default defineConfig({
     }
   ],
   webServer: {
-    // Dedicated E2E port (5174) avoids clashes with a stuck `npm run dev` on 5173.
-    // Demo BA–KE: window.__FORENZ_E2E_DEMO__ via addInitScript + VITE_ENABLE_DEMO.
+    // Dedicated E2E port (5174) avoids clashes with `npm run dev` on 5173.
     command: `npm run dev -- --host 127.0.0.1 --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: false,
-    timeout: 120_000,
-    env: {
-      ...process.env,
-      VITE_ENABLE_DEMO: 'true'
-    }
+    timeout: 120_000
   }
 });
