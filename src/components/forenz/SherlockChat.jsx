@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, X, Send, Loader2, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Search, X, Send, Loader2, AlertTriangle, ShieldCheck, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { parseTimeToMinutes } from '@/lib/forenzUtils';
@@ -120,28 +120,42 @@ export default function SherlockChat({ persons = [], edges = [], redFlags = [], 
 
   return (
     <>
+      {/* Plávajúce tlačidlo Sherlock AI - vždy nad všetkými prvkami s vysokým z-indexom */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="absolute bottom-4 right-4 z-30 w-11 h-11 rounded-xl flex items-center justify-center shadow-xl transition-all bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 backdrop-blur-md"
+        className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-50 w-12 h-12 rounded-2xl flex items-center justify-center shadow-2xl transition-all bg-slate-900/95 hover:bg-slate-800 text-blue-400 hover:text-blue-300 border border-slate-700/80 backdrop-blur-xl hover:scale-105 active:scale-95"
         title="Sherlock AI Forenzný Asistent"
+        aria-label="Sherlock AI Forenzný Asistent"
       >
         {open ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
       </button>
 
+      {/* Okno chatu Sherlock AI - plávajúce nad celým rozhraním */}
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 16 }}
+            initial={{ opacity: 0, scale: 0.92, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 16 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="absolute bottom-16 right-4 z-30 w-[20rem] sm:w-[22rem] h-[28rem] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            className="fixed bottom-20 right-3 sm:right-6 lg:bottom-20 lg:right-6 z-50 w-[calc(100vw-1.5rem)] sm:w-[24rem] h-[30rem] max-h-[calc(100vh-6.5rem)] bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             <div className="px-3.5 py-2.5 border-b border-slate-800 flex items-center gap-2 bg-slate-900/90">
-              <Search className="w-4 h-4 text-blue-400" />
+              <div className="w-6 h-6 rounded-lg bg-blue-950/60 border border-blue-500/30 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              </div>
               <span className="text-xs font-semibold text-slate-100">Sherlock AI Forenzný Asistent</span>
-              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">v1.2</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">v1.2</span>
+              <button
+                onClick={() => setOpen(false)}
+                className="ml-auto p-1 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-lg transition-colors"
+                title="Zatvoriť okno"
+                aria-label="Zatvoriť okno"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
+
             <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
               {flaggedPassages.length > 0 && (
                 <div className="mb-2 border border-amber-900/50 rounded-xl overflow-hidden bg-amber-950/20">
@@ -210,6 +224,7 @@ export default function SherlockChat({ persons = [], edges = [], redFlags = [], 
               )}
               <div ref={endRef} />
             </div>
+
             <div className="p-2.5 border-t border-slate-800 bg-slate-900/90 flex gap-2">
               <input
                 value={input}
@@ -220,7 +235,7 @@ export default function SherlockChat({ persons = [], edges = [], redFlags = [], 
                 placeholder="Napíšte otázku vyšetrovateľovi…"
                 className="flex-1 bg-slate-950 border border-slate-800 text-slate-100 text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 placeholder:text-slate-500"
               />
-              <button onClick={send} disabled={busy} className="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50 flex items-center justify-center shrink-0 transition-colors shadow-sm">
+              <button onClick={send} disabled={busy} className="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50 flex items-center justify-center shrink-0 transition-colors shadow-sm" aria-label="Odoslať otázku">
                 <Send className="w-3.5 h-3.5" />
               </button>
             </div>

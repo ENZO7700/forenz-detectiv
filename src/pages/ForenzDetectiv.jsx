@@ -845,13 +845,24 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                 }}
               />
               <RedFlagsPanel redFlags={visibleRedFlags} />
-              <SherlockChat persons={visiblePersons} edges={visibleEdges} redFlags={visibleRedFlags} flaggedPassages={visibleFlaggedPassages} claims={visibleClaims} events={visibleEvents} contradictions={visibleContradictions} openSignal={sherlockSignal} />
             </div>
           </CollapsibleSidebar>
         </div>
       )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Sherlock AI Chat - Globálne plávajúce okno dostupné vo všetkých pohľadoch */}
+      <SherlockChat
+        persons={visiblePersons}
+        edges={visibleEdges}
+        redFlags={visibleRedFlags}
+        flaggedPassages={visibleFlaggedPassages}
+        claims={visibleClaims}
+        events={visibleEvents}
+        contradictions={visibleContradictions}
+        openSignal={sherlockSignal}
+      />
 
       {toast && (
         <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-white/80 backdrop-blur-3xl border border-white text-blue-800 text-sm shadow-xl">
