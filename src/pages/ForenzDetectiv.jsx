@@ -100,6 +100,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const storeToast = useForenzStore((s) => s.toast);
   const [trustOpen, setTrustOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
@@ -1103,9 +1104,13 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         openSignal={sherlockSignal}
       />
 
-      {toast && (
-        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-white/80 backdrop-blur-3xl border border-white text-blue-800 text-sm shadow-xl">
-          {toast}
+      {(toast || storeToast) && (
+        <div
+          role="status"
+          data-testid="app-toast"
+          className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-white/80 backdrop-blur-3xl border border-white text-blue-800 text-sm shadow-xl"
+        >
+          {toast || storeToast}
         </div>
       )}
 

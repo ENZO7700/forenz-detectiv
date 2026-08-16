@@ -9,7 +9,7 @@ export default async function (req: any) {
     const body = await req.json().catch(() => ({}));
     const { plan = 'pro', interval = 'month', successUrl, cancelUrl } = body || {};
 
-    const stripeSecretKey = secrets.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+    const stripeSecretKey = secrets.get('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
       // Test / Simulated mode
       return Response.json({
