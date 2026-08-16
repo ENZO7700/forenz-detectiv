@@ -1,15 +1,17 @@
 import { appParams } from '@/lib/app-params';
 
 /**
- * Otvorí Google OAuth prihlásenie v modálnom Popup okne.
- * Tento prístup rieši "MismatchingStateError" a blokovanie cookies tretích strán na vlastných doménach (Vercel).
+ * Otvorí Google OAuth prihlásenie v modálnom Popup okne s premostením domény.
+ * Tento prístup rieši "Domain is not valid" a "MismatchingStateError" na vlastných doménach (Vercel).
  */
 export function loginWithGooglePopup(fromUrl = '/') {
   const { appId, appBaseUrl } = appParams;
   const redirectUrl = new URL(fromUrl, window.location.origin).toString();
   const popupOrigin = window.location.origin;
 
-  const queryParams = `app_id=${encodeURIComponent(appId)}&from_url=${encodeURIComponent(redirectUrl)}&popup_origin=${encodeURIComponent(popupOrigin)}`;
+  // Premostenie: Base44 overí vlastnú doménu app.base44.com a následne pošle token do popup_origin
+  const base44InternalReturn = `${appBaseUrl}/apps/${appId}`;
+  const queryParams = `app_id=${encodeURIComponent(appId)}&from_url=${encodeURIComponent(base44InternalReturn)}&popup_origin=${encodeURIComponent(popupOrigin)}`;
   const loginUrl = `${appBaseUrl}/api/apps/auth/login?${queryParams}`;
 
   const width = 500;
@@ -24,7 +26,6 @@ export function loginWithGooglePopup(fromUrl = '/') {
   );
 
   if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-    // Ak prehliadač zablokoval popup, fallback na priamy redirect
     window.location.href = loginUrl;
     return;
   }
@@ -39,7 +40,6 @@ export function loginWithGooglePopup(fromUrl = '/') {
     };
 
     const onMessage = (event) => {
-      // Prijmeme správu z base44 backendu
       if (!event.origin.includes('base44.com')) return;
       if (!event.data?.access_token) return;
 
