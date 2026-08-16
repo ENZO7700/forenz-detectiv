@@ -1,24 +1,31 @@
 import { createClient } from '@base44/sdk';
 import { appParams } from '@/lib/app-params';
 
-// Zakáž interné SDK analytics v guest/lokálnom režime pred inicializáciou
+// Deaktivácia interného Base44 SDK analytics v guest / standalone režime
 if (typeof window !== 'undefined') {
   if (!window.base44SharedInstances) {
     window.base44SharedInstances = {};
   }
-  if (!window.base44SharedInstances.analytics) {
-    window.base44SharedInstances.analytics = {
-      instance: {
-        requestsQueue: [],
-        isProcessing: false,
-        isHeartBeatProcessing: false,
-        wasInitializationTracked: true,
-        sessionContext: null,
-        sessionStartTime: null,
-        config: { enabled: false, maxQueueSize: 0, throttleTime: 999999, batchSize: 0, heartBeatInterval: 999999 }
+  window.base44SharedInstances.analytics = {
+    instance: {
+      requestsQueue: [],
+      isProcessing: false,
+      isHeartBeatProcessing: false,
+      wasInitializationTracked: true,
+      sessionContext: {
+        user_id: null,
+        session_id: 'guest-session'
+      },
+      sessionStartTime: null,
+      config: {
+        enabled: false,
+        maxQueueSize: 0,
+        throttleTime: 999999,
+        batchSize: 0,
+        heartBeatInterval: 999999
       }
-    };
-  }
+    }
+  };
 }
 
 const { appId, token, functionsVersion, appBaseUrl } = appParams;
