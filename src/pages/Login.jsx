@@ -6,16 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
-import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
-import { loginWithGooglePopup } from "@/lib/popupAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("larsenevans@proton.me");
   const [password, setPassword] = useState("POKLOP123###");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const returnTo = safeReturnTo();
 
   const handleSubmit = async (e) => {
@@ -29,18 +26,6 @@ export default function Login() {
       setError(err.message || "Nesprávny email alebo heslo.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogle = async () => {
-    setError("");
-    setGoogleLoading(true);
-    try {
-      await loginWithGooglePopup(returnTo);
-    } catch (err) {
-      setError(err.message || "Google prihlásenie zlyhalo. Použite prosím prihlásenie emailom a heslom nižšie.");
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -68,8 +53,8 @@ export default function Login() {
         </div>
       )}
 
-      {/* Formulár pre Email a Heslo (Okamžité bezpečné prihlásenie) */}
-      <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+      {/* Formulár pre Email a Heslo */}
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Emailová adresa</Label>
           <div className="relative">
@@ -107,7 +92,7 @@ export default function Login() {
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium bg-blue-600 hover:bg-blue-500 text-white shadow-md transition-all" disabled={loading}>
+        <Button type="submit" className="w-full h-12 font-medium bg-blue-600 hover:bg-blue-500 text-white shadow-md transition-all mt-2" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -120,30 +105,6 @@ export default function Login() {
           )}
         </Button>
       </form>
-
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">alebo cez Google</span>
-        </div>
-      </div>
-
-      <Button
-        variant="outline"
-        type="button"
-        className="w-full h-11 text-xs sm:text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        onClick={handleGoogle}
-        disabled={googleLoading}
-      >
-        {googleLoading ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        ) : (
-          <GoogleIcon className="w-4 h-4 mr-2" />
-        )}
-        Pokračovať cez Google
-      </Button>
     </AuthLayout>
   );
 }
