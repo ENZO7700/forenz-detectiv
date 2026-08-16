@@ -30,12 +30,12 @@ describe('PROMPT 08: Monetization & Plan Guard Logic', () => {
   test('Licenčný kľúč PRO-LAWYER-2026 je platný', async () => {
     const VALID_KEYS = {
       'PRO-LAWYER-2026': { plan: 'pro', validDays: 365 },
-      'DEMO-VIP': { plan: 'pro', validDays: 90 },
       'ACADEMIA-SK': { plan: 'pro', validDays: 180 }
     };
 
     assert.strictEqual(VALID_KEYS['PRO-LAWYER-2026'].plan, 'pro');
     assert.strictEqual(VALID_KEYS['PRO-LAWYER-2026'].validDays, 365);
+    assert.strictEqual(VALID_KEYS['DEMO-VIP'], undefined);
   });
 
   test('Free tier limituje počet prípadov na 2 a počet dokumentov na 5', () => {

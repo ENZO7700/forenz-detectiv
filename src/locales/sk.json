@@ -67,8 +67,7 @@
   },
   "pricing": {
     "badge": "ForenzDetectiv Licencie pre Advokátov a Vyšetrovateľov",
-    "title": "Získajte neobmedzenú AI analýzu spisov",
-    "testMode": "Testovací režim — Stripe kľúč nie je nastavený"
+    "title": "Získajte neobmedzenú AI analýzu spisov"
   },
   "legal": {
     "case": "Vyšetrovací spis",

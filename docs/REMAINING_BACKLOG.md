@@ -132,9 +132,9 @@ flowchart TD
 
 **Acceptance:**
 
-- [ ] Nová Base44 function (vzor v [`base44/functions/`](../base44/functions/)) vytvorí Stripe Checkout Session a vráti `{ id }`
-- [ ] S `VITE_STRIPE_PUBLIC_KEY` → `redirectToCheckout`
-- [ ] Bez kľúča ostáva test mode + banner v PricingModal
+- [ ] Nová Base44 function (vzor v [`base44/functions/`](../base44/functions/)) vytvorí Stripe Checkout Session a vráti `{ id, url }`
+- [ ] S `VITE_STRIPE_PUBLIC_KEY` → `redirectToCheckout` na `session.url`
+- [ ] Bez kľúča / secretu → fail-closed (žiadny mock upgrade, 503 na serveri)
 - [ ] Aktualizovaný [`docs/STRIPE_SETUP.md`](STRIPE_SETUP.md) (secrets, price IDs)
 - [ ] Žiadne falošné live charge v CI
 

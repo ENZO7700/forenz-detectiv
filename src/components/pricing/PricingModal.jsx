@@ -23,12 +23,19 @@ export default function PricingModal({ isOpen, onClose }) {
 
     try {
       setLoadingPlan(selectedPlan);
-      await redirectToCheckout({ plan: selectedPlan, interval: annual ? 'year' : 'month' });
-      // Pre testovacie prostredie ihneď upgradneme
-      upgradePlan(selectedPlan);
+      const result = await redirectToCheckout({ plan: selectedPlan, interval: annual ? 'year' : 'month' });
+      if (!result?.success) {
+        setPromoMsg({
+          type: 'error',
+          text: result?.error || 'Checkout zlyhal. Skúste to znova neskôr.'
+        });
+        return;
+      }
+      // Upgrade prebieha až po overení platby (success URL / webhook) — tu iba zatvoríme modal pri redirecte
       onClose();
     } catch (err) {
       console.error(err);
+      setPromoMsg({ type: 'error', text: err?.message || 'Checkout zlyhal.' });
     } finally {
       setLoadingPlan(null);
     }
@@ -212,7 +219,7 @@ export default function PricingModal({ isOpen, onClose }) {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <input
               type="text"
-              placeholder="napr. PRO-LAWYER-2026"
+              placeholder="Licenčný kľúč"
               value={promoCode}
               onChange={(e) => setPromoCode(e.target.value)}
               className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 font-mono uppercase focus:outline-none focus:border-amber-500"

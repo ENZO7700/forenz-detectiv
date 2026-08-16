@@ -59,8 +59,12 @@ export default function ShareModal({
   };
 
   const handleLinkedInShare = () => {
+    const locA = contradiction?.locationA || 'miesta A';
+    const locB = contradiction?.locationB || 'miesta B';
+    const mins = contradiction?.intervalMinutes != null ? `${contradiction.intervalMinutes} minút` : 'krátky interval';
+    const speed = contradiction?.requiredSpeedKmH != null ? `${contradiction.requiredSpeedKmH} km/h` : 'nemožnú rýchlosť';
     const text = encodeURIComponent(
-      `Odhalili sme fyzikálne nemožné alibi pomocou ForenzDetectiv AI!\n\n📍 Presun z ${contradiction?.locationA || 'Bratislavy'} do ${contradiction?.locationB || 'Košíc'} za ${contradiction?.intervalMinutes || 40} minút vyžaduje rýchlosť ${contradiction?.requiredSpeedKmH || 675} km/h.\n\nVyskúšajte automatickú detekciu rozporov vo vyšetrovacích spisoch:`
+      `Odhalili sme fyzikálne nemožné alibi pomocou ForenzDetectiv AI!\n\n📍 Presun z ${locA} do ${locB} za ${mins} vyžaduje ${speed}.\n\nVyskúšajte automatickú detekciu rozporov vo vyšetrovacích spisoch:`
     );
     const url = encodeURIComponent('https://forenzdetectiv.sk');
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&summary=${text}`, '_blank');

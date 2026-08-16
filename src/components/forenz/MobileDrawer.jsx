@@ -113,7 +113,7 @@ export default function MobileDrawer({
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-slate-100 truncate">{user?.full_name || 'Hlavný Vyšetrovateľ'}</p>
-              <p className="text-[10px] text-slate-400 truncate">{user?.email || 'vysetrovatel@forenz.sk'}</p>
+              <p className="text-[10px] text-slate-400 truncate">{user?.email || 'Hosť'}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white p-1 shrink-0">

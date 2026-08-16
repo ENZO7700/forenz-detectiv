@@ -1,7 +1,7 @@
 import { createClient } from '@base44/sdk';
 import { appParams } from '../lib/app-params.js';
 
-// Deaktivácia interného Base44 SDK analytics v guest / standalone / test režime
+// Deaktivácia interného Base44 SDK analytics v guest / standalone režime
 if (typeof globalThis !== 'undefined') {
   if (!globalThis.base44SharedInstances) {
     globalThis.base44SharedInstances = {};
@@ -41,7 +41,7 @@ export const base44 = createClient({
   appBaseUrl: appBaseUrl || 'https://app.base44.com'
 });
 
-// Bezpečný wrapper pre base44.auth.me zabraňujúci 401 chybám v konzole
+// Bezpečný wrapper pre base44.auth.me — bez fake admin guest používateľa
 const originalMe = base44.auth.me ? base44.auth.me.bind(base44.auth) : null;
 if (originalMe) {
   base44.auth.me = async () => {
@@ -51,23 +51,13 @@ if (originalMe) {
       : null;
 
     if (!storedToken) {
-      return {
-        id: 'guest-detective',
-        email: 'vysetrovatel@forenz.sk',
-        full_name: 'Hlavný Vyšetrovateľ',
-        role: 'admin'
-      };
+      return null;
     }
 
     try {
       return await originalMe();
     } catch {
-      return {
-        id: 'guest-detective',
-        email: 'vysetrovatel@forenz.sk',
-        full_name: 'Hlavný Vyšetrovateľ',
-        role: 'admin'
-      };
+      return null;
     }
   };
 }

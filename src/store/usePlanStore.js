@@ -2,7 +2,6 @@ import { create } from 'zustand';
 
 const VALID_LICENSE_KEYS = {
   'PRO-LAWYER-2026': { plan: 'pro', validDays: 365 },
-  'DEMO-VIP': { plan: 'pro', validDays: 90 },
   'ACADEMIA-SK': { plan: 'pro', validDays: 180 },
   'AGENCY-PARTNER': { plan: 'agency', validDays: 365 }
 };
@@ -88,17 +87,7 @@ export const usePlanStore = create((set, get) => ({
     const ref = urlParams.get('ref');
     if (!ref) return;
 
+    // Iba zaznamenaj referral — žiadny automatický Pro upgrade v produkcii
     localStorage.setItem('forenz_incoming_ref', ref);
-    const alreadyGranted = localStorage.getItem('forenz_referral_rewarded');
-    if (alreadyGranted) return;
-
-    // First-visit referral reward: 30 days Pro credit
-    localStorage.setItem('forenz_referral_rewarded', '1');
-    localStorage.setItem('forenz_referral_credits', '30');
-    localStorage.setItem('forenz_user_plan', 'pro');
-    set({
-      referralCreditsDays: 30,
-      plan: 'pro'
-    });
   }
 }));
