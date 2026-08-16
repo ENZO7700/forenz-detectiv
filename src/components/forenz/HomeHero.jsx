@@ -5,7 +5,6 @@ import {
   ShieldCheck,
   MapPin,
   AlertTriangle,
-  ArrowRight,
   Scale,
   Files
 } from 'lucide-react';
