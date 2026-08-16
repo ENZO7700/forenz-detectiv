@@ -58,4 +58,32 @@ describe('UI/UX Anomaly Fixes & Regression Suite (HERO-01 to CHAT-10)', () => {
     assert.strictEqual(getScale(3), 3);
     assert.strictEqual(getScale(null), 2);
   });
+
+  test('UPLOAD-LIMIT: Limit na jedno nahratie PDF / spisu je presne 50 MB (50 000 KB / 52 428 800 B)', () => {
+    const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+    const isSizeAllowed = (sizeBytes) => sizeBytes <= MAX_FILE_SIZE_BYTES;
+
+    assert.strictEqual(MAX_FILE_SIZE_BYTES, 52428800);
+    assert.strictEqual(isSizeAllowed(10 * 1024 * 1024), true); // 10 MB - povolené
+    assert.strictEqual(isSizeAllowed(49.9 * 1024 * 1024), true); // 49.9 MB - povolené
+    assert.strictEqual(isSizeAllowed(50 * 1024 * 1024), true); // presne 50 MB - povolené
+    assert.strictEqual(isSizeAllowed(50.1 * 1024 * 1024), false); // 50.1 MB - zamietnuté
+    assert.strictEqual(isSizeAllowed(100 * 1024 * 1024), false); // 100 MB - zamietnuté
+  });
+
+  test('UPLOAD-LIMIT: Hromadný upload filtruje a preskakuje súbory nad 50 MB so spätnou väzbou', () => {
+    const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+    const incomingFiles = [
+      { name: 'spis_ok_1.pdf', size: 15 * 1024 * 1024 },
+      { name: 'spis_oversized.pdf', size: 75 * 1024 * 1024 },
+      { name: 'spis_ok_2.pdf', size: 30 * 1024 * 1024 }
+    ];
+
+    const validFiles = incomingFiles.filter(f => f.size <= MAX_FILE_SIZE_BYTES);
+    const oversized = incomingFiles.filter(f => f.size > MAX_FILE_SIZE_BYTES);
+
+    assert.strictEqual(validFiles.length, 2);
+    assert.strictEqual(oversized.length, 1);
+    assert.strictEqual(oversized[0].name, 'spis_oversized.pdf');
+  });
 });

@@ -13,18 +13,40 @@ import {
 } from 'lucide-react';
 import { useForenzStore } from '@/store/useForenzStore';
 
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB (50 000 KB)
+
 export default function HomeHero({ onScan, onBulkScan = null, scanning = false }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const loadDemoCase = useForenzStore((s) => s.loadDemoCase);
+  const showToast = useForenzStore((s) => s.showToast);
 
   const handleFiles = (fileList) => {
     if (!fileList || fileList.length === 0) return;
     const files = Array.from(fileList);
-    if (files.length > 1 && onBulkScan) {
-      onBulkScan(files);
+    const validFiles = [];
+    const oversizedFiles = [];
+
+    files.forEach((file) => {
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        oversizedFiles.push(file);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (oversizedFiles.length > 0) {
+      const first = oversizedFiles[0];
+      const sizeKb = Math.round(first.size / 1024);
+      showToast?.(`Súbor "${first.name}" prekračuje limit 50 MB (${sizeKb.toLocaleString()} KB / max 50 000 KB).`);
+    }
+
+    if (validFiles.length === 0) return;
+
+    if (validFiles.length > 1 && onBulkScan) {
+      onBulkScan(validFiles);
     } else if (onScan) {
-      onScan(files[0]);
+      onScan(validFiles[0]);
     }
   };
 
@@ -125,7 +147,7 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
                 {scanning ? 'Spracovávam výpoveď...' : 'Pretiahnite sem 1 alebo viacero zápisníc naraz'}
               </h3>
               <p className="text-xs text-slate-400">
-                Podpora hromadného nahratia (Bulk upload): PDF zápisnice, fotografie svedectiev (OCR), textové súbory
+                Podpora PDF a dokumentov do 50 MB (50 000 KB), fotografie svedectiev (OCR), textové súbory
               </p>
             </div>
 

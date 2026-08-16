@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { fileToNormalizedBase64, base64DataUrlToBlobFile } from '@/lib/imageProcessor';
@@ -198,7 +198,15 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     stopReplay();
   }, [timeBounds.min, timeBounds.max, timeBounds.hasTime]);
 
+  const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB (50 000 KB)
+
   const handleScan = async (file) => {
+    if (!file) return;
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      const sizeKb = Math.round(file.size / 1024);
+      showToast(`Súbor "${file.name}" prekračuje limit 50 MB (${sizeKb.toLocaleString()} KB / max 50 000 KB).`);
+      return;
+    }
     setScanning(true);
     try {
       trackFileUploaded(file.name?.split('.').pop() || 'unknown', Math.round(file.size / 1024));
@@ -240,7 +248,26 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   };
 
   const handleBulkScan = async (files) => {
-    const batch = files.slice(0, 100);
+    const validFiles = [];
+    const oversizedFiles = [];
+
+    (files || []).forEach((file) => {
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        oversizedFiles.push(file);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (oversizedFiles.length > 0) {
+      const names = oversizedFiles.map(f => f.name).slice(0, 2).join(', ');
+      const extra = oversizedFiles.length > 2 ? ` (+${oversizedFiles.length - 2} ďalšie)` : '';
+      showToast(`Preskočené súbory nad 50 MB (50 000 KB): ${names}${extra}`);
+    }
+
+    if (validFiles.length === 0) return;
+
+    const batch = validFiles.slice(0, 100);
     setScanning(true);
     setBulkProgress({ total: batch.length, done: 0, analyzing: 0, failed: 0 });
     try {
