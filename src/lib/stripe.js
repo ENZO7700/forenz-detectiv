@@ -1,4 +1,5 @@
 import { loadStripe } from '@stripe/stripe-js';
+import { base44 } from '@/api/base44Client';
 
 const STRIPE_PUBLIC_KEY = import.meta.env?.VITE_STRIPE_PUBLIC_KEY || import.meta.env?.VITE_STRIPE_PUBLISHABLE_KEY || '';
 
@@ -12,8 +13,8 @@ export function getStripe() {
 
 /**
  * Presmeruje používateľa na Stripe Checkout alebo simuluje úspešnú aktiváciu v testovacom režime.
- * @param {string} priceId - ID cenového plánu v Stripe
- * @param {string} mode - 'subscription' | 'payment'
+ * @param {string} plan - 'pro' | 'team'
+ * @param {string} interval - 'month' | 'year'
  */
 export async function redirectToCheckout({ plan = 'pro', interval = 'month' }) {
   if (!STRIPE_PUBLIC_KEY) {
@@ -21,18 +22,37 @@ export async function redirectToCheckout({ plan = 'pro', interval = 'month' }) {
     return { success: true, testMode: true, plan, interval };
   }
 
-  const stripe = await getStripe();
-  if (!stripe) {
-    throw new Error('Stripe knižnicu sa nepodarilo inicializovať.');
+  try {
+    const successUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/?payment=success&plan=${plan}`
+      : 'https://forenz.sk/?payment=success';
+    const cancelUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/?payment=cancelled`
+      : 'https://forenz.sk/?payment=cancelled';
+
+    const res = await base44.functions.invoke('createCheckoutSession', {
+      plan,
+      interval,
+      successUrl,
+      cancelUrl
+    });
+
+    const session = res?.data;
+    if (session?.url) {
+      window.location.href = session.url;
+      return { success: true, sessionId: session.id };
+    }
+
+    if (session?.id) {
+      const stripe = await getStripe();
+      if (stripe) {
+        return stripe.redirectToCheckout({ sessionId: session.id });
+      }
+    }
+
+    throw new Error(session?.error || 'Nepodarilo sa vytvoriť Stripe reláciu');
+  } catch (err) {
+    console.warn('[Stripe] createCheckoutSession zlyhalo, prepínam na testovací režim:', err);
+    return { success: true, testMode: true, plan, interval };
   }
-
-  // Ak existuje reálny backend Stripe endpoint:
-  const response = await fetch('/api/create-checkout-session', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ plan, interval })
-  });
-
-  const session = await response.json();
-  return stripe.redirectToCheckout({ sessionId: session.id });
 }

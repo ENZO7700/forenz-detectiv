@@ -68,9 +68,14 @@ export const useForenzStore = create((set, get) => ({
   setClaims: (claims) => set({ claims }),
   setEvents: (events) => set({ events }),
   setLocations: (locations) => set({ locations }),
-  setVehicles: (vehicles) => set({ vehicles }),
-  setContradictions: (contradictions) => set({ contradictions }),
-  setOverrides: (overrides) => set({ overrides }),
+  setContradictions: (contradictions) => {
+    const list = contradictions || [];
+    set({ contradictions: list });
+    if (list.length > 0) {
+      const hasAlibi = list.some((c) => c.type === 'alibi' || c.severity === 'high' || c.is_alibi_conflict);
+      trackContradictionDetected(list.length, hasAlibi);
+    }
+  },
 
   setSelectedDocId: (selectedDocId) => set({ selectedDocId }),
   setSelectedPerson: (selectedPerson) => set({ selectedPerson }),
@@ -263,6 +268,11 @@ export const useForenzStore = create((set, get) => ({
         ...freshData,
         loading: false
       });
+
+      if (freshData.contradictions && freshData.contradictions.length > 0) {
+        const hasAlibi = freshData.contradictions.some((c) => c.type === 'alibi' || c.severity === 'high' || c.is_alibi_conflict);
+        trackContradictionDetected(freshData.contradictions.length, hasAlibi);
+      }
 
       // Uloženie do offline IndexedDB
       saveCaseOffline('current', freshData);
