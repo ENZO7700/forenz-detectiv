@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "sk.forenzdetectiv.twa",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:44:C5:9F:5C:9E:71:0E:26:A6:49:EE:40:9F:22:98:C3:A8:E0:D4:7D:87:67:12:4D:BF:E6:C0:AA:FE"
+      ]
+    }
+  }
+]
