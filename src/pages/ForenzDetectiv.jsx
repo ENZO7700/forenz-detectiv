@@ -79,6 +79,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const setActiveEdgeId = useForenzStore((s) => s.setActiveEdgeId);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [toast, setToast] = useState(null);
   const replayRef = useRef(null);
   const pulseRef = useRef(null);
 

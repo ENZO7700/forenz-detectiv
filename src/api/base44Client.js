@@ -3,12 +3,12 @@ import { appParams } from '@/lib/app-params';
 
 const { appId, token, functionsVersion, appBaseUrl } = appParams;
 
-//Create a client with authentication required
+// Create a client configured to communicate directly with Base44 platform
 export const base44 = createClient({
-  appId,
+  appId: appId || '6a7ed366df1f1138ad653044',
   token,
-  functionsVersion,
-  serverUrl: '',
+  functionsVersion: functionsVersion || 'v1',
+  serverUrl: appBaseUrl || 'https://app.base44.com',
   requiresAuth: false,
-  appBaseUrl
+  appBaseUrl: appBaseUrl || 'https://app.base44.com'
 });
