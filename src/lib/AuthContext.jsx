@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingPublicSettings(false);
       setAuthError(null);
       
-      const hasToken = !!(localStorage.getItem('base44_access_token') || localStorage.getItem('token') || appParams.token);
+      const hasToken = !!(localStorage.getItem('base44_access_token') || localStorage.getItem('token') || appParams?.token);
       if (hasToken) {
         await checkUserAuth();
       } else {

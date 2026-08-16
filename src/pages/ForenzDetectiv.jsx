@@ -28,6 +28,7 @@ import MobileDashboard from '@/components/forenz/MobileDashboard';
 import IdentityPanel from '@/components/forenz/IdentityPanel';
 import CollapsibleSidebar from '@/components/forenz/CollapsibleSidebar';
 import { useForenzStore } from '@/store/useForenzStore';
+import { appParams } from '@/lib/app-params';
 
 export default function ForenzDetectiv({ readOnly = false, scope = null, sharedBy = null, initialData = null }) {
   const documents = useForenzStore((s) => s.documents);
@@ -91,7 +92,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   }, [fetchStoreData, scope, initialData]);
 
   useEffect(() => {
-    const hasToken = !!(localStorage.getItem('base44_access_token') || localStorage.getItem('token') || appParams.token);
+    const hasToken = !!(localStorage.getItem('base44_access_token') || localStorage.getItem('token') || appParams?.token);
     if (hasToken) {
       base44.auth.me().then(setCurrentUser).catch(() => {
         setCurrentUser({ email: 'vysetrovatel@forenz.sk', full_name: 'Hlavný Vyšetrovateľ', role: 'admin' });
