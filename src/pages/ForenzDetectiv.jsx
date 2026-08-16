@@ -33,7 +33,7 @@ import PdfExportDialog from '@/components/export/PdfExportDialog';
 import { saveDocumentOffline, saveCaseOffline } from '@/lib/offlineDb';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated, trackCourtDossierExported, trackCrossExamGenerated } from '@/lib/analytics';
-import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin, Search, Upload, XOctagon } from 'lucide-react';
+import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin, Search, XOctagon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileDrawer from '@/components/forenz/MobileDrawer';
 import MobileBottomNav from '@/components/forenz/MobileBottomNav';
@@ -1080,7 +1080,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       )}
 
       {/* Navigation View Tabs (Desktop & Tablet) */}
-      <div className="hidden lg:flex shrink-0 items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
+      <div className="hidden lg:flex shrink-0 items-center px-4 py-2 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -1157,21 +1157,6 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
             Prepojené identity
           </button>
         </div>
-
-        {/* Upload / Home CTA button on right side of tab bar */}
-        <div className="flex items-center gap-2">
-          {documents.length > 0 && (
-            <button
-              type="button"
-              onClick={() => handleViewChange('hero')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-medium transition-all shadow-sm"
-              title="Nahrať nový spis / Dropzone"
-            >
-              <Upload className="w-3.5 h-3.5 text-amber-400" />
-              <span>Nahrať spis</span>
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Main Workspace View: HomeHero if on hero view, otherwise render the selected view */}
@@ -1232,6 +1217,11 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                     onJumpToContradiction={handleJumpToContradiction}
                     onCrossExamine={(c) => openCrossExam(c, 'contradiction')}
                     readOnly={readOnly}
+                    onScan={handleScan}
+                    onBulkScan={handleBulkScan}
+                    scanning={scanning}
+                    bulkProgress={bulkProgress}
+                    onCancelProcessing={handleCancelProcessing}
                   />
                 </Suspense>
               </ErrorBoundary>

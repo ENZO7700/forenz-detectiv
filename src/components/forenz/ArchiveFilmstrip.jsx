@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { FileText, Users, Network, Flag, AlertOctagon } from 'lucide-react';
+import ScanButton from '@/components/forenz/ScanButton';
+import BulkScanButton from '@/components/forenz/BulkScanButton';
 
 const STATUS_BADGE = {
   pending: { label: 'Čaká', cls: 'bg-amber-500/15 text-amber-300 border border-amber-500/30' },
@@ -8,7 +10,18 @@ const STATUS_BADGE = {
   error: { label: 'Chyba', cls: 'bg-red-500/15 text-red-300 border border-red-500/30' }
 };
 
-export default function ArchiveFilmstrip({ documents = [], selectedDocId, onSelect, contradictionCounts = {} }) {
+export default function ArchiveFilmstrip({
+  documents = [],
+  selectedDocId,
+  onSelect,
+  contradictionCounts = {},
+  onScan = null,
+  onBulkScan = null,
+  scanning = false,
+  bulkProgress = null,
+  onCancelProcessing = null,
+  readOnly = false
+}) {
   const scrollRef = useRef(null);
   const drag = useRef({ active: false, moved: false, sx: 0, scrollLeft: 0 });
 
@@ -42,9 +55,24 @@ export default function ArchiveFilmstrip({ documents = [], selectedDocId, onSele
 
   return (
     <div className="shrink-0 bg-slate-900 border-b border-slate-800">
-      <div className="px-4 py-2 flex items-center gap-2">
+      <div className="px-4 py-2 flex items-center gap-2 flex-wrap">
         <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Archív dokumentov</span>
         <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700 font-mono">{documents.length}</span>
+        {!readOnly && onScan && (
+          <div className="ml-auto flex items-center gap-1.5">
+            {onBulkScan && (
+              <div className="hidden sm:block">
+                <BulkScanButton
+                  onBulkScan={onBulkScan}
+                  scanning={scanning}
+                  progress={bulkProgress}
+                  onCancel={onCancelProcessing}
+                />
+              </div>
+            )}
+            <ScanButton onScan={onScan} scanning={scanning} />
+          </div>
+        )}
       </div>
       <div
         ref={scrollRef}

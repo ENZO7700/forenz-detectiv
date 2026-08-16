@@ -20,7 +20,12 @@ export default function ArchiveView({
   onJumpToEdge,
   onJumpToContradiction,
   onCrossExamine,
-  readOnly
+  readOnly,
+  onScan = null,
+  onBulkScan = null,
+  scanning = false,
+  bulkProgress = null,
+  onCancelProcessing = null
 }) {
   const effectiveDocId = selectedDocId || documents[0]?.id || null;
   const doc = useMemo(() => documents.find((d) => d.id === effectiveDocId) || null, [documents, effectiveDocId]);
@@ -41,6 +46,12 @@ export default function ArchiveView({
         selectedDocId={effectiveDocId}
         onSelect={onSelectDoc}
         contradictionCounts={contradictionCounts}
+        onScan={onScan}
+        onBulkScan={onBulkScan}
+        scanning={scanning}
+        bulkProgress={bulkProgress}
+        onCancelProcessing={onCancelProcessing}
+        readOnly={readOnly}
       />
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
         <ArchiveViewer
