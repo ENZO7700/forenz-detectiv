@@ -31,6 +31,101 @@ export function buildPdfContainerTitle(fileName, pageCount) {
 }
 
 /**
+ * Groups a flat array of Document records into a hierarchical tree structure:
+ * - PDF containers (source_kind === 'pdf_container') group their child pages (parent_document_id === container.id).
+ * - Child pages are sorted by page_number ascending.
+ * - Aggregates stats (totalPages, donePages, analyzingPages, errorPages, pendingPages, status).
+ * - Standalone documents remain top-level items.
+ *
+ * @param {Array<object>} documents
+ * @returns {Array<{ type: 'container' | 'standalone', doc: object, pages?: Array<object>, totalPages?: number, donePages?: number, analyzingPages?: number, errorPages?: number, pendingPages?: number, status?: string }>}
+ */
+export function buildDocumentHierarchy(documents = []) {
+  if (!Array.isArray(documents) || documents.length === 0) return [];
+
+  const containerMap = new Map();
+  const childrenMap = new Map();
+
+  // 1. Identify all container records
+  documents.forEach((doc) => {
+    if (!doc || typeof doc !== 'object') return;
+    if (doc.source_kind === 'pdf_container') {
+      containerMap.set(doc.id, doc);
+      childrenMap.set(doc.id, []);
+    }
+  });
+
+  // 2. Partition child pages into their respective container
+  documents.forEach((doc) => {
+    if (!doc || typeof doc !== 'object') return;
+    if (doc.source_kind === 'pdf_container') {
+      return;
+    }
+    const parentId = doc.parent_document_id;
+    if (parentId && containerMap.has(parentId)) {
+      childrenMap.get(parentId).push(doc);
+    }
+  });
+
+  // 3. Assemble hierarchy preserving appearance order in original documents array
+  const result = [];
+  const processedContainers = new Set();
+
+  documents.forEach((doc) => {
+    if (!doc || typeof doc !== 'object') return;
+
+    if (doc.source_kind === 'pdf_container') {
+      if (processedContainers.has(doc.id)) return;
+      processedContainers.add(doc.id);
+
+      const pages = childrenMap.get(doc.id) || [];
+      pages.sort((a, b) => {
+        const numA = Number(a.page_number) || 0;
+        const numB = Number(b.page_number) || 0;
+        return numA - numB;
+      });
+
+      const totalPages = doc.page_count || pages.length || 0;
+      const donePages = pages.filter((p) => p.status === 'done').length;
+      const analyzingPages = pages.filter((p) => p.status === 'analyzing').length;
+      const errorPages = pages.filter((p) => p.status === 'error').length;
+      const pendingPages = pages.filter((p) => p.status === 'pending').length;
+
+      let aggregatedStatus = doc.status || 'pending';
+      if (errorPages > 0) {
+        aggregatedStatus = 'error';
+      } else if (analyzingPages > 0) {
+        aggregatedStatus = 'analyzing';
+      } else if (pendingPages > 0 && donePages < totalPages) {
+        aggregatedStatus = 'pending';
+      } else if (donePages > 0 && donePages >= totalPages) {
+        aggregatedStatus = 'done';
+      }
+
+      result.push({
+        type: 'container',
+        doc,
+        pages,
+        totalPages,
+        donePages,
+        analyzingPages,
+        errorPages,
+        pendingPages,
+        status: aggregatedStatus
+      });
+    } else if (!doc.parent_document_id || !containerMap.has(doc.parent_document_id)) {
+      // Top-level standalone doc
+      result.push({
+        type: 'standalone',
+        doc
+      });
+    }
+  });
+
+  return result;
+}
+
+/**
  * How many Document rows we can create for a PDF given remaining plan slots.
  * Parent container + N page docs (parent skipped when pages === 1).
  */
@@ -159,40 +254,64 @@ export async function renderPdfPageToFile(pdf, pageNumber, opts = {}) {
  *
  * @param {File|Blob} file
  * @param {(ctx: { pageNumber: number, pageCount: number, originalPageCount: number, file: File }) => Promise<void>} onPage
- * @param {{ maxPages?: number, pagesLimit?: number, renderConcurrency?: number, maxEdge?: number, quality?: number }} [options]
+ * @param {{ maxPages?: number, pagesLimit?: number, renderConcurrency?: number, maxEdge?: number, quality?: number, signal?: AbortSignal, isAborted?: () => boolean }} [options]
  */
 export async function forEachPdfPage(file, onPage, options = {}) {
   const maxPages = options.maxPages ?? PDF_MAX_PAGES;
+  const signal = options.signal;
+  const isAborted = () => Boolean(signal?.aborted || options.isAborted?.());
+
+  if (isAborted()) {
+    return { pageCount: 0, originalPageCount: 0, truncated: false, aborted: true };
+  }
+
   const { pdf, pageCount } = await loadPdfDocument(file);
   const pagesLimit = options.pagesLimit != null
     ? Math.min(pageCount, maxPages, options.pagesLimit)
     : Math.min(pageCount, maxPages);
   const renderConcurrency = Math.max(1, options.renderConcurrency ?? PDF_RENDER_CONCURRENCY);
 
+  let renderedCount = 0;
   try {
     if (pagesLimit < 1) {
-      return { pageCount: 0, originalPageCount: pageCount, truncated: pageCount > 0 };
+      return { pageCount: 0, originalPageCount: pageCount, truncated: pageCount > 0, aborted: false };
     }
 
     const pageNumbers = Array.from({ length: pagesLimit }, (_, i) => i + 1);
     await mapWithConcurrency(pageNumbers, renderConcurrency, async (pageNumber) => {
+      if (isAborted()) return;
+
       const pageFile = await renderPdfPageToFile(pdf, pageNumber, {
         fileName: file.name,
         maxEdge: options.maxEdge,
         quality: options.quality
       });
+
+      if (isAborted()) return;
+
       await onPage({
         pageNumber,
         pageCount: pagesLimit,
         originalPageCount: pageCount,
         file: pageFile
       });
+      renderedCount++;
     });
+
+    if (isAborted()) {
+      return {
+        pageCount: renderedCount,
+        originalPageCount: pageCount,
+        truncated: true,
+        aborted: true
+      };
+    }
 
     return {
       pageCount: pagesLimit,
       originalPageCount: pageCount,
-      truncated: pageCount > pagesLimit
+      truncated: pageCount > pagesLimit,
+      aborted: false
     };
   } finally {
     try {
@@ -212,15 +331,31 @@ export async function forEachPdfPage(file, onPage, options = {}) {
  *   remainingSlots: number,
  *   maxPages?: number,
  *   pageConcurrency?: number,
+ *   signal?: AbortSignal,
+ *   isAborted?: () => boolean,
  *   uploadBinary: (f: File|Blob) => Promise<string>,
  *   createDocument: (fields: object) => Promise<object>,
- *   analyzeDocument: (doc: object) => Promise<unknown>,
- *   onPageProgress?: (info: { pageNumber: number, pageCount: number }) => void,
+ *   analyzeDocument?: (doc: object) => Promise<unknown>,
+ *   onPageProgress?: (info: { pageNumber: number, pageCount: number, originalPageCount?: number, stage?: 'rendering' | 'uploading' | 'analyzing' | 'done', percent?: number, statusText?: string }) => void,
  * }} handlers
  */
 export async function chunkAndProcessPdf(file, handlers = {}) {
   const maxPages = handlers.maxPages ?? PDF_MAX_PAGES;
   const pageConcurrency = Math.max(1, handlers.pageConcurrency ?? PDF_RENDER_CONCURRENCY);
+  const signal = handlers.signal;
+  const isAborted = () => Boolean(signal?.aborted || handlers.isAborted?.());
+
+  if (isAborted()) {
+    return {
+      ok: false,
+      aborted: true,
+      reason: 'aborted',
+      pageCount: 0,
+      originalPageCount: 0,
+      truncated: false
+    };
+  }
+
   const { pdf, pageCount } = await loadPdfDocument(file);
   const budget = planPdfDocumentBudget(handlers.remainingSlots, pageCount, maxPages);
 
@@ -231,14 +366,38 @@ export async function chunkAndProcessPdf(file, handlers = {}) {
       reason: 'slots',
       pageCount: 0,
       originalPageCount: pageCount,
-      truncated: true
+      truncated: true,
+      aborted: false
     };
   }
 
   let parentDoc = null;
+  const completedPageDocs = [];
+
   try {
+    if (isAborted()) {
+      return {
+        ok: false,
+        aborted: true,
+        reason: 'aborted',
+        pageCount: 0,
+        originalPageCount: pageCount,
+        truncated: true
+      };
+    }
+
     if (budget.createParent) {
       const parentUrl = await handlers.uploadBinary(file);
+      if (isAborted()) {
+        return {
+          ok: false,
+          aborted: true,
+          reason: 'aborted',
+          pageCount: 0,
+          originalPageCount: pageCount,
+          truncated: true
+        };
+      }
       parentDoc = await handlers.createDocument({
         title: buildPdfContainerTitle(file.name, budget.pages),
         image_url: parentUrl,
@@ -251,13 +410,51 @@ export async function chunkAndProcessPdf(file, handlers = {}) {
 
     const pageNumbers = Array.from({ length: budget.pages }, (_, i) => i + 1);
 
-    const pageDocs = await mapWithConcurrency(pageNumbers, pageConcurrency, async (pageNumber) => {
+    await mapWithConcurrency(pageNumbers, pageConcurrency, async (pageNumber) => {
+      if (isAborted()) return;
+
+      const calcPercent = (stageMultiplier) => {
+        const stepPerChunk = 100 / budget.pages;
+        const base = (pageNumber - 1) * stepPerChunk;
+        return Math.min(100, Math.max(1, Math.round(base + (stepPerChunk * stageMultiplier))));
+      };
+
+      // Phase 1: Rendering JPEG
+      if (handlers.onPageProgress) {
+        handlers.onPageProgress({
+          pageNumber,
+          pageCount: budget.pages,
+          originalPageCount: pageCount,
+          stage: 'rendering',
+          percent: calcPercent(0.25),
+          statusText: `Strana ${pageNumber}/${budget.pages}: Renderovanie... [${calcPercent(0.25)}%]`
+        });
+      }
+
       const pageFile = await renderPdfPageToFile(pdf, pageNumber, {
         fileName: file.name,
         maxEdge: handlers.maxEdge,
         quality: handlers.quality
       });
+
+      if (isAborted()) return;
+
+      // Phase 2: Uploading JPEG
+      if (handlers.onPageProgress) {
+        handlers.onPageProgress({
+          pageNumber,
+          pageCount: budget.pages,
+          originalPageCount: pageCount,
+          stage: 'uploading',
+          percent: calcPercent(0.5),
+          statusText: `Strana ${pageNumber}/${budget.pages}: Nahrávanie... [${calcPercent(0.5)}%]`
+        });
+      }
+
       const pageUrl = await handlers.uploadBinary(pageFile);
+
+      if (isAborted()) return;
+
       const pageDoc = await handlers.createDocument({
         title: buildPdfPageTitle(file.name, pageNumber, budget.pages),
         image_url: pageUrl,
@@ -267,19 +464,58 @@ export async function chunkAndProcessPdf(file, handlers = {}) {
         page_number: pageNumber,
         page_count: budget.pages
       });
+
+      completedPageDocs.push(pageDoc);
+
+      if (isAborted()) return;
+
+      // Phase 3: AI extraction
       if (handlers.onPageProgress) {
-        handlers.onPageProgress({ pageNumber, pageCount: budget.pages });
+        handlers.onPageProgress({
+          pageNumber,
+          pageCount: budget.pages,
+          originalPageCount: pageCount,
+          stage: 'analyzing',
+          percent: calcPercent(0.75),
+          statusText: `Strana ${pageNumber}/${budget.pages}: AI extrakcia... [${calcPercent(0.75)}%]`
+        });
       }
+
       if (handlers.analyzeDocument) {
         await handlers.analyzeDocument(pageDoc);
       }
-      return pageDoc;
+
+      // Phase 4: Done page
+      if (handlers.onPageProgress) {
+        handlers.onPageProgress({
+          pageNumber,
+          pageCount: budget.pages,
+          originalPageCount: pageCount,
+          stage: 'done',
+          percent: calcPercent(1.0),
+          statusText: `Strana ${pageNumber}/${budget.pages}: Hotovo [${calcPercent(1.0)}%]`
+        });
+      }
     });
+
+    if (isAborted()) {
+      return {
+        ok: false,
+        aborted: true,
+        reason: 'aborted',
+        parentDoc,
+        pageDocs: completedPageDocs,
+        pageCount: completedPageDocs.length,
+        originalPageCount: pageCount,
+        truncated: true
+      };
+    }
 
     return {
       ok: true,
+      aborted: false,
       parentDoc,
-      pageDocs,
+      pageDocs: completedPageDocs,
       pageCount: budget.pages,
       originalPageCount: pageCount,
       truncated: budget.truncated || pageCount > maxPages

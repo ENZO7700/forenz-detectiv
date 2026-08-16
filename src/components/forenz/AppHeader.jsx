@@ -45,6 +45,7 @@ export default function AppHeader({
   handleScan,
   handleBulkScan,
   bulkProgress,
+  onCancelProcessing,
   onExport,
   onExportAll,
   onClearCase,
@@ -425,7 +426,12 @@ export default function AppHeader({
           {/* Bulk Scan Button on Desktop */}
           {!readOnly && handleBulkScan && (
             <div className="hidden sm:block">
-              <BulkScanButton onBulkScan={handleBulkScan} scanning={scanning} progress={bulkProgress} />
+              <BulkScanButton
+                onBulkScan={handleBulkScan}
+                scanning={scanning}
+                progress={bulkProgress}
+                onCancel={onCancelProcessing}
+              />
             </div>
           )}
 

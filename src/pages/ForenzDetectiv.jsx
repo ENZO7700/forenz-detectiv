@@ -34,7 +34,7 @@ import PdfExportDialog from '@/components/export/PdfExportDialog';
 import { saveDocumentOffline, saveCaseOffline } from '@/lib/offlineDb';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated } from '@/lib/analytics';
-import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin, Search, Upload } from 'lucide-react';
+import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin, Search, Upload, XOctagon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileDrawer from '@/components/forenz/MobileDrawer';
 import MobileBottomNav from '@/components/forenz/MobileBottomNav';
@@ -139,7 +139,23 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const [pdfExportScope, setPdfExportScope] = useState('selected'); // 'selected' | 'all'
   const replayRef = useRef(null);
   const pulseRef = useRef(null);
+  const abortControllerRef = useRef(null);
   const isMobile = useIsMobile();
+
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2500);
+  }, []);
+
+  const handleCancelProcessing = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setScanning(false);
+    setBulkProgress(null);
+    showToast('Spracovanie bolo zastavené.');
+  }, [setScanning, setBulkProgress, showToast]);
 
   const plan = usePlanStore((s) => s.plan);
   const pricingModalOpen = usePlanStore((s) => s.pricingModalOpen);
@@ -325,6 +341,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       openPaywall('limit_documents');
       return;
     }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setScanning(true);
     try {
       if (documents.length === 0) {
@@ -343,18 +363,41 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       if (isPdfFile(file)) {
         const slots = remainingDocSlots();
         const pageConcurrency = isMobile ? 1 : PDF_ANALYZE_CONCURRENCY;
+        setBulkProgress({
+          total: 1,
+          done: 0,
+          analyzing: 1,
+          failed: 0,
+          percent: 5,
+          statusText: `Pripravujem PDF: ${file.name}...`
+        });
+
         const result = await chunkAndProcessPdf(file, {
           remainingSlots: slots,
           maxPages: PDF_MAX_PAGES,
           pageConcurrency,
+          signal: controller.signal,
           uploadBinary: uploadBinaryToStorage,
           createDocument: (fields) => createDocumentRecord(fields),
           analyzeDocument: (doc) => invokeAnalyze(doc, doc.title),
-          onPageProgress: ({ pageNumber, pageCount }) => {
-            setBulkProgress({ total: pageCount, done: pageNumber, analyzing: 1, failed: 0 });
+          onPageProgress: ({ pageNumber, pageCount, stage, percent, statusText }) => {
+            setBulkProgress({
+              total: pageCount,
+              done: stage === 'done' ? pageNumber : Math.max(0, pageNumber - 1),
+              analyzing: stage === 'done' ? 0 : 1,
+              failed: 0,
+              percent,
+              statusText: statusText || `Strana ${pageNumber}/${pageCount}: ${stage}...`
+            });
           }
         });
+
         setBulkProgress(null);
+        if (result.aborted) {
+          showToast(`Spracovanie PDF bolo zastavené. Spracovaných ${result.pageDocs?.length || 0} z ${result.originalPageCount || 0} strán.`);
+          await fetchData();
+          return;
+        }
         if (!result.ok) {
           openPaywall('limit_documents');
           return;
@@ -367,8 +410,25 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       }
 
       // LOAD / PREPARE → UPLOAD → RELEASE local memory → ANALYZE FROM STORAGE
+      setBulkProgress({
+        total: 1,
+        done: 0,
+        analyzing: 1,
+        failed: 0,
+        percent: 25,
+        statusText: `Spracovávam súbor: ${file.name}...`
+      });
+
       const uploadFile = await prepareFileForUpload(file);
+      if (controller.signal.aborted) {
+        showToast('Spracovanie bolo zastavené.');
+        return;
+      }
       const file_url = await uploadBinaryToStorage(uploadFile);
+      if (controller.signal.aborted) {
+        showToast('Spracovanie bolo zastavené.');
+        return;
+      }
 
       const doc = await createDocumentRecord({
         title: file.name,
@@ -393,7 +453,20 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         setSelectedDocId(doc.id);
       }
 
+      if (controller.signal.aborted) {
+        showToast('Spracovanie bolo zastavené.');
+        return;
+      }
+
       try {
+        setBulkProgress({
+          total: 1,
+          done: 0,
+          analyzing: 1,
+          failed: 0,
+          percent: 75,
+          statusText: `AI extrakcia: ${file.name}...`
+        });
         await invokeAnalyze(doc, file.name);
         if (!doc.__localOnly) await fetchData();
       } catch (err) {
@@ -401,17 +474,22 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         showToast(`Spis "${file.name}" bol načítaný a bezpečne uložený do lokálneho úložiska (IndexedDB 50 MB).`);
       }
     } catch (e) {
-      console.error(e);
-      const msg = String(e?.message || '');
-      const isDevViteDisconnect =
-        import.meta.env.DEV &&
-        /Failed to fetch dynamically imported module|Loading module|\/\.vite\/deps\//i.test(msg);
-      showToast(
-        isDevViteDisconnect
-          ? 'Dev server sa odpojil — obnov stránku na http://127.0.0.1:5173 a skús znova.'
-          : 'Nahrávanie zlyhalo'
-      );
+      if (controller.signal.aborted || e?.name === 'AbortError') {
+        showToast('Spracovanie bolo zastavené.');
+      } else {
+        console.error(e);
+        const msg = String(e?.message || '');
+        const isDevViteDisconnect =
+          import.meta.env.DEV &&
+          /Failed to fetch dynamically imported module|Loading module|\/\.vite\/deps\//i.test(msg);
+        showToast(
+          isDevViteDisconnect
+            ? 'Dev server sa odpojil — obnov stránku na http://127.0.0.1:5173 a skús znova.'
+            : 'Nahrávanie zlyhalo'
+        );
+      }
     } finally {
+      abortControllerRef.current = null;
       setScanning(false);
       setBulkProgress(null);
     }
@@ -464,8 +542,11 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       return;
     }
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setScanning(true);
-    setBulkProgress({ total: cappedBatch.length, done: 0, analyzing: 0, failed: 0 });
+    setBulkProgress({ total: cappedBatch.length, done: 0, analyzing: 0, failed: 0, statusText: `Pripravujem ${cappedBatch.length} súborov...` });
     try {
       if (documents.length === 0) {
         if (!usePlanStore.getState().canCreateCase()) {
@@ -488,16 +569,25 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
       // Pipeline: PDF chunk alebo preprocess → upload → create → analyze (concurrency capped)
       await mapWithAdaptiveConcurrency(cappedBatch, fileConcStart, fileConcMax, async (file) => {
-        if (slotsLeft < 1) return;
+        if (controller.signal.aborted || slotsLeft < 1) return;
 
         if (isPdfFile(file)) {
           const result = await chunkAndProcessPdf(file, {
             remainingSlots: slotsLeft,
             maxPages: PDF_MAX_PAGES,
             pageConcurrency,
+            signal: controller.signal,
             uploadBinary: uploadBinaryToStorage,
             createDocument: (fields) => createDocumentRecord(fields),
+            onPageProgress: ({ pageNumber, pageCount, statusText, percent }) => {
+              setBulkProgress((p) => ({
+                ...p,
+                percent,
+                statusText: statusText || `${file.name} (s. ${pageNumber}/${pageCount})`
+              }));
+            },
             analyzeDocument: async (doc) => {
+              if (controller.signal.aborted) return;
               setBulkProgress((p) => ({ ...p, analyzing: (p?.analyzing || 0) + 1 }));
               try {
                 await invokeAnalyze(doc, doc.title);
@@ -518,7 +608,11 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         }
 
         const uploadFile = await prepareFileForUpload(file);
+        if (controller.signal.aborted) return;
+
         const file_url = await uploadBinaryToStorage(uploadFile);
+        if (controller.signal.aborted) return;
+
         const doc = await createDocumentRecord({
           title: file.name,
           image_url: file_url || URL.createObjectURL(uploadFile),
@@ -528,18 +622,29 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
         if (Number.isFinite(slotsLeft)) slotsLeft = Math.max(0, slotsLeft - 1);
 
-        setBulkProgress((p) => ({ ...p, analyzing: p.analyzing + 1 }));
+        if (controller.signal.aborted) return;
+
+        setBulkProgress((p) => ({
+          ...p,
+          analyzing: (p?.analyzing || 0) + 1,
+          statusText: `AI extrakcia: ${file.name}...`
+        }));
         try {
           await invokeAnalyze(doc, file.name);
           setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
         } catch {
-          setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
+          setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1, failed: (p?.failed || 0) + 1 }));
         }
       });
       await fetchData();
     } catch (e) {
-      console.error(e);
+      if (controller.signal.aborted || e?.name === 'AbortError') {
+        showToast('Hromadné spracovanie bolo zastavené.');
+      } else {
+        console.error(e);
+      }
     } finally {
+      abortControllerRef.current = null;
       setScanning(false);
       setBulkProgress(null);
     }
@@ -547,15 +652,25 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
   const handleRetryAnalysis = async (doc) => {
     try {
-      await base44.entities.Document.update(doc.id, { status: 'pending', last_error: '' });
-      setBulkProgress({ total: 1, done: 0, analyzing: 1, failed: 0 });
+      if (!doc?.__localOnly) {
+        await base44.entities.Document.update(doc.id, { status: 'pending', last_error: '' });
+      }
+      setBulkProgress({
+        total: 1,
+        done: 0,
+        analyzing: 1,
+        failed: 0,
+        percent: 50,
+        statusText: `Znovu analyzujem stranu: ${doc.title}...`
+      });
       try {
-        const res = await withAiRetry(
-          () => base44.functions.invoke('analyzeDocument', { documentId: doc.id, documentTitle: doc.title }),
-          { maxRetries: 3, initialDelayMs: 1200 }
-        );
+        const res = await invokeAnalyze(doc, doc.title);
         setBulkProgress(null);
-        if (!res?.data?.ok) showToast('Analýza opäť zlyhala: ' + (res?.data?.error || ''));
+        if (res?.data && !res.data.ok) {
+          showToast('Analýza opäť zlyhala: ' + (res.data.error || ''));
+        } else {
+          showToast(`Analýza úspešne dokončená: ${doc.title}`);
+        }
       } catch (err) {
         setBulkProgress(null);
         showToast('Retry zlyhal: ' + (err?.message || ''));
@@ -566,6 +681,52 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       setBulkProgress(null);
       showToast('Retry zlyhal');
     }
+  };
+
+  const handleRetryContainer = async (containerDoc) => {
+    const childErrorPages = (documents || []).filter(
+      (d) => d.parent_document_id === containerDoc.id && d.status === 'error'
+    );
+    if (!childErrorPages.length) return;
+
+    setScanning(true);
+    setBulkProgress({
+      total: childErrorPages.length,
+      done: 0,
+      analyzing: 0,
+      failed: 0,
+      statusText: `Znovu analyzujem ${childErrorPages.length} chybných strán...`
+    });
+
+    for (let i = 0; i < childErrorPages.length; i++) {
+      const pageDoc = childErrorPages[i];
+      setBulkProgress((p) => ({
+        ...p,
+        analyzing: (p?.analyzing || 0) + 1,
+        statusText: `Strana ${pageDoc.page_number || (i + 1)}/${childErrorPages.length}: AI extrakcia...`
+      }));
+      try {
+        if (!pageDoc.__localOnly) {
+          await base44.entities.Document.update(pageDoc.id, { status: 'pending', last_error: '' });
+        }
+        await invokeAnalyze(pageDoc, pageDoc.title);
+        setBulkProgress((p) => ({
+          ...p,
+          analyzing: Math.max(0, (p?.analyzing || 1) - 1),
+          done: (p?.done || 0) + 1
+        }));
+      } catch {
+        setBulkProgress((p) => ({
+          ...p,
+          analyzing: Math.max(0, (p?.analyzing || 1) - 1),
+          failed: (p?.failed || 0) + 1
+        }));
+      }
+    }
+    setScanning(false);
+    setBulkProgress(null);
+    showToast(`Dokončená opätovná analýza ${childErrorPages.length} strán.`);
+    await fetchData();
   };
 
   const handleDelete = async (doc) => {
@@ -660,11 +821,6 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     } catch (e) {
       console.error(e);
     }
-  };
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
   };
 
   const handleSelectEdge = useCallback((e) => {
@@ -805,6 +961,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         handleScan={handleScan}
         handleBulkScan={handleBulkScan}
         bulkProgress={bulkProgress}
+        onCancelProcessing={handleCancelProcessing}
         onExport={handleExport}
         onExportAll={handleExportAll}
         onClearCase={() => {
@@ -824,14 +981,59 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       />
 
       {bulkProgress && (
-        <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center gap-3 text-xs text-slate-300 shrink-0">
-          <span className="shrink-0 tabular-nums whitespace-nowrap text-slate-400">
-            {bulkProgress.done} ✓ · {bulkProgress.analyzing} ⏳ · {bulkProgress.failed} ✕ / {bulkProgress.total}
-          </span>
-          <div className="flex-1 h-1.5 rounded bg-slate-800 overflow-hidden flex">
-            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${bulkProgress.total ? (bulkProgress.done / bulkProgress.total) * 100 : 0}%` }} />
-            <div className="h-full bg-amber-500 transition-all" style={{ width: `${bulkProgress.total ? (bulkProgress.analyzing / bulkProgress.total) * 100 : 0}%` }} />
-            <div className="h-full bg-red-500 transition-all" style={{ width: `${bulkProgress.total ? (bulkProgress.failed / bulkProgress.total) * 100 : 0}%` }} />
+        <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3 text-xs text-slate-300 shrink-0 shadow-md">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <Loader2 className="w-4 h-4 text-blue-400 animate-spin shrink-0" />
+            <span className="font-medium text-slate-200 truncate">
+              {bulkProgress.statusText || `Spracovanie: ${bulkProgress.done} z ${bulkProgress.total}`}
+            </span>
+            <span className="shrink-0 tabular-nums whitespace-nowrap text-slate-400 text-[11px] hidden sm:inline">
+              {bulkProgress.done} ✓ · {bulkProgress.analyzing} ⏳ · {bulkProgress.failed} ✕ / {bulkProgress.total}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-24 sm:w-44 h-2 rounded-full bg-slate-800 overflow-hidden flex border border-slate-700/60">
+              <div
+                className="h-full bg-emerald-500 transition-all duration-300"
+                style={{
+                  width: `${
+                    bulkProgress.percent != null
+                      ? bulkProgress.percent
+                      : bulkProgress.total
+                      ? (bulkProgress.done / bulkProgress.total) * 100
+                      : 0
+                  }%`
+                }}
+              />
+              {bulkProgress.analyzing > 0 && (
+                <div
+                  className="h-full bg-blue-500 transition-all duration-300 animate-pulse"
+                  style={{
+                    width: `${bulkProgress.total ? (bulkProgress.analyzing / bulkProgress.total) * 100 : 0}%`
+                  }}
+                />
+              )}
+              {bulkProgress.failed > 0 && (
+                <div
+                  className="h-full bg-red-500 transition-all duration-300"
+                  style={{
+                    width: `${bulkProgress.total ? (bulkProgress.failed / bulkProgress.total) * 100 : 0}%`
+                  }}
+                />
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCancelProcessing}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 text-red-300 text-xs font-medium transition-colors"
+              title="Zastaviť spracovanie zostávajúcich strán"
+              aria-label="Zastaviť spracovanie"
+            >
+              <XOctagon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Zastaviť spracovanie</span>
+            </button>
           </div>
         </div>
       )}
@@ -1030,6 +1232,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                     onSelect={setSelectedDocId}
                     onDelete={readOnly ? null : handleDelete}
                     onRetry={readOnly ? null : handleRetryAnalysis}
+                    onRetryContainer={readOnly ? null : handleRetryContainer}
                   />
                 </CollapsibleSidebar>
 

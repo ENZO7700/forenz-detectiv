@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
-import { Layers, Loader2 } from 'lucide-react';
+import { Layers, Loader2, XOctagon } from 'lucide-react';
 
-export default function BulkScanButton({ onBulkScan, scanning, progress }) {
+export default function BulkScanButton({ onBulkScan, scanning, progress, onCancel }) {
   const inputRef = useRef(null);
 
   const handleChange = (e) => {
@@ -16,7 +16,7 @@ export default function BulkScanButton({ onBulkScan, scanning, progress }) {
     : 'Hromadne nahrať výpovede (mobil ≤20, desktop ≤100)';
 
   return (
-    <>
+    <div className="inline-flex items-center gap-1.5">
       <input
         ref={inputRef}
         type="file"
@@ -36,6 +36,18 @@ export default function BulkScanButton({ onBulkScan, scanning, progress }) {
         {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
         <span className="hidden sm:inline">{label}</span>
       </button>
-    </>
+
+      {scanning && onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex items-center gap-1 p-2 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 text-xs font-medium transition-colors"
+          title="Zastaviť spracovanie"
+          aria-label="Zastaviť spracovanie"
+        >
+          <XOctagon className="w-4 h-4" />
+        </button>
+      )}
+    </div>
   );
 }

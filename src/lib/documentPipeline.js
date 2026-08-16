@@ -24,6 +24,7 @@ export {
   isPdfFile,
   buildPdfPageTitle,
   buildPdfContainerTitle,
+  buildDocumentHierarchy,
   planPdfDocumentBudget,
   forEachPdfPage,
   chunkAndProcessPdf
