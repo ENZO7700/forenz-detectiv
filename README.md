@@ -137,6 +137,7 @@ base44 secret set MISTRAL_API_KEY your_key_here
 
 ### Onboarding & docs
 - First-run UX = 1 tip (`QuickTip`); plný sprievodca je v draweri (neblokuje start).
+- Remaining ops backlog (RB-01..07): [`docs/REMAINING_BACKLOG.md`](docs/REMAINING_BACKLOG.md)
 - TWA / Play: [`docs/TWA_SETUP.md`](docs/TWA_SETUP.md)
 - Stripe: [`docs/STRIPE_SETUP.md`](docs/STRIPE_SETUP.md)
 - Analytics → Looker: [`docs/LOOKER_POSTHOG.md`](docs/LOOKER_POSTHOG.md)

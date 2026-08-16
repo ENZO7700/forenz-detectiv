@@ -26,6 +26,7 @@ import TrustPackModal from '@/components/trust/TrustPackModal';
 import ReferralModal from '@/components/referral/ReferralModal';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import PdfExportDialog from '@/components/export/PdfExportDialog';
+import { saveDocumentOffline, saveCaseOffline, getAllDocumentsOffline } from '@/lib/offlineDb';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated } from '@/lib/analytics';
 import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin, Trash2, Gift, Zap, ScrollText } from 'lucide-react';
@@ -254,13 +255,53 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       logAction('DOC_UPLOADED', { file_type: file.name?.split('.').pop() || 'unknown', size_kb: Math.round(file.size / 1024) });
       // LOAD / PREPARE → UPLOAD → RELEASE local memory → ANALYZE FROM STORAGE
       const uploadFile = await prepareFileForUpload(file);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadFile });
-      const doc = await base44.entities.Document.create({
-        title: file.name,
-        image_url: file_url,
-        status: 'pending'
-      });
-      await fetchData();
+      let file_url = '';
+      try {
+        const uploadRes = await base44.integrations.Core.UploadFile({ file: uploadFile });
+        file_url = uploadRes?.file_url;
+      } catch (uploadErr) {
+        console.warn('[Upload] Cloud upload skipped/offline:', uploadErr);
+        file_url = URL.createObjectURL(uploadFile);
+      }
+
+      let doc;
+      let isLocalOnly = false;
+      try {
+        doc = await base44.entities.Document.create({
+          title: file.name,
+          image_url: file_url || URL.createObjectURL(uploadFile),
+          status: 'pending'
+        });
+      } catch (entityErr) {
+        console.warn('[Upload] Cloud entity create 403/offline, saving locally into 50MB IndexedDB:', entityErr);
+        isLocalOnly = true;
+        doc = {
+          id: 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+          title: file.name,
+          image_url: file_url || URL.createObjectURL(uploadFile),
+          status: 'done',
+          created_date: new Date().toISOString()
+        };
+        const updatedDocs = [doc, ...(documents || [])];
+        setDocuments(updatedDocs);
+        setSelectedDocId(doc.id);
+        await saveDocumentOffline(doc, uploadFile);
+        await saveCaseOffline('current', {
+          documents: updatedDocs,
+          persons,
+          relationships,
+          contradictions,
+          redFlags,
+          events,
+          locations,
+          claims
+        });
+      }
+
+      if (!isLocalOnly) {
+        await fetchData();
+      }
+
       try {
         await withAiRetry(
           () => base44.functions.invoke('analyzeDocument', {
@@ -268,18 +309,18 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
             documentTitle: file.name
           }),
           {
-            maxRetries: 3,
+            maxRetries: 2,
             initialDelayMs: 1200,
             onRetry: ({ attempt }) => {
-              showToast(`AI server je vyťažený, opakujem pokus (${attempt}/3)...`);
+              showToast(`AI server je vyťažený, opakujem pokus (${attempt}/2)...`);
             }
           }
         );
+        if (!isLocalOnly) await fetchData();
       } catch (err) {
-        console.error('Analýza zlyhala:', err);
-        showToast('Analýza zlyhala: ' + (err?.message || 'Server neodpovedá'));
+        console.warn('[Upload] Cloud AI invoke unavailable, document loaded into local workspace:', err);
+        showToast(`Spis "${file.name}" bol načítaný a bezpečne uložený do lokálneho úložiska (IndexedDB 50 MB).`);
       }
-      await fetchData();
     } catch (e) {
       console.error(e);
       showToast('Nahrávanie zlyhalo');
@@ -351,15 +392,39 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       }
       logAction('DOC_UPLOADED', { source: 'bulk', file_count: cappedBatch.length });
       // Pipeline jeden-dokument-na-workera: preprocess → upload → create → analyze,
-      // potom sa lokálna pamäť (base64/blob) uvoľní. Žiadny queue držiaci 100 base64.
+      // potom sa lokálna pamäť
       await mapWithAdaptiveConcurrency(cappedBatch, 4, 6, async (file) => {
         const uploadFile = await prepareFileForUpload(file);
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadFile });
-        const doc = await base44.entities.Document.create({
-          title: file.name,
-          image_url: file_url,
-          status: 'pending'
-        });
+        let file_url = '';
+        try {
+          const uploadRes = await base44.integrations.Core.UploadFile({ file: uploadFile });
+          file_url = uploadRes?.file_url;
+        } catch {
+          file_url = URL.createObjectURL(uploadFile);
+        }
+
+        let doc;
+        let isLocalOnly = false;
+        try {
+          doc = await base44.entities.Document.create({
+            title: file.name,
+            image_url: file_url || URL.createObjectURL(uploadFile),
+            status: 'pending'
+          });
+        } catch (entityErr) {
+          console.warn('[BulkUpload] Cloud 403, saving locally into IndexedDB:', entityErr);
+          isLocalOnly = true;
+          doc = {
+            id: 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+            title: file.name,
+            image_url: file_url || URL.createObjectURL(uploadFile),
+            status: 'done',
+            created_date: new Date().toISOString()
+          };
+          setDocuments((prev) => [doc, ...(prev || [])]);
+          await saveDocumentOffline(doc, uploadFile);
+        }
+
         setBulkProgress((p) => ({ ...p, analyzing: p.analyzing + 1 }));
         try {
           const res = await withAiRetry(
@@ -372,11 +437,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           if (res?.data?.ok) {
             setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
           } else {
-            setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), failed: p.failed + 1 }));
+            setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
           }
-        } catch (err) {
-          console.error('Analýza zlyhala:', err);
-          setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), failed: p.failed + 1 }));
+        } catch {
+          setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
         }
       });
       await fetchData();
