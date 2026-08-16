@@ -12,7 +12,10 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    strictPort: false
+    strictPort: false,
+    hmr: {
+      clientPort: 5173
+    }
   },
   plugins: [
     base44({
