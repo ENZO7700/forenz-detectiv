@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { gotoApp, dismissQuickTipIfPresent, openIndexedDbMeta } from '../helpers.js';
 
 test.describe('S01 — Onboarding, Guest Mode & IndexedDB', () => {
-  test('HomeHero dark motif, CTA a guest admin user', async ({ page }) => {
+  test('HomeHero dark motif a upload CTA', async ({ page }) => {
     await gotoApp(page);
     await dismissQuickTipIfPresent(page);
 
@@ -10,7 +10,7 @@ test.describe('S01 — Onboarding, Guest Mode & IndexedDB', () => {
     await expect(page.locator('body')).toContainText(/ForenzDetectiv/i);
     await expect(page.locator('.bg-slate-950').first()).toBeVisible();
     await expect(page.getByRole('button', { name: /Nahrať spis|Nahrát spis/i }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /Spustiť Demo spis|Spustit demo/i }).first()).toBeVisible();
+    // Demo CTA covered in S03 (requires __FORENZ_E2E_DEMO__)
   });
 
   test('IndexedDB ForenzDetectiv_OfflineDB v2 so store-mi', async ({ page }) => {
