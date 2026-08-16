@@ -1,6 +1,6 @@
 # Remaining backlog — po PROMPT-01..12 (100 %)
 
-Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo gated, PDF chunking, E2E harden, Document schema push).
+Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo hard-removed, PDF chunking, E2E upload-first, Document schema push).
 
 **Zámerné rozhodnutia (neotvárať znova):**
 
@@ -78,7 +78,7 @@ flowchart TD
 **Acceptance:**
 
 - [ ] `VITE_POSTHOG_KEY` (+ `VITE_POSTHOG_HOST=https://eu.i.posthog.com`) v prod / Base44 env
-- [ ] Po `demo_launched` alebo uploade viditeľný event v PostHog EU Live
+- [ ] Po uploade / `case_created` viditeľný event v PostHog EU Live
 - [ ] Session recording ostáva vypnutá (súlad s [`src/lib/analytics.js`](../src/lib/analytics.js))
 
 **Owner hint:** Product / DevOps. Referencia: [`docs/LOOKER_POSTHOG.md`](LOOKER_POSTHOG.md), [`.env.example`](../.env.example).
@@ -89,14 +89,13 @@ flowchart TD
 
 ## RB-03 — Wire `trackContradictionDetected` on real detection
 
-**Title:** `fix(analytics): fire contradiction_detected outside demo load`
+**Title:** `fix(analytics): fire contradiction_detected on real detection`
 
-**Why:** North Star funnel — overiť, že `trackContradictionDetected` beží po reálnej detekcii rozporov (nie po demo).
+**Why:** North Star funnel — overiť, že `trackContradictionDetected` beží po reálnej detekcii rozporov (upload-first, bez synthetic case).
 
 **Acceptance:**
 
 - [ ] Po úspešnom `detectContradictions` / store update reálnych rozporov sa volá `trackContradictionDetected(count, hasAlibiConflict)`
-- [ ] Demo path ostáva bez dvojitého double-count (alebo je explicitne OK)
 - [ ] `npm test` + lint/typecheck PASS; žiadne PII v properties
 
 **Owner hint:** Frontend. Súbory: `useForenzStore.js`, handlery v `ForenzDetectiv.jsx` / contradiction engine callback.
@@ -115,7 +114,7 @@ flowchart TD
 
 - [ ] Looker Studio data source napojený na PostHog EU (alebo BigQuery export)
 - [ ] Scorecard: weekly unique users s eventom `contradiction_viewed`
-- [ ] Funnel: `demo_launched` → `case_created` → `contradiction_detected` → `contradiction_viewed` → `pdf_exported`
+- [ ] Funnel: `case_created` → `contradiction_detected` → `contradiction_viewed` → `pdf_exported`
 - [ ] Zdieľateľný link (screenshot do repo **nie** povinný)
 
 **Owner hint:** Growth / Analytics. Špec: [`docs/LOOKER_POSTHOG.md`](LOOKER_POSTHOG.md).
@@ -191,3 +190,4 @@ flowchart TD
 | [STRIPE_SETUP.md](STRIPE_SETUP.md) | Test vs live Stripe |
 | [TWA_SETUP.md](TWA_SETUP.md) | Bubblewrap, assetlinks, Play |
 | [todo.md](todo.md) | Historický katalóg PROMPT-01..12 (nemazať / neprepisovať statusy tu) |
+

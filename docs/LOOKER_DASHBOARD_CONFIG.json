@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "ForenzDetectiv - North Star Dashboard",
   "version": "2026.1",
   "dataSources": [
@@ -23,11 +23,10 @@
           "type": "funnel",
           "title": "Investigation Journey Funnel",
           "steps": [
-            { "name": "1. Demo / Home Start", "metric": "demo_launched" },
-            { "name": "2. Spis Vytvorený", "metric": "case_created" },
-            { "name": "3. Rozpory Nájdené", "metric": "contradiction_detected" },
-            { "name": "4. Detail Rozporu Zobrazený", "metric": "contradiction_viewed" },
-            { "name": "5. Znalecký PDF Export", "metric": "pdf_exported" }
+            { "name": "1. Spis Vytvorený (upload)", "metric": "case_created" },
+            { "name": "2. Rozpory Nájdené", "metric": "contradiction_detected" },
+            { "name": "3. Detail Rozporu Zobrazený", "metric": "contradiction_viewed" },
+            { "name": "4. Znalecký PDF Export", "metric": "pdf_exported" }
           ],
           "showConversionPercentages": true
         },
