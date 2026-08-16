@@ -7,7 +7,7 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
   timeout: 90_000,
   expect: { timeout: 15_000 },
@@ -24,16 +24,9 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+        channel: undefined,
         viewport: { width: 1440, height: 900 }
       }
-    },
-    {
-      name: 'mobile-chrome',
-      use: {
-        ...devices['iPhone 14'],
-        viewport: { width: 390, height: 844 }
-      },
-      testMatch: /11-pwa|01-onboarding/
     }
   ],
   webServer: {

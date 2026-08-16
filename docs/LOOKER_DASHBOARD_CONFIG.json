@@ -1,0 +1,63 @@
+{
+  "name": "ForenzDetectiv - North Star Dashboard",
+  "version": "2026.1",
+  "dataSources": [
+    {
+      "type": "PostHog",
+      "host": "https://eu.i.posthog.com",
+      "description": "PostHog EU Product Analytics Stream"
+    }
+  ],
+  "pages": [
+    {
+      "title": "North Star & Conversion Funnel",
+      "charts": [
+        {
+          "type": "scorecard",
+          "title": "Weekly Active Investigators (WAU)",
+          "metric": "wau_contradiction_viewed",
+          "target": 100,
+          "comparison": "previous_week"
+        },
+        {
+          "type": "funnel",
+          "title": "Investigation Journey Funnel",
+          "steps": [
+            { "name": "1. Demo / Home Start", "metric": "demo_launched" },
+            { "name": "2. Spis Vytvorený", "metric": "case_created" },
+            { "name": "3. Rozpory Nájdené", "metric": "contradiction_detected" },
+            { "name": "4. Detail Rozporu Zobrazený", "metric": "contradiction_viewed" },
+            { "name": "5. Znalecký PDF Export", "metric": "pdf_exported" }
+          ],
+          "showConversionPercentages": true
+        },
+        {
+          "type": "time_series",
+          "title": "Detegované Rozpory v Čase",
+          "metric": "total_contradiction_events",
+          "dimension": "date",
+          "interval": "day"
+        }
+      ]
+    },
+    {
+      "title": "B2B & Monetization Growth",
+      "charts": [
+        {
+          "type": "table",
+          "title": "Konverzné Pomery Krok za Krokom",
+          "columns": [
+            { "name": "Konverzný Krok", "type": "dimension" },
+            { "name": "Počet Používateľov", "type": "metric" },
+            { "name": "Konverzný Pomer (%)", "type": "metric" }
+          ]
+        }
+      ]
+    }
+  ],
+  "theme": {
+    "primaryColor": "#f59e0b",
+    "secondaryColor": "#0f172a",
+    "backgroundColor": "#020617"
+  }
+}

@@ -1,11 +1,15 @@
 /**
  * Shared helpers for Master E2E (PROMPT scenarios 01–12).
  */
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { expect } from '@playwright/test';
 
-export async function gotoApp(page, path = '/') {
-  await page.goto(path);
+export async function gotoApp(page, pathName = '/') {
+  await page.goto(pathName);
   await page.waitForLoadState('domcontentloaded');
+  await expect(page.getByText('ForenzDetectiv').first()).toBeVisible({ timeout: 20_000 });
 }
 
 export async function dismissQuickTipIfPresent(page) {
@@ -21,10 +25,9 @@ export async function launchDemo(page) {
   const demoBtn = page.getByRole('button', { name: /Spustiť Demo spis|Spustit demo|Demo spis/i }).first();
   await expect(demoBtn).toBeVisible({ timeout: 15_000 });
   await demoBtn.click();
-  // Demo scanning delay ~1.4s then map
-  await expect(page.getByRole('button', { name: /Alibi mapa|Mapa|Alibi/i }).or(page.locator('text=/Bratislava|Košice|Praha|Brno/i').first())).toBeVisible({
-    timeout: 20_000
-  });
+  await expect(
+    page.getByRole('button', { name: /Pavúk vzťahov|Pavúk/i }).first()
+  ).toBeVisible({ timeout: 20_000 });
 }
 
 export async function openIndexedDbMeta(page) {
@@ -41,7 +44,6 @@ export async function openIndexedDbMeta(page) {
         resolve({ name: DB_NAME, version: DB_VERSION, stores });
       };
       req.onupgradeneeded = () => {
-        // App may create stores; if test opens first, create minimal schema
         const db = req.result;
         for (const name of ['cases', 'documents', 'analysis_cache', 'file_blobs']) {
           if (!db.objectStoreNames.contains(name)) {
@@ -53,15 +55,38 @@ export async function openIndexedDbMeta(page) {
   });
 }
 
-/** Oversized PDF for gate tests — allocates in Node, streams to input. */
-export function makePdfBuffer(sizeBytes, name = 'spis.pdf') {
-  const buf = Buffer.alloc(Math.max(sizeBytes, 8));
-  buf.write('%PDF-1.4', 0, 'ascii');
-  return { name, mimeType: 'application/pdf', buffer: buf };
+/** Write PDF fixture to temp file (Playwright rejects in-memory buffers > 50MB). */
+export function writePdfFixture(sizeBytes, fileName = 'spis.pdf') {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'forenz-e2e-'));
+  const filePath = path.join(dir, fileName);
+  const fd = fs.openSync(filePath, 'w');
+  fs.writeSync(fd, Buffer.from('%PDF-1.4\n'));
+  const remaining = Math.max(0, sizeBytes - 8);
+  const chunk = Buffer.alloc(1024 * 1024, 0);
+  let written = 0;
+  while (written < remaining) {
+    const n = Math.min(chunk.length, remaining - written);
+    fs.writeSync(fd, chunk, 0, n);
+    written += n;
+  }
+  fs.closeSync(fd);
+  return filePath;
 }
 
 export async function expectToastMatching(page, pattern) {
   const toast = page.getByTestId('app-toast');
   await expect(toast).toBeVisible({ timeout: 10_000 });
   await expect(toast).toContainText(pattern);
+}
+
+export async function openPricingModal(page) {
+  // Desktop header plan badge
+  const planBtn = page.getByRole('button', { name: /Free|Pro|Agency/i }).first();
+  if (await planBtn.isVisible().catch(() => false)) {
+    await planBtn.click();
+    return;
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByText(/^Cenník$|Pricing/i).first().click();
 }

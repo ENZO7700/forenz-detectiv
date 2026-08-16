@@ -25,6 +25,10 @@ export function captureUtmParameters() {
   if (hasUtm) {
     try {
       sessionStorage.setItem('forenz_utm_params', JSON.stringify(utmData));
+      if (window.history && window.history.replaceState) {
+        const cleanUrl = window.location.pathname + (window.location.hash || '');
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
     } catch (e) {
       console.warn('Nepodarilo sa uložiť UTM parametre', e);
     }
