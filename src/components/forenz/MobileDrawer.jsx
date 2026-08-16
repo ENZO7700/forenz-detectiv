@@ -3,9 +3,10 @@ import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import {
   Network, Layers, Archive, LogOut, X, ShieldAlert,
-  Sun, Moon, Monitor, Users, HelpCircle, Clock, MapPin, LayoutDashboard
+  Sun, Moon, Monitor, Users, HelpCircle, Clock, MapPin, LayoutDashboard, Download
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { usePwaInstall } from '@/lib/pwaInstall';
 
 function initials(name) {
   if (!name) return 'VY';
@@ -71,6 +72,7 @@ function ThemeSwitcher() {
 
 export default function MobileDrawer({ user, activeView, onNavigate, onClose, onLogout, onOpenIntro, alertCount = 0 }) {
   const go = (view) => { onNavigate(view); onClose(); };
+  const { canInstall, promptInstall } = usePwaInstall();
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
@@ -126,6 +128,17 @@ export default function MobileDrawer({ user, activeView, onNavigate, onClose, on
           <Item icon={Archive} label="Archív spisov" active={activeView === 'archive'} onClick={() => go('archive')} />
 
           <SectionLabel>Nápoveda & Nastavenia</SectionLabel>
+          {canInstall && (
+            <Item
+              icon={Download}
+              label="Inštalovať do mobilu (PWA)"
+              badge="App"
+              onClick={async () => {
+                await promptInstall();
+                onClose();
+              }}
+            />
+          )}
           {onOpenIntro && (
             <Item icon={HelpCircle} label="Sprievodca systémom (3 kroky)" onClick={() => { onOpenIntro(); onClose(); }} />
           )}
