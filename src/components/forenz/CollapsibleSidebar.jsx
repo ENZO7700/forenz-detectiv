@@ -3,18 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function CollapsibleSidebar({ side, collapsed, onToggle, expandedWidth, bubbleIcon: Icon, bubbleLabel, children }) {
+  const currentWidth = collapsed ? 0 : expandedWidth;
+
   return (
     <>
       {/* Mobilné zobrazenie */}
       <div className="lg:hidden">{children}</div>
 
-      {/* Desktop: kolabujúci panel s ťahadlom */}
+      {/* Desktop: kolabujúci panel s ťahadlom bez layout shiftu */}
       <motion.div
-        animate={{ width: collapsed ? 0 : expandedWidth }}
+        initial={false}
+        animate={{ width: currentWidth }}
+        style={{ width: currentWidth }}
         transition={{ type: 'spring', stiffness: 200, damping: 30 }}
         className="hidden lg:flex shrink-0 overflow-hidden"
       >
-        <div style={{ width: expandedWidth }} className="h-full flex">
+        <div style={{ width: expandedWidth, minWidth: expandedWidth }} className="h-full flex">
           {side === 'right' && <Handle side={side} onToggle={onToggle} />}
           <div className="flex-1 min-w-0 h-full">{children}</div>
           {side === 'left' && <Handle side={side} onToggle={onToggle} />}
