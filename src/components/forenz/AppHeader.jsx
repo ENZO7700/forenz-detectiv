@@ -105,7 +105,7 @@ export default function AppHeader({
           </button>
 
           {/* Logo & Name */}
-          <Link to="/" className="flex items-center gap-2 group focus:outline-none">
+          <Link to="/" className="flex items-center gap-2 group focus:outline-none" aria-label="ForenzDetektív - Domovská stránka">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/20 via-blue-600/30 to-indigo-600/40 p-0.5 flex items-center justify-center border border-amber-500/30 shadow-glass-sm group-hover:border-amber-400 transition-all">
               <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
                 <Network className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />

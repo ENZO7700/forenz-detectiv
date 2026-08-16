@@ -76,10 +76,13 @@ export default function MiniPlayground({ onTryFullApp = null, onRequestPilot = n
       {/* 2 Inputs Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
+          <label htmlFor="statement1" className="text-xs font-semibold text-slate-300 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-blue-400" /> Výpoveď #1 (alebo Záznam A)
           </label>
           <textarea
+            id="statement1"
+            name="statement1"
+            aria-label="Výpoveď číslo 1 alebo záznam A"
             rows={3}
             value={statement1}
             onChange={(e) => setStatement1(e.target.value)}
@@ -88,10 +91,13 @@ export default function MiniPlayground({ onTryFullApp = null, onRequestPilot = n
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
+          <label htmlFor="statement2" className="text-xs font-semibold text-slate-300 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-amber-400" /> Výpoveď #2 (alebo Záznam B)
           </label>
           <textarea
+            id="statement2"
+            name="statement2"
+            aria-label="Výpoveď číslo 2 alebo záznam B"
             rows={3}
             value={statement2}
             onChange={(e) => setStatement2(e.target.value)}

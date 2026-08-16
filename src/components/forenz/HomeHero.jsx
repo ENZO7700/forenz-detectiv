@@ -148,9 +148,9 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-base sm:text-lg font-semibold text-white">
+              <h2 className="text-base sm:text-lg font-semibold text-white">
                 {scanning ? t('hero.dropScanning') : t('hero.dropTitle')}
-              </h3>
+              </h2>
               <p className="text-xs text-slate-400">
                 {t('hero.dropHint')}
               </p>
@@ -213,7 +213,7 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
             <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
             <div>
               <div className="text-xs font-semibold text-slate-200">{t('hero.badgeContradictions')}</div>
-              <div className="text-[11px] text-slate-500">{t('hero.badgeCitations')}</div>
+              <div className="text-[11px] text-slate-400">{t('hero.badgeCitations')}</div>
             </div>
           </div>
 
@@ -221,7 +221,7 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
             <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
             <div>
               <div className="text-xs font-semibold text-slate-200">{t('hero.badgeMap')}</div>
-              <div className="text-[11px] text-slate-500">{t('hero.badgeHaversine')}</div>
+              <div className="text-[11px] text-slate-400">{t('hero.badgeHaversine')}</div>
             </div>
           </div>
 
@@ -229,7 +229,7 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <div>
               <div className="text-xs font-semibold text-slate-200">{t('hero.badgeSandbox')}</div>
-              <div className="text-[11px] text-slate-500">{t('hero.badgeGdpr')}</div>
+              <div className="text-[11px] text-slate-400">{t('hero.badgeGdpr')}</div>
             </div>
           </div>
 
@@ -237,7 +237,7 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
             <Scale className="w-4 h-4 text-amber-400 shrink-0" />
             <div>
               <div className="text-xs font-semibold text-slate-200">{t('hero.badgePdf')}</div>
-              <div className="text-[11px] text-slate-500">{t('hero.badgeSha')}</div>
+              <div className="text-[11px] text-slate-400">{t('hero.badgeSha')}</div>
             </div>
           </div>
         </motion.div>
