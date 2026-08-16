@@ -9,6 +9,7 @@
     <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)" />
     <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
@@ -27,8 +28,8 @@
     <meta name="twitter:description" content="Inteligentná analýza vyšetrovacích spisov. AI detekcia rozporov, alibi verifikácia a vizualizácia vzťahov." />
     <meta name="twitter:image" content="https://forenzdetectiv.sk/og-preview.png" />
 
-    <!-- Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://eu.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://app.base44.com https://*.base44.com https://eu.i.posthog.com https://*.ingest.sentry.io https://*.sentry.io wss:; frame-src 'none'; object-src 'none'; base-uri 'self';" />
+    <!-- Content Security Policy (Allows Stripe, Vercel Live, PostHog, Sentry) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://vercel.live https://*.vercel.live https://*.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://app.base44.com https://*.base44.com https://api.stripe.com https://*.stripe.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://*.posthog.com https://*.ingest.sentry.io https://*.sentry.io https://vercel.live https://*.vercel.live https://maps.googleapis.com wss: ws:; frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://vercel.live https://*.vercel.live; worker-src 'self' blob:; object-src 'none'; base-uri 'self';" />
 
     <title>Alibi — AI Forenzná Analýza Spisov</title>
     <link rel="preconnect" href="https://eu.i.posthog.com" crossorigin />

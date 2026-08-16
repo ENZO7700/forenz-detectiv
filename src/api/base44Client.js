@@ -1,12 +1,12 @@
 import { createClient } from '@base44/sdk';
 import { appParams } from '../lib/app-params.js';
 
-// Deaktivácia interného Base44 SDK analytics v guest / standalone režime
-if (typeof window !== 'undefined') {
-  if (!window.base44SharedInstances) {
-    window.base44SharedInstances = {};
+// Deaktivácia interného Base44 SDK analytics v guest / standalone / test režime
+if (typeof globalThis !== 'undefined') {
+  if (!globalThis.base44SharedInstances) {
+    globalThis.base44SharedInstances = {};
   }
-  window.base44SharedInstances.analytics = {
+  globalThis.base44SharedInstances.analytics = {
     instance: {
       requestsQueue: [],
       isProcessing: false,

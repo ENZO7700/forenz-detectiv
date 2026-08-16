@@ -24,6 +24,11 @@ describe('Production Readiness & Legal P0 Checklist Test Suite', () => {
     assert.match(content, /http-equiv="Content-Security-Policy"/, 'Musí obsahovať CSP hlavičku');
     assert.match(content, /default-src 'self'/, 'CSP musí povoliť self');
     assert.match(content, /https:\/\/eu\.i\.posthog\.com/, 'CSP musí povoliť PostHog');
+    assert.match(content, /https:\/\/js\.stripe\.com/, 'CSP musí povoliť Stripe.js');
+    assert.match(content, /https:\/\/vercel\.live/, 'CSP musí povoliť Vercel Live');
+
+    // Mobile Web App Meta
+    assert.match(content, /name="mobile-web-app-capable"/, 'Musí obsahovať moderný mobile-web-app-capable tag');
   });
 
   test('2. public/sitemap.xml existuje a obsahuje všetky kľúčové trasy', () => {

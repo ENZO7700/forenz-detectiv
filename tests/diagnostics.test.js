@@ -57,32 +57,40 @@ function claim(overrides = {}) {
 
 describe('Diagnostic coverage: rate limiting', () => {
   test('vytvorí záznam v aktuálnom fixnom okne pri prvom požiadavku', async () => {
-    Date.now = () => Date.parse('2026-08-16T10:07:30.000Z');
-    const { client, calls } = createRateLimitClient();
+    try {
+      Date.now = () => Date.parse('2026-08-16T10:07:30.000Z');
+      const { client, calls } = createRateLimitClient();
 
-    const result = await checkRate(client, 'user-1', 3, 60_000);
+      const result = await checkRate(client, 'user-1', 3, 60_000);
 
-    assert.deepEqual(result, { ok: true });
-    assert.equal(calls.create.length, 1);
-    assert.deepEqual(calls.create[0], {
-      key: 'user-1',
-      window: '2026-08-16T10:07:00.000Z',
-      count: 1
-    });
+      assert.deepEqual(result, { ok: true });
+      assert.equal(calls.create.length, 1);
+      assert.deepEqual(calls.create[0], {
+        key: 'user-1',
+        window: '2026-08-16T10:07:00.000Z',
+        count: 1
+      });
+    } finally {
+      Date.now = REAL_DATE_NOW;
+    }
   });
 
   test('zvýši existujúce počítadlo a pri dosiahnutom limite nevyžaduje zápis', async () => {
-    Date.now = () => Date.parse('2026-08-16T10:07:30.000Z');
-    const existing = [{ id: 'rate-1', count: 2 }];
-    const { client, calls } = createRateLimitClient({ existing });
+    try {
+      Date.now = () => Date.parse('2026-08-16T10:07:30.000Z');
+      const existing = [{ id: 'rate-1', count: 2 }];
+      const { client, calls } = createRateLimitClient({ existing });
 
-    assert.deepEqual(await checkRate(client, 'user-1', 3, 60_000), { ok: true });
-    assert.deepEqual(calls.update, [{ id: 'rate-1', patch: { count: 3 } }]);
+      assert.deepEqual(await checkRate(client, 'user-1', 3, 60_000), { ok: true });
+      assert.deepEqual(calls.update, [{ id: 'rate-1', patch: { count: 3 } }]);
 
-    existing[0].count = 3;
-    const blocked = await checkRate(client, 'user-1', 3, 60_000);
-    assert.deepEqual(blocked, { ok: false, retryAfterMs: 30_000 });
-    assert.equal(calls.update.length, 1);
+      existing[0].count = 3;
+      const blocked = await checkRate(client, 'user-1', 3, 60_000);
+      assert.deepEqual(blocked, { ok: false, retryAfterMs: 30_000 });
+      assert.equal(calls.update.length, 1);
+    } finally {
+      Date.now = REAL_DATE_NOW;
+    }
   });
 
   test('pri chybe databázy fail-open nezablokuje oprávneného používateľa', async () => {

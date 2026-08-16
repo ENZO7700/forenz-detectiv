@@ -5,6 +5,7 @@
 import { exportForensicCasePdf } from './pdfExporter.js';
 import { buildZipStore } from './zipStore.js';
 import { calculateSha256Digest, generateCaseIntegrityDigest, buildSha256Chain } from '../utils/cryptoUtils.js';
+import html2canvas from 'html2canvas';
 
 const CSV_SEP = ';'; // Excel-friendly in SK/EU locales
 
@@ -112,7 +113,6 @@ async function capturePngBytes(element, fallbackLabel) {
 
   if (element && typeof document !== 'undefined') {
     try {
-      const { default: html2canvas } = await import('html2canvas');
       const scale = Math.max(2, typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2);
       const canvas = await html2canvas(element, {
         scale,
