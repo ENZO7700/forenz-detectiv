@@ -1,23 +1,38 @@
 /**
  * Production post-upload analysis pipeline (no demo shortcuts).
  *
- * Steps (implemented unless noted):
+ * Steps (implemented):
  * 1. validateUploadSize — reject files over MAX_FILE_SIZE_BYTES (50 MB)
- * 2. prepareFileForUpload — normalize images; PDF/text pass-through as-is
- * 3. UploadFile → Document.create(status: pending)
- * 4. analyzeDocument / runAnalysis — Pixtral extraction → entity write
- * 5. runContradictionDetection — cross-document claims / alibi checks
+ * 2. prepareFileForUpload — normalize images; non-PDF text pass-through
+ * 3. PDF page-chunking (pdf.js) — multi-page PDFs → JPEG page Documents
+ *    linked via parent_document_id / page_number (see pdfPageChunker.js)
+ * 4. UploadFile → Document.create(status: pending) per analysis unit
+ * 5. analyzeDocument / runAnalysis — Pixtral extraction → entity write
+ * 6. runContradictionDetection — cross-document claims / alibi checks
  *
- * Gap: multi-page PDF chunk/split into page images before Pixtral is NOT
- * implemented yet. Large PDFs are uploaded whole; analysis expects image_url
- * (vision model). Next step: render PDF pages → N Document parts or page jobs.
+ * Demo case remains gated behind VITE_ENABLE_DEMO (see demoFlag.js).
  */
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
+export {
+  PDF_MAX_PAGES,
+  PDF_RENDER_MAX_EDGE,
+  PDF_JPEG_QUALITY,
+  PDF_RENDER_CONCURRENCY,
+  PDF_ANALYZE_CONCURRENCY,
+  isPdfFile,
+  buildPdfPageTitle,
+  buildPdfContainerTitle,
+  planPdfDocumentBudget,
+  forEachPdfPage,
+  chunkAndProcessPdf
+} from './pdfPageChunker.js';
+
 export const PIPELINE_STEPS = [
   { id: 'validate', label: 'Kontrola veľkosti a typu súboru' },
-  { id: 'prepare', label: 'Príprava (normalizácia obrázka / PDF pass-through)' },
+  { id: 'prepare', label: 'Príprava (normalizácia obrázka / PDF chunking)' },
+  { id: 'chunk', label: 'PDF → stránky (JPEG) s väzbou parent/child' },
   { id: 'upload', label: 'Upload do úložiska a vytvorenie Document (pending)' },
   { id: 'analyze', label: 'AI analyzeDocument → entity write' },
   { id: 'contradictions', label: 'Detekcia rozporov naprieč dokumentmi' }
@@ -32,5 +47,5 @@ export function validateUploadSize(file, maxBytes = MAX_FILE_SIZE_BYTES) {
   return { ok: true };
 }
 
-/** True when PDF page-splitting for vision analysis is still missing. */
-export const PDF_PAGE_CHUNKING_IMPLEMENTED = false;
+/** True when multi-page PDFs are split into page images before Pixtral. */
+export const PDF_PAGE_CHUNKING_IMPLEMENTED = true;

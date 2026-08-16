@@ -179,12 +179,13 @@ Backend funkcie bežia v Deno runtime (`base44/functions/<name>/entry.ts`) a kom
 
 ### Post-upload tok (produkcia)
 1. **Kontrola veľkosti** — max 50 MB (`validateUploadSize` / `documentPipeline.js`).
-2. **Príprava** — obrázky normalizácia (`prepareFileForUpload`); PDF/text zatiaľ pass-through.
-3. **Upload** — `UploadFile` → `Document.create(status: pending)`.
-4. **AI analýza** — `analyzeDocument` / `runAnalysis` (Pixtral) → zápis entít.
-5. **Rozpory** — `runContradictionDetection` naprieč dokumentmi používateľa.
+2. **Príprava** — obrázky normalizácia (`prepareFileForUpload`); text pass-through.
+3. **PDF page-chunking** — multi-page PDF sa client-side (pdf.js) renderuje po stránkach na JPEG (max 40 strán, concurrency 1 na mobile / 2 na desktope). Vznikne `pdf_container` + `pdf_page` Documents (`parent_document_id`, `page_number`). Jednostránkové PDF → jedna JPEG Document bez kontajnera.
+4. **Upload** — `UploadFile` → `Document.create(status: pending)` pre každú analytickú jednotku.
+5. **AI analýza** — `analyzeDocument` / `runAnalysis` (Pixtral) → zápis entít (iba stránky / obrázky, nie PDF blob).
+6. **Rozpory** — `runContradictionDetection` naprieč dokumentmi používateľa.
 
-**Gap:** rozdelenie veľkých multi-page PDF na stránky (chunk/split) pre vision model **ešte nie je implementované** (`PDF_PAGE_CHUNKING_IMPLEMENTED = false`). Ďalší krok: render stránok → N jobov analýzy.
+`PDF_PAGE_CHUNKING_IMPLEMENTED = true` (`src/lib/documentPipeline.js`, `src/lib/pdfPageChunker.js`). **Ops:** po zmene schémy musíš publishnúť Base44 `Document` (`base44 login` → `base44 entities push`), inak produkcia odmietne `parent_document_id` / `page_number` / `page_count` / `source_kind`.
 
 ### Model
 - **Mistral Pixtral-12B** (`pixtral-12b-2409`) — multimodálny, spracováva obrázok výpovede.

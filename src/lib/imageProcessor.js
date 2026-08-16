@@ -1,10 +1,10 @@
-// Príprava súboru pre upload: PDF a textové súbory sa nahrávajú priamo, obrázky prejdú normalizáciou.
-// Gap: veľké multi-page PDF sa zatiaľ nerozdeľujú na stránky pre Pixtral — pozri documentPipeline.js.
+// Príprava súboru pre upload: textové súbory pass-through, obrázky normalizácia.
+// Multi-page PDF sa pred uploadom rozdelí v upload flow (pdfPageChunker / documentPipeline).
 export async function prepareFileForUpload(file) {
   if (!file) return file;
   const isImage = file.type?.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif)$/i.test(file.name || '');
   if (!isImage) {
-    // PDF alebo textový dokument — nepoužívame Image/Canvas normalizáciu
+    // PDF (neskôr chunknuté) alebo textový dokument — bez Image/Canvas normalizácie
     return file;
   }
   try {

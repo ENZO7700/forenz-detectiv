@@ -44,7 +44,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-pdf': ['pdf-lib', '@pdf-lib/fontkit'],
+          'vendor-pdf': ['pdf-lib', '@pdf-lib/fontkit', 'pdfjs-dist'],
           'vendor-maps': ['leaflet', 'react-leaflet'],
           'vendor-charts': ['recharts'],
           'vendor-motion': ['framer-motion', 'lucide-react'],

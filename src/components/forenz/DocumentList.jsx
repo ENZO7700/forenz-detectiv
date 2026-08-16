@@ -62,17 +62,25 @@ export default function DocumentList({ documents, selectedDocId, onSelect, onDel
                   <p className="text-xs font-medium text-slate-200 truncate">{doc.title}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${badge.cls}`}>{badge.label}</span>
-                    {doc.status === 'done' && (
+                    {doc.source_kind === 'pdf_page' && doc.page_number != null && (
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        s.{doc.page_number}{doc.page_count ? `/${doc.page_count}` : ''}
+                      </span>
+                    )}
+                    {doc.source_kind === 'pdf_container' && (
+                      <span className="text-[10px] text-slate-500">PDF</span>
+                    )}
+                    {doc.status === 'done' && doc.source_kind !== 'pdf_container' && (
                       <span className="text-[10px] text-slate-400">
                         {doc.person_count || 0} osôb · {doc.relationship_count || 0} vzťahov
                       </span>
                     )}
                   </div>
-                  {doc.status === 'error' && doc.error && (
-                    <p className="text-[10px] text-red-400 mt-1 line-clamp-2">{doc.error}</p>
+                  {doc.status === 'error' && (doc.error || doc.last_error) && (
+                    <p className="text-[10px] text-red-400 mt-1 line-clamp-2">{doc.error || doc.last_error}</p>
                   )}
                 </div>
-                {onRetry && doc.status === 'error' && (
+                {onRetry && doc.status === 'error' && doc.source_kind !== 'pdf_container' && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onRetry(doc); }}
                     className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-400 p-1 transition"

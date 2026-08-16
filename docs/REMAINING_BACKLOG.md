@@ -10,6 +10,8 @@ Stav kódu na `main` (~`1802e77`): produktový sprint PROMPT-01..12 je **uzatvor
 
 **Ako použiť:** každý ticket nižšie skopíruj do GitHub Issue. `gh` CLI môže vyžadovať `gh auth login`.
 
+**Pipeline note:** PDF page-chunking je v kóde (`Document.jsonc`: `parent_document_id`, `page_number`, `page_count`, `source_kind`) — produkcia vyžaduje `base44 entities push` (po `base44 login` / linknutom app), pozri README AI pipeline.
+
 ---
 
 ## Done vs Remaining

@@ -67,8 +67,9 @@ describe('Production upload pipeline helpers', () => {
     assert.ok(bad.sizeKb > 50_000);
   });
 
-  test('pipeline kroky sú zdokumentované a PDF chunking ešte nie je hotový', () => {
-    assert.ok(PIPELINE_STEPS.length >= 5);
-    assert.equal(PDF_PAGE_CHUNKING_IMPLEMENTED, false);
+  test('pipeline kroky obsahujú PDF chunking a flag je zapnutý', () => {
+    assert.ok(PIPELINE_STEPS.length >= 6);
+    assert.ok(PIPELINE_STEPS.some((s) => s.id === 'chunk'));
+    assert.equal(PDF_PAGE_CHUNKING_IMPLEMENTED, true);
   });
 });

@@ -7,9 +7,7 @@ test.describe('S11 — PWA, mobilné UI & offline', () => {
     await gotoApp(page);
     await dismissQuickTipIfPresent(page);
 
-    const nav = page.locator('nav.lg\\:hidden, nav').filter({
-      has: page.getByRole('button', { name: /Pavúk|Spis|Alibi|Sherlock/i })
-    }).first();
+    const nav = page.locator('nav').filter({ hasText: /Pavúk|Spis|Alibi|Sherlock/i }).first();
     await expect(nav).toBeVisible({ timeout: 20_000 });
     const pb = await nav.evaluate((el) => getComputedStyle(el).paddingBottom);
     expect(pb).toBeTruthy();
@@ -19,7 +17,7 @@ test.describe('S11 — PWA, mobilné UI & offline', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoApp(page);
     await dismissQuickTipIfPresent(page);
-    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByRole('button', { name: /Otvoriť navigáciu|Menu/i }).click();
     await expect(page.getByText(/Cenník|Sprievodca|Audit/i).first()).toBeVisible({ timeout: 10_000 });
   });
 

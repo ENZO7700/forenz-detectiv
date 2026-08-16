@@ -19,10 +19,13 @@ test.describe('S05/S08/S09 — Legal smoke, Sherlock, PDF export', () => {
   });
 
   test('S09 PDF export dialóg / tlačidlo Report PDF', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 }); // Report PDF is 2xl:inline-flex
     await launchDemo(page);
-    const exportBtn = page.getByRole('button', { name: /Report PDF/i });
-    await expect(exportBtn).toBeVisible({ timeout: 15_000 });
-    await exportBtn.click();
+    const exportBtn = page.getByRole('button', { name: /Report PDF/i }).or(
+      page.getByTitle(/Exportovať znalecký posudok do PDF/i)
+    );
+    await expect(exportBtn.first()).toBeVisible({ timeout: 15_000 });
+    await exportBtn.first().click();
     await expect(page.locator('[role="dialog"]').first()).toBeVisible({ timeout: 10_000 });
   });
 });

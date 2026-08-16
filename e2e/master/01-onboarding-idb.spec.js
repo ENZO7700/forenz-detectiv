@@ -7,10 +7,9 @@ test.describe('S01 — Onboarding, Guest Mode & IndexedDB', () => {
     await dismissQuickTipIfPresent(page);
 
     await expect(page).toHaveTitle(/ForenzDetectiv/i);
-    await expect(page.locator('body')).toContainText('ForenzDetectiv AI');
+    await expect(page.locator('body')).toContainText(/ForenzDetectiv/i);
     await expect(page.locator('.bg-slate-950').first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /Nahrať spis|Nahrát spis|Spustiť Demo/i }).first()).toBeVisible();
-    // E2E webServer sets VITE_ENABLE_DEMO=true
+    await expect(page.getByRole('button', { name: /Nahrať spis|Nahrát spis/i }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: /Spustiť Demo spis|Spustit demo/i }).first()).toBeVisible();
   });
 

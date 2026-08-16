@@ -66,6 +66,28 @@
     "processing_job_id": {
       "type": "string",
       "description": "ID behu spracovania"
+    },
+    "parent_document_id": {
+      "type": "string",
+      "description": "ID rodi\u010dovsk\u00e9ho PDF kontajnera (iba pdf_page)"
+    },
+    "page_number": {
+      "type": "number",
+      "description": "1-based \u010d\u00edslo str\u00e1nky (iba pdf_page)"
+    },
+    "page_count": {
+      "type": "number",
+      "description": "Po\u010det str\u00e1nok na kontajneri alebo celkov\u00fd po\u010det pri page doc"
+    },
+    "source_kind": {
+      "type": "string",
+      "enum": [
+        "upload",
+        "pdf_container",
+        "pdf_page"
+      ],
+      "default": "upload",
+      "description": "upload = be\u017en\u00fd s\u00fabor; pdf_container = origin\u00e1lne PDF; pdf_page = JPEG str\u00e1nka"
     }
   },
   "required": [

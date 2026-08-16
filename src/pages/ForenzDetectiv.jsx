@@ -1,7 +1,14 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { base44 } from '@/api/base44Client';
 import { prepareFileForUpload } from '@/lib/imageProcessor';
-import { MAX_FILE_SIZE_BYTES, validateUploadSize } from '@/lib/documentPipeline';
+import {
+  MAX_FILE_SIZE_BYTES,
+  validateUploadSize,
+  isPdfFile,
+  chunkAndProcessPdf,
+  PDF_ANALYZE_CONCURRENCY,
+  PDF_MAX_PAGES
+} from '@/lib/documentPipeline';
 import { parseTimeToMinutes, namesMatch } from '@/lib/forenzUtils';
 import { mapWithAdaptiveConcurrency } from '@/lib/adaptiveConcurrency';
 import DocumentList from '@/components/forenz/DocumentList';
@@ -225,7 +232,62 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     stopReplay();
   }, [timeBounds.min, timeBounds.max, timeBounds.hasTime]);
 
-  // Upload → validate → prepare → analyzeDocument → contradiction detect (see documentPipeline.js)
+  // Upload → validate → prepare → (PDF chunk) → analyzeDocument → contradiction detect
+  const remainingDocSlots = () => {
+    if (plan === 'pro' || plan === 'agency') return Number.POSITIVE_INFINITY;
+    return Math.max(0, 5 - (documents?.length || 0));
+  };
+
+  const uploadBinaryToStorage = async (uploadFile) => {
+    try {
+      const uploadRes = await base44.integrations.Core.UploadFile({ file: uploadFile });
+      return uploadRes?.file_url || URL.createObjectURL(uploadFile);
+    } catch (uploadErr) {
+      console.warn('[Upload] Cloud upload skipped/offline:', uploadErr);
+      return URL.createObjectURL(uploadFile);
+    }
+  };
+
+  const createDocumentRecord = async (fields, uploadFileForOffline = null) => {
+    try {
+      return await base44.entities.Document.create(fields);
+    } catch (entityErr) {
+      console.warn('[Upload] Cloud entity create 403/offline, saving locally:', entityErr);
+      const doc = {
+        id: 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        ...fields,
+        status: fields.status === 'pending' ? 'done' : (fields.status || 'done'),
+        created_date: new Date().toISOString()
+      };
+      setDocuments((prev) => [doc, ...(prev || [])]);
+      if (uploadFileForOffline) {
+        try {
+          await saveDocumentOffline(doc, uploadFileForOffline);
+        } catch (_) {
+          /* ignore offline save errors */
+        }
+      }
+      return { ...doc, __localOnly: true };
+    }
+  };
+
+  const invokeAnalyze = async (doc, title) => {
+    if (doc?.__localOnly) return null;
+    return withAiRetry(
+      () => base44.functions.invoke('analyzeDocument', {
+        documentId: doc.id,
+        documentTitle: title || doc.title
+      }),
+      {
+        maxRetries: 2,
+        initialDelayMs: 1200,
+        onRetry: ({ attempt }) => {
+          showToast(`AI server je vyťažený, opakujem pokus (${attempt}/2)...`);
+        }
+      }
+    );
+  };
+
   const handleScan = async (file) => {
     if (!file) return;
     const sizeCheck = validateUploadSize(file, MAX_FILE_SIZE_BYTES);
@@ -251,41 +313,49 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       }
       trackFileUploaded(file.name?.split('.').pop() || 'unknown', Math.round(file.size / 1024));
       logAction('DOC_UPLOADED', { file_type: file.name?.split('.').pop() || 'unknown', size_kb: Math.round(file.size / 1024) });
-      // LOAD / PREPARE → UPLOAD → RELEASE local memory → ANALYZE FROM STORAGE
-      const uploadFile = await prepareFileForUpload(file);
-      let file_url = '';
-      try {
-        const uploadRes = await base44.integrations.Core.UploadFile({ file: uploadFile });
-        file_url = uploadRes?.file_url;
-      } catch (uploadErr) {
-        console.warn('[Upload] Cloud upload skipped/offline:', uploadErr);
-        file_url = URL.createObjectURL(uploadFile);
+
+      if (isPdfFile(file)) {
+        const slots = remainingDocSlots();
+        const pageConcurrency = isMobile ? 1 : PDF_ANALYZE_CONCURRENCY;
+        const result = await chunkAndProcessPdf(file, {
+          remainingSlots: slots,
+          maxPages: PDF_MAX_PAGES,
+          pageConcurrency,
+          uploadBinary: uploadBinaryToStorage,
+          createDocument: (fields) => createDocumentRecord(fields),
+          analyzeDocument: (doc) => invokeAnalyze(doc, doc.title),
+          onPageProgress: ({ pageNumber, pageCount }) => {
+            setBulkProgress({ total: pageCount, done: pageNumber, analyzing: 1, failed: 0 });
+          }
+        });
+        setBulkProgress(null);
+        if (!result.ok) {
+          openPaywall('limit_documents');
+          return;
+        }
+        if (result.truncated) {
+          showToast(`PDF má ${result.originalPageCount} strán — spracovaných ${result.pageCount} (limit ${PDF_MAX_PAGES} / plán).`);
+        }
+        await fetchData();
+        return;
       }
 
-      let doc;
-      let isLocalOnly = false;
-      try {
-        doc = await base44.entities.Document.create({
-          title: file.name,
-          image_url: file_url || URL.createObjectURL(uploadFile),
-          status: 'pending'
-        });
-      } catch (entityErr) {
-        console.warn('[Upload] Cloud entity create 403/offline, saving locally into 50MB IndexedDB:', entityErr);
-        isLocalOnly = true;
-        doc = {
-          id: 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-          title: file.name,
-          image_url: file_url || URL.createObjectURL(uploadFile),
-          status: 'done',
-          created_date: new Date().toISOString()
-        };
-        const updatedDocs = [doc, ...(documents || [])];
-        setDocuments(updatedDocs);
-        setSelectedDocId(doc.id);
-        await saveDocumentOffline(doc, uploadFile);
+      // LOAD / PREPARE → UPLOAD → RELEASE local memory → ANALYZE FROM STORAGE
+      const uploadFile = await prepareFileForUpload(file);
+      const file_url = await uploadBinaryToStorage(uploadFile);
+
+      const doc = await createDocumentRecord({
+        title: file.name,
+        image_url: file_url,
+        status: 'pending',
+        source_kind: 'upload'
+      }, uploadFile);
+
+      if (!doc.__localOnly) {
+        await fetchData();
+      } else {
         await saveCaseOffline('current', {
-          documents: updatedDocs,
+          documents: [doc, ...(documents || [])].map(({ __localOnly, ...rest }) => rest),
           persons,
           relationships,
           contradictions,
@@ -294,27 +364,12 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           locations,
           claims
         });
-      }
-
-      if (!isLocalOnly) {
-        await fetchData();
+        setSelectedDocId(doc.id);
       }
 
       try {
-        await withAiRetry(
-          () => base44.functions.invoke('analyzeDocument', {
-            documentId: doc.id,
-            documentTitle: file.name
-          }),
-          {
-            maxRetries: 2,
-            initialDelayMs: 1200,
-            onRetry: ({ attempt }) => {
-              showToast(`AI server je vyťažený, opakujem pokus (${attempt}/2)...`);
-            }
-          }
-        );
-        if (!isLocalOnly) await fetchData();
+        await invokeAnalyze(doc, file.name);
+        if (!doc.__localOnly) await fetchData();
       } catch (err) {
         console.warn('[Upload] Cloud AI invoke unavailable, document loaded into local workspace:', err);
         showToast(`Spis "${file.name}" bol načítaný a bezpečne uložený do lokálneho úložiska (IndexedDB 50 MB).`);
@@ -324,6 +379,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       showToast('Nahrávanie zlyhalo');
     } finally {
       setScanning(false);
+      setBulkProgress(null);
     }
   };
 
@@ -389,52 +445,59 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         logAction('CASE_CREATED', { source: 'bulk_upload', file_count: cappedBatch.length });
       }
       logAction('DOC_UPLOADED', { source: 'bulk', file_count: cappedBatch.length });
-      // Pipeline jeden-dokument-na-workera: preprocess → upload → create → analyze,
-      // potom sa lokálna pamäť
-      await mapWithAdaptiveConcurrency(cappedBatch, 4, 6, async (file) => {
-        const uploadFile = await prepareFileForUpload(file);
-        let file_url = '';
-        try {
-          const uploadRes = await base44.integrations.Core.UploadFile({ file: uploadFile });
-          file_url = uploadRes?.file_url;
-        } catch {
-          file_url = URL.createObjectURL(uploadFile);
+
+      let slotsLeft = remainingDocSlots();
+      const pageConcurrency = isMobile ? 1 : PDF_ANALYZE_CONCURRENCY;
+      // Free plán: sériovo kvôli presnému počítaniu slotov (PDF = N dokumentov).
+      const fileConcStart = (plan === 'free' || plan === undefined) ? 1 : 2;
+      const fileConcMax = (plan === 'free' || plan === undefined) ? 1 : (isMobile ? 2 : 4);
+
+      // Pipeline: PDF chunk alebo preprocess → upload → create → analyze (concurrency capped)
+      await mapWithAdaptiveConcurrency(cappedBatch, fileConcStart, fileConcMax, async (file) => {
+        if (slotsLeft < 1) return;
+
+        if (isPdfFile(file)) {
+          const result = await chunkAndProcessPdf(file, {
+            remainingSlots: slotsLeft,
+            maxPages: PDF_MAX_PAGES,
+            pageConcurrency,
+            uploadBinary: uploadBinaryToStorage,
+            createDocument: (fields) => createDocumentRecord(fields),
+            analyzeDocument: async (doc) => {
+              setBulkProgress((p) => ({ ...p, analyzing: (p?.analyzing || 0) + 1 }));
+              try {
+                await invokeAnalyze(doc, doc.title);
+              } finally {
+                setBulkProgress((p) => ({
+                  ...p,
+                  analyzing: Math.max(0, (p?.analyzing || 1) - 1),
+                  done: (p?.done || 0) + 1
+                }));
+              }
+            }
+          });
+          if (result.ok) {
+            const used = (result.parentDoc ? 1 : 0) + (result.pageCount || 0);
+            slotsLeft = Number.isFinite(slotsLeft) ? Math.max(0, slotsLeft - used) : slotsLeft;
+          }
+          return;
         }
 
-        let doc;
-        try {
-          doc = await base44.entities.Document.create({
-            title: file.name,
-            image_url: file_url || URL.createObjectURL(uploadFile),
-            status: 'pending'
-          });
-        } catch (entityErr) {
-          console.warn('[BulkUpload] Cloud 403, saving locally into IndexedDB:', entityErr);
-          doc = {
-            id: 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-            title: file.name,
-            image_url: file_url || URL.createObjectURL(uploadFile),
-            status: 'done',
-            created_date: new Date().toISOString()
-          };
-          setDocuments((prev) => [doc, ...(prev || [])]);
-          await saveDocumentOffline(doc, uploadFile);
-        }
+        const uploadFile = await prepareFileForUpload(file);
+        const file_url = await uploadBinaryToStorage(uploadFile);
+        const doc = await createDocumentRecord({
+          title: file.name,
+          image_url: file_url || URL.createObjectURL(uploadFile),
+          status: 'pending',
+          source_kind: 'upload'
+        }, uploadFile);
+
+        if (Number.isFinite(slotsLeft)) slotsLeft = Math.max(0, slotsLeft - 1);
 
         setBulkProgress((p) => ({ ...p, analyzing: p.analyzing + 1 }));
         try {
-          const res = await withAiRetry(
-            () => base44.functions.invoke('analyzeDocument', {
-              documentId: doc.id,
-              documentTitle: file.name
-            }),
-            { maxRetries: 2, initialDelayMs: 1000 }
-          );
-          if (res?.data?.ok) {
-            setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
-          } else {
-            setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
-          }
+          await invokeAnalyze(doc, file.name);
+          setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
         } catch {
           setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
         }
@@ -476,19 +539,25 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       return;
     }
     try {
-      await base44.entities.Person.deleteMany({ document_id: doc.id });
-      await base44.entities.Relationship.deleteMany({ document_id: doc.id });
-      await base44.entities.RedFlag.deleteMany({ document_id: doc.id });
-      await base44.entities.FlaggedPassage.deleteMany({ document_id: doc.id });
-      await base44.entities.ForensicClaim.deleteMany({ document_id: doc.id });
-      await base44.entities.Event.deleteMany({ document_id: doc.id });
-      await base44.entities.Location.deleteMany({ document_id: doc.id });
-      await base44.entities.Vehicle.deleteMany({ document_id: doc.id });
-      // Contradiction môže byť ako ktorákoľvek strana — mažem obidve
-      await base44.entities.Contradiction.deleteMany({ document_a_id: doc.id });
-      await base44.entities.Contradiction.deleteMany({ document_b_id: doc.id });
-      await base44.entities.Document.delete(doc.id);
-      if (selectedDocId === doc.id) setSelectedDocId(null);
+      const childPages = (doc.source_kind === 'pdf_container')
+        ? (documents || []).filter((d) => d.parent_document_id === doc.id)
+        : [];
+      const toDelete = [doc, ...childPages];
+
+      for (const target of toDelete) {
+        await base44.entities.Person.deleteMany({ document_id: target.id });
+        await base44.entities.Relationship.deleteMany({ document_id: target.id });
+        await base44.entities.RedFlag.deleteMany({ document_id: target.id });
+        await base44.entities.FlaggedPassage.deleteMany({ document_id: target.id });
+        await base44.entities.ForensicClaim.deleteMany({ document_id: target.id });
+        await base44.entities.Event.deleteMany({ document_id: target.id });
+        await base44.entities.Location.deleteMany({ document_id: target.id });
+        await base44.entities.Vehicle.deleteMany({ document_id: target.id });
+        await base44.entities.Contradiction.deleteMany({ document_a_id: target.id });
+        await base44.entities.Contradiction.deleteMany({ document_b_id: target.id });
+        await base44.entities.Document.delete(target.id);
+      }
+      if (selectedDocId && toDelete.some((d) => d.id === selectedDocId)) setSelectedDocId(null);
       await fetchData();
     } catch (e) {
       console.error(e);
