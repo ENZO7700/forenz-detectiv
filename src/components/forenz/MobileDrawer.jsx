@@ -174,6 +174,16 @@ export default function MobileDrawer({
           {onOpenIntro && (
             <Item icon={HelpCircle} label={t('nav.guide')} onClick={() => { onOpenIntro(); onClose(); }} />
           )}
+          <SectionLabel>Právne informácie</SectionLabel>
+          <div className="px-3 py-1 flex items-center gap-3 text-[11px]">
+            <Link to="/terms" onClick={onClose} className="text-slate-400 hover:text-slate-200 underline underline-offset-2">
+              Podmienky (VOP)
+            </Link>
+            <span className="text-slate-600">&middot;</span>
+            <Link to="/privacy" onClick={onClose} className="text-slate-400 hover:text-slate-200 underline underline-offset-2">
+              Ochrana súkromia
+            </Link>
+          </div>
           <div className="px-3 mb-2 mt-2">
             <LanguageSwitcher className="w-full justify-center" />
           </div>
