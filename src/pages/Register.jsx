@@ -10,6 +10,7 @@ import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { loginWithGooglePopup } from "@/lib/popupAuth";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -67,11 +68,12 @@ export default function Register() {
     }
   };
 
-  const handleGoogle = () => {
+  const handleGoogle = async () => {
+    setError("");
     try {
-      base44.auth.loginWithProvider("google", safeReturnTo());
+      await loginWithGooglePopup(safeReturnTo());
     } catch (err) {
-      setError("Google registrácia vyžaduje overenú doménu v Base44. Použite registráciu emailom a heslom.");
+      setError(err.message || "Google registrácia bola zrušená alebo zlyhala. Použite registráciu emailom a heslom.");
     }
   };
 

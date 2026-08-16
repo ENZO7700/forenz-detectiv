@@ -8,6 +8,7 @@ import { LogIn, Mail, Lock, Loader2, AlertCircle, Info } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { loginWithGooglePopup } from "@/lib/popupAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -30,11 +31,12 @@ export default function Login() {
     }
   };
 
-  const handleGoogle = () => {
+  const handleGoogle = async () => {
+    setError("");
     try {
-      base44.auth.loginWithProvider("google", returnTo);
+      await loginWithGooglePopup(returnTo);
     } catch (err) {
-      setError("Google prihlásenie vyžaduje overenú doménu v Base44. Použite prihlásenie emailom a heslom.");
+      setError(err.message || "Google prihlásenie bolo zrušené alebo zlyhalo. Môžete použiť prihlásenie emailom a heslom.");
     }
   };
 
