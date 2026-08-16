@@ -2,8 +2,7 @@ import { create } from 'zustand';
 import { base44 } from '../api/base44Client.js';
 import { saveCaseOffline, getCaseOffline } from '../lib/offlineDb.js';
 import { calculateGraphMetrics } from '../lib/graphMetrics.js';
-import { DEMO_CASE_DATA } from '../data/demoCaseData.js';
-import { CZ_DEMO_CASE } from '../data/czDemoCaseData.js';
+import { isDemoEnabled } from '../lib/demoFlag.js';
 import { trackDemoLaunched, trackContradictionDetected } from '../lib/analytics.js';
 
 function normalizeDemoCase(raw, caseId) {
@@ -103,11 +102,19 @@ export const useForenzStore = create((set, get) => ({
     }, 4000);
   },
 
-  // 3.1 Demo spis s krátkou „analýza“ pauzou (aha moment)
-  // Paywall bypass — demo je ukážka, nie produkčný upload.
-  loadDemoCase: () => {
+  // 3.1 Local-only demo (VITE_ENABLE_DEMO=true). Production never injects synthetic cases.
+  loadDemoCase: async () => {
+    if (!isDemoEnabled()) {
+      get().showToast('Nahrajte reálny spis — demo režim nie je v produkcii zapnutý.');
+      return;
+    }
+
     const lang = typeof window !== 'undefined' ? localStorage.getItem('forenz_lang') : 'sk';
     const isCs = lang === 'cs';
+    const [{ DEMO_CASE_DATA }, { CZ_DEMO_CASE }] = await Promise.all([
+      import('../data/demoCaseData.js'),
+      import('../data/czDemoCaseData.js')
+    ]);
     const raw = isCs ? CZ_DEMO_CASE : DEMO_CASE_DATA;
     const caseId = isCs ? 'praha-brno' : 'ba-ke';
     const demo = normalizeDemoCase(raw, caseId);
@@ -129,7 +136,7 @@ export const useForenzStore = create((set, get) => ({
       null;
 
     set({ scanning: true, loading: true });
-    get().showToast(isCs ? 'Analyzuji demo spis…' : 'Analyzujem demo spis…');
+    get().showToast(isCs ? 'Načítávám lokální demo spis…' : 'Načítavam lokálny demo spis…');
 
     setTimeout(() => {
       set({
@@ -153,13 +160,13 @@ export const useForenzStore = create((set, get) => ({
       });
 
       trackDemoLaunched(caseId);
-      trackContradictionDetected(demo.contradictions.length, true);
+      trackContradictionDetected(demo.contradictions.length, true, true, caseId);
       get().showToast(
         isCs
-          ? 'Ukázka rozporu: Podívejte se na citaci ze zdroje a mapu nemožného přesunu.'
-          : 'Ukážka rozporu: Pozrite si citáciu zo zdroja a mapu nemožného presunu.'
+          ? 'Lokální demo (nie produkčné dáta): mapa nemožného přesunu.'
+          : 'Lokálne demo (nie produkčné dáta): mapa nemožného presunu.'
       );
-    }, 1400);
+    }, 400);
   },
 
   // 3.2 Vyčistenie prípadu (pre návrat na čistý Home)

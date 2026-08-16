@@ -25,8 +25,11 @@ export async function launchDemo(page) {
   const demoBtn = page.getByRole('button', { name: /Spustiť Demo spis|Spustit demo|Demo spis/i }).first();
   await expect(demoBtn).toBeVisible({ timeout: 15_000 });
   await demoBtn.click();
+  // Desktop nav tabs appear after demo documents load
   await expect(
-    page.getByRole('button', { name: /Pavúk vzťahov|Pavúk/i }).first()
+    page.getByRole('button', { name: 'Pavúk vzťahov', exact: true })
+      .or(page.getByRole('button', { name: /^Pavúk$/i }))
+      .first()
   ).toBeVisible({ timeout: 20_000 });
 }
 

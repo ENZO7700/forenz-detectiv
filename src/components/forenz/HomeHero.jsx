@@ -2,21 +2,19 @@ import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Upload,
-  Zap,
   ShieldCheck,
   MapPin,
   AlertTriangle,
-  Sparkles,
   ArrowRight,
   Scale,
-  Files
+  Files,
+  Zap
 } from 'lucide-react';
 import { useForenzStore } from '@/store/useForenzStore';
-import MiniPlayground from '@/components/landing/MiniPlayground';
 import LeadCaptureModal from '@/components/landing/LeadCaptureModal';
 import { useTranslation } from '@/i18n/i18nContext';
-
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB (50 000 KB)
+import { isDemoEnabled } from '@/lib/demoFlag';
+import { MAX_FILE_SIZE_BYTES, validateUploadSize } from '@/lib/documentPipeline';
 
 export default function HomeHero({ onScan, onBulkScan = null, scanning = false }) {
   const fileInputRef = useRef(null);
@@ -25,6 +23,7 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
   const loadDemoCase = useForenzStore((s) => s.loadDemoCase);
   const showToast = useForenzStore((s) => s.showToast);
   const { t } = useTranslation();
+  const demoOn = isDemoEnabled();
 
   const handleFiles = (fileList) => {
     if (!fileList || fileList.length === 0) return;
@@ -33,7 +32,7 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
     const oversizedFiles = [];
 
     files.forEach((file) => {
-      if (file.size > MAX_FILE_SIZE_BYTES) {
+      if (!validateUploadSize(file, MAX_FILE_SIZE_BYTES).ok) {
         oversizedFiles.push(file);
       } else {
         validFiles.push(file);
@@ -57,7 +56,6 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
 
   const handleFileChange = (e) => {
     handleFiles(e.target.files);
-    // Reset file input value to allow re-upload of same files
     e.target.value = '';
   };
 
@@ -79,12 +77,10 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
 
   return (
     <div className="relative w-full flex-1 flex flex-col items-center justify-center p-4 lg:p-8 overflow-y-auto bg-slate-950 text-slate-100">
-      {/* Background ambient lighting */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[400px] h-[300px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="max-w-4xl w-full flex flex-col items-center text-center z-10 my-auto">
-        {/* Pill Tag */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -97,7 +93,6 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
           <span>{t('hero.pill')}</span>
         </motion.div>
 
-        {/* Hero Headline */}
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -108,7 +103,6 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-red-500">{t('hero.headlineEnd')}</span>
         </motion.h1>
 
-        {/* Subheadline */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -118,7 +112,6 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
           {t('hero.subheadline')}
         </motion.p>
 
-        {/* Drag & Drop Main Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -170,39 +163,38 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
           </div>
         </motion.div>
 
-        {/* 1-Tap Demo CTA Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
-          className="w-full max-w-2xl mt-4"
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.35, delay: 0.35 }}
+          className="text-[11px] sm:text-xs text-slate-500 max-w-2xl mt-3 leading-relaxed"
         >
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900 border border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg hover:border-amber-500/40 transition-colors">
-            <div className="flex items-center gap-3 text-left">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
-                <Sparkles className="w-5 h-5 text-amber-400" />
+          {t('hero.pipelineHint')}
+        </motion.p>
+
+        {demoOn && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+            className="w-full max-w-2xl mt-4"
+          >
+            <div className="p-4 rounded-2xl bg-slate-900 border border-dashed border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-left">
+                <h4 className="text-sm font-semibold text-amber-300">{t('hero.demoTitle')}</h4>
+                <p className="text-xs text-slate-400">{t('hero.demoDesc')}</p>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
-                  {t('hero.demoTitle')}
-                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">{t('hero.demoBadge')}</span>
-                </h4>
-                <p className="text-xs text-slate-400">
-                  {t('hero.demoDesc')}
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={() => loadDemoCase()}
+                className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 text-xs font-semibold"
+              >
+                <Zap className="w-3.5 h-3.5" /> {t('hero.demoCta')} <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
+          </motion.div>
+        )}
 
-            <button
-              onClick={loadDemoCase}
-              className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 text-xs font-semibold transition-all hover:scale-[1.02]"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> {t('hero.demoCta')} <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Proof Strip / Feature Badges */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -242,17 +234,12 @@ export default function HomeHero({ onScan, onBulkScan = null, scanning = false }
           </div>
         </motion.div>
 
-        {/* Mini playground + B2B lead CTA */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.55 }}
-          className="w-full max-w-3xl mt-8 space-y-4"
+          className="w-full max-w-3xl mt-8"
         >
-          <MiniPlayground
-            onTryFullApp={loadDemoCase}
-            onRequestPilot={() => setLeadOpen(true)}
-          />
           <button
             type="button"
             onClick={() => setLeadOpen(true)}
