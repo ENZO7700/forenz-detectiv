@@ -48,11 +48,6 @@
     "badgePdf": "Súdny PDF export",
     "badgeSha": "SHA-256 hash integrity"
   },
-  "quickTip": {
-    "label": "Rýchly tip:",
-    "text": "Nahrajte aspoň 2 reálne výpovede — AI ich porovná a nájde rozpory aj nemožné alibi.",
-    "close": "Zavrieť tip"
-  },
   "welcome": {
     "guide": "Rýchly štart · 1 tip",
     "title": "Odhaľte rozpory a nemožné alibi za minúty",

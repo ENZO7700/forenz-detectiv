@@ -20,7 +20,6 @@ import RedFlagsPanel from '@/components/forenz/RedFlagsPanel';
 import SherlockChat from '@/components/forenz/SherlockChat';
 import QuickSearchDialog from '@/components/forenz/QuickSearchDialog';
 import WelcomeIntroModal from '@/components/forenz/WelcomeIntroModal';
-import QuickTip from '@/components/forenz/QuickTip';
 import HomeHero from '@/components/forenz/HomeHero';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ViewSkeleton } from '@/components/ui/SkeletonViews';
@@ -1387,8 +1386,6 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         onSelectDoc={handleJumpToArchive}
         onSelectEvent={() => setActiveView('timeline')}
       />
-
-      <QuickTip />
 
       <WelcomeIntroModal
         open={introOpen}
