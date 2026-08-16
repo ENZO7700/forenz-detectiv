@@ -166,12 +166,16 @@ let pdfjsModulePromise = null;
 
 async function loadPdfjs() {
   if (!pdfjsModulePromise) {
-    pdfjsModulePromise = import('pdfjs-dist').then((pdfjs) => {
-      if (typeof window !== 'undefined' && pdfjs.GlobalWorkerOptions && !pdfjs.GlobalWorkerOptions.workerSrc) {
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-          'pdfjs-dist/build/pdf.worker.min.mjs',
-          import.meta.url
-        ).toString();
+    pdfjsModulePromise = import('pdfjs-dist').then(async (pdfjs) => {
+      if (typeof window !== 'undefined' && pdfjs.GlobalWorkerOptions) {
+        try {
+          // Vite explicit asset URL bundling
+          const { default: workerUrl } = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+          pdfjs.GlobalWorkerOptions.workerSrc = workerUrl || pdfjs.GlobalWorkerOptions.workerSrc;
+        } catch {
+          // CDN / inline fallback ak Vite asset zlyhá
+          pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version || '5.7.284'}/pdf.worker.min.mjs`;
+        }
       }
       return pdfjs;
     }).catch((err) => {
@@ -188,14 +192,27 @@ async function loadPdfjs() {
 export async function loadPdfDocument(file) {
   const pdfjs = await loadPdfjs();
   const data = new Uint8Array(await file.arrayBuffer());
-  const loadingTask = pdfjs.getDocument({
-    data,
-    // Prefer streaming when possible; still safe for File-backed buffers.
-    disableAutoFetch: true,
-    useSystemFonts: true
-  });
-  const pdf = await loadingTask.promise;
-  return { pdf, pageCount: pdf.numPages || 0 };
+
+  try {
+    const loadingTask = pdfjs.getDocument({
+      data,
+      disableAutoFetch: true,
+      useSystemFonts: true
+    });
+    const pdf = await loadingTask.promise;
+    return { pdf, pageCount: pdf.numPages || 0 };
+  } catch (primaryErr) {
+    console.warn('[PDF] Primárne načítanie s workerom zlyhalo, prepínam na núdzový režim:', primaryErr);
+    // Núdzový fallback bez workera pri reštriktívnom CSP / iFrame sandboxe
+    const fallbackTask = pdfjs.getDocument({
+      data,
+      disableAutoFetch: true,
+      disableFontFace: true,
+      useSystemFonts: false
+    });
+    const pdf = await fallbackTask.promise;
+    return { pdf, pageCount: pdf.numPages || 0 };
+  }
 }
 
 /**
