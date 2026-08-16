@@ -1,6 +1,6 @@
 # Remaining backlog — po PROMPT-01..12 (100 %)
 
-Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo hard-removed, PDF chunking, E2E upload-first, Document schema push).
+Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo hard-removed, PDF chunking, E2E upload-first, Document schema push) + **PROMPT-PROD-01** (DocumentList hierarchy, per-page progress, cancel via AbortController, per-page retry).
 
 **Zámerné rozhodnutia (neotvárať znova):**
 
@@ -29,6 +29,7 @@ Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo hard-removed, PDF chu
 | Stripe test mode + docs | Done | live Checkout → RB-05 |
 | Looker / Ads **docs** | Done | live dashboard → RB-04 / RB-07 |
 | PDF page-chunking + Document schema push | Done | **PROMPT-OPS-01** |
+| PDF chunk progress UI / cancel / per-page retry | Done | **PROMPT-PROD-01** (`DocumentList`, `pdfPageChunker`, AbortController) |
 | Demo production gate (`VITE_ENABLE_DEMO`) | Removed | Hard-delete demo case + CTA |
 | Master E2E (Playwright S01–S12) | Done | upload-first (no demo bootstrap) |
 | Lokálny CI gate | Done | focused + lint/typecheck/build |
