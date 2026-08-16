@@ -3,7 +3,9 @@ import Fuse from 'fuse.js';
 import {
   Dialog,
   DialogContent,
-  DialogHeader
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Search, User, Link2, Calendar, FileText, AlertTriangle, ShieldAlert, ChevronRight } from 'lucide-react';
 
@@ -166,6 +168,10 @@ export default function QuickSearchDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-2xl max-w-xl p-0 overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl text-slate-100">
+        <DialogTitle className="sr-only">Rýchle vyhľadávanie v prípade</DialogTitle>
+        <DialogDescription className="sr-only">
+          Vyhľadajte osoby, dokumenty, udalosti a rozpory v aktuálnom prípade.
+        </DialogDescription>
         <DialogHeader className="p-3.5 border-b border-slate-800 flex flex-row items-center gap-3 bg-slate-900/90">
           <Search className="w-4 h-4 text-blue-400 shrink-0" />
           <input

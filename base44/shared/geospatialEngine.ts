@@ -67,7 +67,7 @@ export function normalizeLocationName(loc: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/^(v|vo|do|pri|na|v meste|okres|mesto)\s+/g, '')
+    .replace(/^(v meste|okres|mesto|vo|do|pri|na|v)\s+/g, '')
     .replace(/[^a-z0-9]+/g, '')
     .trim();
 }
