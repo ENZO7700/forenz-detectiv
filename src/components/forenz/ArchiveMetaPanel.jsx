@@ -51,7 +51,7 @@ export default function ArchiveMetaPanel({
   vehicles = [],
   contradictions = [],
   onJumpToPerson,
-  onJumpToEdge,
+  _onJumpToEdge,
   onJumpToContradiction,
   readOnly
 }) {

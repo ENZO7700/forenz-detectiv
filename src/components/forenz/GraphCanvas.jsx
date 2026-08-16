@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -147,11 +147,11 @@ export default function GraphCanvas({
   onSelectPerson,
   selectedEdgeId,
   onSelectEdge,
-  onShowEvidence,
+  _onShowEvidence,
   maxTime,
   timeEnabled,
   activeEdgeId,
-  flaggedPassages = [],
+  _flaggedPassages = [],
   overrides = [],
   onCreateOverrides,
   readOnly = false

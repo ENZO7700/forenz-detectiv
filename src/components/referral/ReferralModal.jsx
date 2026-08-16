@@ -5,7 +5,7 @@ import { Gift, Copy, Check, Mail, Users } from 'lucide-react';
 import { usePlanStore } from '@/store/usePlanStore';
 
 export default function ReferralModal({ isOpen, onClose }) {
-  const { getReferralLink, userId } = usePlanStore();
+  const { getReferralLink } = usePlanStore();
   const [copied, setCopied] = useState(false);
   const refLink = getReferralLink();
 

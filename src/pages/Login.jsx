@@ -9,8 +9,8 @@ import AuthLayout from "@/components/AuthLayout";
 import { safeReturnTo } from "@/lib/authReturnTo";
 
 export default function Login() {
-  const [email, setEmail] = useState("larsenevans@proton.me");
-  const [password, setPassword] = useState("POKLOP123###");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const returnTo = safeReturnTo();

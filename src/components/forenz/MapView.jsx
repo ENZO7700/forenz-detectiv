@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { resolveLocationCoords } from '../../../base44/shared/geospatialEngine.ts';
-import { MapPin, AlertTriangle, Users, Filter } from 'lucide-react';
+import { MapPin, AlertTriangle, Filter } from 'lucide-react';
 
 const createCustomIcon = (color, label) => {
   return L.divIcon({

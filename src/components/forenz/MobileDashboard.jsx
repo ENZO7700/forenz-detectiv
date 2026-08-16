@@ -72,7 +72,7 @@ function SectionTitle({ children }) {
   return <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">{children}</h3>;
 }
 
-export default function MobileDashboard({ documents, persons, relationships, redFlags, contradictions, onSelectPerson }) {
+export default function MobileDashboard({ documents, persons, relationships, _redFlags, _contradictions, onSelectPerson }) {
   const stats = useMemo(() => {
     const analyzing = documents.filter((d) => d.status === 'analyzing' || d.status === 'pending').length;
     const errors = documents.filter((d) => d.status === 'error').length;

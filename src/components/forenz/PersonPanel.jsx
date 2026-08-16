@@ -10,7 +10,6 @@ export default function PersonPanel({ person, edge, onClose, onShowEvidence }) {
   let content;
 
   if (edge) {
-    const color = '#3b82f6';
     content = (
       <>
         <div className="flex items-center justify-between mb-3">
