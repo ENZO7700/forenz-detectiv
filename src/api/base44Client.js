@@ -32,7 +32,7 @@ const { appId, token, functionsVersion, appBaseUrl } = appParams;
 
 // Create a client configured to communicate directly with Base44 platform
 export const base44 = createClient({
-  appId: appId || '6a7ed366df1f1138ad653044',
+  appId: appId || '6a81f5e7f4adbf6a9523b9d8',
   token,
   functionsVersion: functionsVersion || 'v1',
   serverUrl: appBaseUrl || 'https://app.base44.com',
