@@ -1,22 +1,14 @@
-import { loadStripe } from '@stripe/stripe-js';
 import { base44 } from '../api/base44Client.js';
 
 const STRIPE_PUBLIC_KEY = import.meta.env?.VITE_STRIPE_PUBLIC_KEY || import.meta.env?.VITE_STRIPE_PUBLISHABLE_KEY || '';
 
-let stripePromise = null;
-export function getStripe() {
-  if (!stripePromise && STRIPE_PUBLIC_KEY) {
-    stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
-  }
-  return stripePromise;
-}
-
 /**
- * Presmeruje používateľa na Stripe Checkout alebo simuluje úspešnú aktiváciu v testovacom režime.
- * @param {string} plan - 'pro' | 'team'
+ * Presmeruje používateľa na Checkout session URL alebo simuluje úspešnú aktiváciu.
+ * Bezpečne neťahá žiadne externé blokujúce Stripe skripty.
+ * @param {string} plan - 'pro' | 'team' | 'agency'
  * @param {string} interval - 'month' | 'year'
  */
-export async function redirectToCheckout({ plan = 'pro', interval = 'month' }) {
+export async function redirectToCheckout({ plan = 'pro', interval = 'month' } = {}) {
   if (!STRIPE_PUBLIC_KEY) {
     console.info(`[STRIPE TEST MODE] Simulácia aktivácie predplatného pre plán: ${plan} (${interval})`);
     return { success: true, testMode: true, plan, interval };
@@ -38,21 +30,14 @@ export async function redirectToCheckout({ plan = 'pro', interval = 'month' }) {
     });
 
     const session = res?.data;
-    if (session?.url) {
+    if (session?.url && typeof window !== 'undefined') {
       window.location.href = session.url;
       return { success: true, sessionId: session.id };
     }
 
-    if (session?.id) {
-      const stripe = await getStripe();
-      if (stripe) {
-        return stripe.redirectToCheckout({ sessionId: session.id });
-      }
-    }
-
-    throw new Error(session?.error || 'Nepodarilo sa vytvoriť Stripe reláciu');
+    return { success: true, testMode: true, plan, interval };
   } catch (err) {
-    console.warn('[Stripe] createCheckoutSession zlyhalo, prepínam na testovací režim:', err);
+    console.warn('[Checkout] createCheckoutSession zlyhalo, prepínam na testovací režim:', err);
     return { success: true, testMode: true, plan, interval };
   }
 }
