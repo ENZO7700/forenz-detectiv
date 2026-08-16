@@ -293,6 +293,64 @@ export async function exportForensicCasePdf({
     });
   }
 
+  // 7. Právne posúdenie (Zákon č. 300/2005 Z. z. — Source of Truth)
+  if (contradictions.length > 0) {
+    drawSectionTitle('6. Právne posúdenie relevancie (Zákon č. 300/2005 Z. z.)');
+
+    checkPageBreak(90);
+    currentPage.drawRectangle({
+      x: MARGIN,
+      y: cursorY - 80,
+      width: CONTENT_WIDTH,
+      height: 80,
+      color: rgb(0.96, 0.97, 1.0),
+      borderColor: rgb(0.75, 0.82, 0.95),
+      borderWidth: 1
+    });
+
+    currentPage.drawText('Potenciálne relevantné ustanovenie: § 346 (Krivá výpoveď a krivá prísaha)', {
+      x: MARGIN + 10,
+      y: cursorY - 16,
+      size: 8.5,
+      font: fontBold,
+      color: rgb(0.08, 0.24, 0.65)
+    });
+
+    currentPage.drawText('Status: Potenciálne relevantné (Potentially relevant) · Dôkazný zdroj: Zbierka zákonov SR (s. 160)', {
+      x: MARGIN + 10,
+      y: cursorY - 30,
+      size: 7.5,
+      font: fontRegular,
+      color: rgb(0.25, 0.3, 0.4)
+    });
+
+    currentPage.drawText('Dôvod: Zistený časový/priestorový rozpor vo výpovediach zakladá potrebu preverenia dôveryhodnosti.', {
+      x: MARGIN + 10,
+      y: cursorY - 44,
+      size: 7.5,
+      font: fontRegular,
+      color: rgb(0.2, 0.2, 0.2)
+    });
+
+    currentPage.drawText('Chýbajúce dôkazy: Preukázanie priameho úmyslu vedome klamať, vylúčenie omylu a poučenie svedka.', {
+      x: MARGIN + 10,
+      y: cursorY - 58,
+      size: 7.5,
+      font: fontOblique,
+      color: rgb(0.35, 0.4, 0.45)
+    });
+
+    currentPage.drawText('Vyžaduje právne posúdenie vyšetrovateľom / prokurátorom: ÁNO (REQUIRES_HUMAN_REVIEW)', {
+      x: MARGIN + 10,
+      y: cursorY - 72,
+      size: 8,
+      font: fontBold,
+      color: rgb(0.75, 0.15, 0.15)
+    });
+
+    cursorY -= 95;
+  }
+
   // Pätička na každej strane
   const pageCount = pdfDoc.getPageCount();
   for (let i = 0; i < pageCount; i++) {

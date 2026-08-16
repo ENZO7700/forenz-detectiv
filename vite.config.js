@@ -54,6 +54,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './tests/setup.js',
     include: ['tests/**/*.{test,spec}.{js,jsx,ts,tsx}'],
-    exclude: ['node_modules', 'dist', 'tests/integrity.test.js']
+    exclude: ['node_modules', 'dist', 'tests/integrity.test.js', 'tests/legalIntegration.test.js']
   }
 });
