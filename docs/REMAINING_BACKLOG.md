@@ -27,13 +27,13 @@ Stav kódu na `main` (~`1802e77`): produktový sprint PROMPT-01..12 je **uzatvor
 | Stripe test mode + docs | Done | live Checkout → RB-05 |
 | Looker / Ads **docs** | Done | live dashboard / spend → RB-04 / RB-07 |
 | Lokálny CI (`test`/`lint`/`typecheck`/`build`) | Done | 75/75 |
-| GitHub Actions zelený | Remaining | billing lock → **RB-01** |
-| PostHog EU prod key | Remaining | **RB-02** |
-| `trackContradictionDetected` mimo demo | Remaining | **RB-03** |
-| Looker North Star chart | Remaining | **RB-04** |
-| Stripe `createCheckoutSession` | Remaining | **RB-05** |
-| assetlinks SHA-256 z keystore | Remaining | **RB-06** |
-| Beta 100 + Ads ops | Remaining | **RB-07** |
+| `trackContradictionDetected` mimo demo | Done | **RB-03** hotové v useForenzStore.js |
+| Stripe `createCheckoutSession` | Done | **RB-05** Base44 serverless function + stripe.js |
+| GitHub Actions zelený | Remaining | billing lock → **RB-01** (GitHub admin) |
+| PostHog EU prod key | Remaining | **RB-02** (.env / secrets) |
+| Looker North Star chart | Remaining | **RB-04** (Looker Studio dashboard) |
+| assetlinks SHA-256 z keystore | Remaining | **RB-06** (Google Play signing) |
+| Beta 100 + Ads ops | Remaining | **RB-07** (Campaign rollout) |
 
 ```mermaid
 flowchart TD
