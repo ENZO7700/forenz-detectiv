@@ -404,7 +404,6 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         }
 
         let doc;
-        let isLocalOnly = false;
         try {
           doc = await base44.entities.Document.create({
             title: file.name,
@@ -413,7 +412,6 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           });
         } catch (entityErr) {
           console.warn('[BulkUpload] Cloud 403, saving locally into IndexedDB:', entityErr);
-          isLocalOnly = true;
           doc = {
             id: 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
             title: file.name,
