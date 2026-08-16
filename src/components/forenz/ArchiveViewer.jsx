@@ -15,7 +15,11 @@ export default function ArchiveViewer({ documents = [], selectedDocId, onSelect 
 
   useEffect(() => {
     [prevDoc, nextDoc].forEach((d) => {
-      if (d?.image_url) { const img = new Image(); img.src = d.image_url; }
+      const isPdf = d?.image_url && (/\.pdf$/i.test(d.image_url) || /\.pdf$/i.test(d.title || ''));
+      if (d?.image_url && !isPdf) {
+        const img = new Image();
+        img.src = d.image_url;
+      }
     });
   }, [prevDoc?.id, prevDoc?.image_url, nextDoc?.id, nextDoc?.image_url]);
 
@@ -94,18 +98,29 @@ export default function ArchiveViewer({ documents = [], selectedDocId, onSelect 
         style={{ cursor: zoom > 1 ? 'grab' : 'default' }}
       >
         {doc?.image_url ? (
-          <img
-            src={doc.image_url}
-            alt={doc.title}
-            draggable={false}
-            className="object-contain select-none pointer-events-none rounded-lg shadow-2xl"
-            style={{
-              transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) rotate(${rotate}deg)`,
-              maxWidth: '100%',
-              maxHeight: '100%',
-              transition: drag.current ? 'none' : 'transform 0.15s ease-out'
-            }}
-          />
+          /\.pdf$/i.test(doc.image_url) || /\.pdf$/i.test(doc.title || '') ? (
+            <div className="w-full h-full flex flex-col items-center justify-center p-2">
+              <iframe
+                src={`${doc.image_url}#toolbar=1&navpanes=0`}
+                title={doc.title}
+                className="w-full h-full rounded-xl border border-slate-800 bg-slate-900 shadow-2xl"
+              />
+            </div>
+          ) : (
+            <img
+              src={doc.image_url}
+              alt={doc.title}
+              draggable={false}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              className="object-contain select-none pointer-events-none rounded-lg shadow-2xl"
+              style={{
+                transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) rotate(${rotate}deg)`,
+                maxWidth: '100%',
+                maxHeight: '100%',
+                transition: drag.current ? 'none' : 'transform 0.15s ease-out'
+              }}
+            />
+          )
         ) : (
           <div className="text-slate-500 text-center">
             <FileText className="w-12 h-12 mx-auto mb-2 opacity-40" />

@@ -75,17 +75,21 @@ export default function ArchiveFilmstrip({ documents = [], selectedDocId, onSele
               }`}
             >
               <div className="relative h-24 bg-slate-950 overflow-hidden">
-                {doc.image_url ? (
+                {doc.image_url && !(/\.pdf$/i.test(doc.image_url) || /\.pdf$/i.test(doc.title || '')) ? (
                   <img
                     src={doc.image_url}
                     alt={doc.title}
                     loading="lazy"
                     decoding="async"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-slate-700" />
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-400 group-hover:bg-slate-900/80 transition-colors">
+                    <FileText className="w-8 h-8 text-amber-500/80 mb-1" />
+                    <span className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                      PDF SPIS
+                    </span>
                   </div>
                 )}
                 <span className={`absolute top-1.5 left-1.5 text-[9px] px-1.5 py-0.5 rounded ${badge.cls}`}>
