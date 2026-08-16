@@ -1,5 +1,5 @@
 import { loadStripe } from '@stripe/stripe-js';
-import { base44 } from '@/api/base44Client';
+import { base44 } from '../api/base44Client.js';
 
 const STRIPE_PUBLIC_KEY = import.meta.env?.VITE_STRIPE_PUBLIC_KEY || import.meta.env?.VITE_STRIPE_PUBLISHABLE_KEY || '';
 

@@ -13,6 +13,8 @@ const SENSITIVE_PROPERTY_KEYS = [
   'text',
   'source_text',
   'claim_text',
+  'statement',
+  'witness',
   'name',
   'speaker',
   'person_name',
@@ -20,6 +22,8 @@ const SENSITIVE_PROPERTY_KEYS = [
   'target_name',
   'address',
   'ssn',
+  'national_id',
+  'id_number',
   'email',
   'phone',
   'license_plate'
