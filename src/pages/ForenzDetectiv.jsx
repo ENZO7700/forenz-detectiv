@@ -26,7 +26,7 @@ import TrustPackModal from '@/components/trust/TrustPackModal';
 import ReferralModal from '@/components/referral/ReferralModal';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import PdfExportDialog from '@/components/export/PdfExportDialog';
-import { saveDocumentOffline, saveCaseOffline, getAllDocumentsOffline } from '@/lib/offlineDb';
+import { saveDocumentOffline, saveCaseOffline } from '@/lib/offlineDb';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated } from '@/lib/analytics';
 import { Network, Download, Loader2, Share2, ShieldCheck, Archive, LayoutDashboard, BarChart3, Ban, Layers, Menu, Bell, Users, FileText, ShieldAlert, Clock, Search as SearchIcon, HelpCircle, MapPin, Trash2, Gift, Zap, ScrollText } from 'lucide-react';
@@ -735,11 +735,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           <button
             type="button"
             onClick={() => setPricingModalOpen(true)}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
-              plan === 'pro' || plan === 'agency'
-                ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
-                : 'bg-slate-800 text-slate-300 border-slate-700/80 hover:bg-slate-700'
-            }`}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${plan === 'pro' || plan === 'agency'
+              ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+              : 'bg-slate-800 text-slate-300 border-slate-700/80 hover:bg-slate-700'
+              }`}
             title="Licencie a plány"
           >
             <Zap className="w-3.5 h-3.5 text-amber-400" />
@@ -794,9 +793,8 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
             <>
               <button
                 onClick={() => setShowStats((s) => !s)}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm transition-colors border ${
-                  showStats ? 'bg-blue-600/20 text-blue-400 border-blue-500/40' : 'bg-slate-800 text-slate-200 border-slate-700/80 hover:bg-slate-700'
-                }`}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm transition-colors border ${showStats ? 'bg-blue-600/20 text-blue-400 border-blue-500/40' : 'bg-slate-800 text-slate-200 border-slate-700/80 hover:bg-slate-700'
+                  }`}
                 title="Zobraziť/skryť štatistiky"
               >
                 <BarChart3 className="w-4 h-4 text-blue-400" />
@@ -896,55 +894,50 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       <div className="hidden lg:flex shrink-0 items-center gap-1.5 px-4 py-2 border-b border-slate-800 bg-slate-900">
         <button
           onClick={() => setActiveView('graph')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            activeView === 'graph'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
-          }`}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'graph'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+            }`}
         >
           <Network className="w-3.5 h-3.5" />
           Pavúk vzťahov
         </button>
         <button
           onClick={() => setActiveView('archive')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            activeView === 'archive'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
-          }`}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'archive'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+            }`}
         >
           <Layers className="w-3.5 h-3.5" />
           Kartotéka & Spisy
         </button>
         <button
           onClick={() => setActiveView('identity')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            activeView === 'identity'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
-          }`}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'identity'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+            }`}
         >
           <Users className="w-3.5 h-3.5" />
           Prepojené identity
         </button>
         <button
           onClick={() => setActiveView('timeline')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            activeView === 'timeline'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
-          }`}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'timeline'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+            }`}
         >
           <Clock className="w-3.5 h-3.5" />
           Časová os (Timeline)
         </button>
         <button
           onClick={() => setActiveView('map')}
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            activeView === 'map'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
-          }`}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeView === 'map'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80'
+            }`}
         >
           <MapPin className="w-3.5 h-3.5" />
           Geografická mapa

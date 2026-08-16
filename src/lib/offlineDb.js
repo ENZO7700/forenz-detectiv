@@ -8,7 +8,7 @@ let dbPromise = null;
 export function getDb() {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db, oldVersion) {
+      upgrade(db) {
         if (!db.objectStoreNames.contains('cases')) {
           db.createObjectStore('cases', { keyPath: 'id' });
         }
