@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, AlertTriangle, Share2 } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, Share2, Gavel } from 'lucide-react';
 import ShareModal from '@/components/share/ShareModal';
 
 const CATEGORY_LABEL = {
@@ -11,12 +11,15 @@ const CATEGORY_LABEL = {
   iné: 'Iné varovanie'
 };
 
-export default function RedFlagsPanel({ redFlags = [] }) {
+export default function RedFlagsPanel({
+  redFlags = [],
+  contradictions = [],
+  onCrossExamine = null
+}) {
   const [selectedContradiction, setSelectedContradiction] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
 
   const handleShare = (rf) => {
-    // Pripravíme štruktúru rozporu z red flagu
     const contradictionData = {
       locationA: rf.locationA || rf.locA || 'Bratislava',
       timeA: rf.timeA || '14:15',
@@ -40,11 +43,11 @@ export default function RedFlagsPanel({ redFlags = [] }) {
         <ShieldAlert className="w-4 h-4 text-red-400" />
         <h3 className="text-xs font-semibold text-slate-100">Analýza dôveryhodnosti</h3>
         <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-red-950 text-red-400 font-semibold border border-red-800">
-          {redFlags.length}
+          {redFlags.length + contradictions.length}
         </span>
       </div>
       <div className="p-3 space-y-2">
-        {redFlags.length === 0 ? (
+        {redFlags.length === 0 && contradictions.length === 0 ? (
           <div className="text-center py-6 px-4 bg-slate-900/40 border border-slate-800 rounded-xl">
             <ShieldAlert className="w-7 h-7 mx-auto mb-2 text-slate-600 opacity-60" />
             <p className="text-xs text-slate-400">
@@ -52,56 +55,114 @@ export default function RedFlagsPanel({ redFlags = [] }) {
             </p>
           </div>
         ) : (
-          redFlags.map((rf) => {
-            const isCritical = rf.category === 'geografická_nesúlad' || rf.category === 'rozpor' || rf.severity === 'critical';
-            return (
+          <>
+            {contradictions.map((c) => (
               <div
-                key={rf.id}
-                className={`rounded-xl p-3 border transition-all ${
-                  isCritical
-                    ? 'border-red-900/70 bg-red-950/30 hover:border-red-700'
-                    : 'border-amber-900/60 bg-amber-950/25 hover:border-amber-700'
-                }`}
+                key={c.id || `${c.claim_a_id}-${c.claim_b_id}`}
+                className="rounded-xl p-3 border border-red-900/70 bg-red-950/30 hover:border-red-700 transition-all"
+                data-testid="contradiction-row"
               >
                 <div className="flex items-start gap-2.5">
-                  <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${
-                    isCritical ? 'bg-red-900/50 text-red-400' : 'bg-amber-900/50 text-amber-400'
-                  }`}>
-                    {isCritical ? <ShieldAlert className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                  <div className="p-1.5 rounded-lg shrink-0 mt-0.5 bg-red-900/50 text-red-400">
+                    <ShieldAlert className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-slate-200 leading-snug">{rf.description}</p>
+                    <p className="text-xs font-medium text-slate-200 leading-snug">
+                      {c.explanation || c.type?.replace(/_/g, ' ') || 'Detegovaný rozpor'}
+                    </p>
                     <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase tracking-wider ${
-                          isCritical
-                            ? 'bg-red-900/60 text-red-300 border border-red-800'
-                            : 'bg-amber-900/60 text-amber-300 border border-amber-800'
-                        }`}>
-                          {CATEGORY_LABEL[rf.category] || rf.category}
+                        <span className="text-[9px] font-semibold px-2 py-0.5 rounded uppercase tracking-wider bg-red-900/60 text-red-300 border border-red-800">
+                          {c.severity || 'rozpor'}
                         </span>
-                        {rf.document_title && (
-                          <span className="text-[10px] text-slate-400 truncate max-w-[140px] font-mono">
-                            {rf.document_title}
+                        {c.entity_ref && (
+                          <span className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                            {c.entity_ref}
                           </span>
                         )}
                       </div>
-                      
-                      <button
-                        type="button"
-                        onClick={() => handleShare(rf)}
-                        className="flex items-center gap-1 text-[10px] font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded transition-colors"
-                        title="Zdieľať kartu alibi / rozporu"
-                      >
-                        <Share2 className="w-3 h-3" />
-                        <span>Karta</span>
-                      </button>
+                      {onCrossExamine && (
+                        <button
+                          type="button"
+                          onClick={() => onCrossExamine(c)}
+                          data-testid="cross-exam-contradiction"
+                          className="flex items-center gap-1 text-[10px] font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded transition-colors"
+                          title="Generovať otázky na krížový výsluch"
+                        >
+                          <Gavel className="w-3 h-3" />
+                          <span>Výsluch</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
-            );
-          })
+            ))}
+
+            {redFlags.map((rf) => {
+              const isCritical = rf.category === 'geografická_nesúlad' || rf.category === 'rozpor' || rf.severity === 'critical';
+              return (
+                <div
+                  key={rf.id}
+                  className={`rounded-xl p-3 border transition-all ${
+                    isCritical
+                      ? 'border-red-900/70 bg-red-950/30 hover:border-red-700'
+                      : 'border-amber-900/60 bg-amber-950/25 hover:border-amber-700'
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${
+                      isCritical ? 'bg-red-900/50 text-red-400' : 'bg-amber-900/50 text-amber-400'
+                    }`}>
+                      {isCritical ? <ShieldAlert className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-slate-200 leading-snug">{rf.description}</p>
+                      <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase tracking-wider ${
+                            isCritical
+                              ? 'bg-red-900/60 text-red-300 border border-red-800'
+                              : 'bg-amber-900/60 text-amber-300 border border-amber-800'
+                          }`}>
+                            {CATEGORY_LABEL[rf.category] || rf.category}
+                          </span>
+                          {rf.document_title && (
+                            <span className="text-[10px] text-slate-400 truncate max-w-[140px] font-mono">
+                              {rf.document_title}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5">
+                          {onCrossExamine && (
+                            <button
+                              type="button"
+                              onClick={() => onCrossExamine(rf)}
+                              className="flex items-center gap-1 text-[10px] font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded transition-colors"
+                              title="Generovať otázky na krížový výsluch"
+                            >
+                              <Gavel className="w-3 h-3" />
+                              <span>Výsluch</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleShare(rf)}
+                            className="flex items-center gap-1 text-[10px] font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded transition-colors"
+                            title="Zdieľať kartu alibi / rozporu"
+                          >
+                            <Share2 className="w-3 h-3" />
+                            <span>Karta</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
 

@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Link2, X, Clock, Quote, FileText } from 'lucide-react';
+import { User, Link2, X, Clock, Quote, FileText, Gavel } from 'lucide-react';
 import { TYPE_COLOR } from '@/lib/forenzUtils';
 
 const spring = { type: 'spring', stiffness: 300, damping: 30 };
 
-export default function PersonPanel({ person, edge, onClose, onShowEvidence }) {
+export default function PersonPanel({ person, edge, onClose, onShowEvidence, onCrossExamine }) {
   const key = edge ? `edge-${edge.id}` : person ? `person-${person.id}` : 'empty';
   let content;
 
@@ -105,6 +105,17 @@ export default function PersonPanel({ person, edge, onClose, onShowEvidence }) {
             >
               <FileText className="w-3.5 h-3.5" />
               Zobraziť dôkaz v Kartotéke
+            </button>
+          )}
+          {onCrossExamine && (
+            <button
+              type="button"
+              onClick={() => onCrossExamine(person)}
+              data-testid="cross-exam-person"
+              className="mt-1 w-full inline-flex items-center justify-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 transition-colors font-semibold"
+            >
+              <Gavel className="w-3.5 h-3.5" />
+              Krížový výsluch
             </button>
           )}
         </div>

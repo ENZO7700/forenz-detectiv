@@ -1,6 +1,35 @@
 import html2canvas from 'html2canvas';
 
 /**
+ * Capture DOM element as PNG bytes (high-DPI / ~2K when element is large enough).
+ * Does not trigger download.
+ * @param {HTMLElement} element
+ * @returns {Promise<Uint8Array>}
+ */
+export async function captureElementAsPngBytes(element) {
+  if (!element) {
+    throw new Error('Element pre export do PNG neexistuje.');
+  }
+
+  const retinaScale = typeof window !== 'undefined' ? Math.max(2, window.devicePixelRatio || 2) : 2;
+
+  const canvas = await html2canvas(element, {
+    scale: retinaScale,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#020617',
+    logging: false
+  });
+
+  const dataUrl = canvas.toDataURL('image/png');
+  const b64 = dataUrl.split(',')[1] || '';
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+/**
  * Exportuje zadaný DOM element do PNG obrázku s vysokým rozlíšením (Retina/High-DPI 2K).
  * @param {HTMLElement} element - DOM element na export
  * @param {string} filename - Názov výsledného súboru (bez prípony alebo s .png)

@@ -138,6 +138,14 @@ export function trackPdfExported(pageCount = 1, withHash = true) {
   trackEvent('pdf_exported', { page_count: pageCount, with_hash: withHash });
 }
 
+export function trackCourtDossierExported(fileCount = 5) {
+  trackEvent('court_dossier_exported', { file_count: fileCount });
+}
+
+export function trackCrossExamGenerated(mode = 'mild', questionCount = 0) {
+  trackEvent('cross_exam_generated', { mode, question_count: questionCount });
+}
+
 export function trackShareCardGenerated(type = 'alibi_impossible') {
   trackEvent('share_card_generated', { type });
 }

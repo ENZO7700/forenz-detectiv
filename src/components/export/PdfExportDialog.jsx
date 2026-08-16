@@ -1,24 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { FileText, ShieldCheck, Download, Loader2, Hash, CheckCircle2 } from 'lucide-react';
+import { FileText, ShieldCheck, Download, Loader2, Hash, CheckCircle2, Package } from 'lucide-react';
 import { exportForensicCasePdf } from '@/lib/pdfExporter';
+import { exportCourtDossier } from '@/lib/courtDossier';
 import { generateCaseIntegrityDigest } from '@/utils/cryptoUtils';
 
 export default function PdfExportDialog({
   isOpen,
   onClose,
   onExported = null,
+  onDossierExported = null,
   documents = [],
   persons = [],
   relationships = [],
   redFlags = [],
   contradictions = [],
   events = [],
+  claims = [],
+  auditLogs = [],
   graphCanvasElement = null,
+  mapElement = null,
   scopeTitle = 'Vyšetrovací spis'
 }) {
   const [loading, setLoading] = useState(false);
+  const [dossierLoading, setDossierLoading] = useState(false);
   const [sha256, setSha256] = useState('');
   const [options, setOptions] = useState({
     includeCitations: true,
@@ -62,6 +68,34 @@ export default function PdfExportDialog({
       setLoading(false);
     }
   };
+
+  const handleDossierExport = async () => {
+    try {
+      setDossierLoading(true);
+      const result = await exportCourtDossier({
+        documents,
+        persons,
+        relationships,
+        redFlags,
+        contradictions,
+        events,
+        claims,
+        auditLogs,
+        graphElement: graphCanvasElement,
+        mapElement,
+        scopeTitle,
+        download: true
+      });
+      onDossierExported?.(result);
+      onClose();
+    } catch (err) {
+      console.error('Chyba pri generovaní Court Dossier ZIP:', err);
+    } finally {
+      setDossierLoading(false);
+    }
+  };
+
+  const busy = loading || dossierLoading;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -138,26 +172,50 @@ export default function PdfExportDialog({
           </label>
         </div>
 
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 space-y-1.5">
+          <p className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <Package className="h-3.5 w-3.5 text-amber-400" />
+            Court Intelligence Dossier (ZIP)
+          </p>
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            PDF protokol + CSV rozporov + 2K PNG graf/alibi mapa + JSON audit so SHA-256 reťazcom dôkazov.
+          </p>
+        </div>
+
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+        <div className="flex items-center justify-between pt-4 border-t border-slate-800 gap-2 flex-wrap">
           <Button
             type="button"
             variant="ghost"
             onClick={onClose}
             className="text-slate-400 hover:text-white"
+            disabled={busy}
           >
             Zrušiť
           </Button>
 
-          <Button
-            type="button"
-            onClick={handleExport}
-            disabled={loading}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold gap-2 shadow-lg shadow-amber-500/20"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Exportovať PDF protokol
-          </Button>
+          <div className="flex gap-2 flex-wrap justify-end">
+            <Button
+              type="button"
+              onClick={handleDossierExport}
+              disabled={busy}
+              variant="outline"
+              className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 font-semibold gap-2"
+            >
+              {dossierLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Package className="h-4 w-4" />}
+              Exportovať Dossier ZIP
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleExport}
+              disabled={busy}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold gap-2 shadow-lg shadow-amber-500/20"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Exportovať PDF protokol
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

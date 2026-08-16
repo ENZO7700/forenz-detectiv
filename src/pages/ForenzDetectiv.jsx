@@ -33,7 +33,7 @@ import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import PdfExportDialog from '@/components/export/PdfExportDialog';
 import { saveDocumentOffline, saveCaseOffline } from '@/lib/offlineDb';
 import { withAiRetry } from '@/lib/aiRetry';
-import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated } from '@/lib/analytics';
+import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated, trackCourtDossierExported, trackCrossExamGenerated } from '@/lib/analytics';
 import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin, Search, Upload, XOctagon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileDrawer from '@/components/forenz/MobileDrawer';
@@ -41,6 +41,7 @@ import MobileBottomNav from '@/components/forenz/MobileBottomNav';
 import MobileDashboard from '@/components/forenz/MobileDashboard';
 import IdentityPanel from '@/components/forenz/IdentityPanel';
 import CollapsibleSidebar from '@/components/forenz/CollapsibleSidebar';
+import CrossExamDialog from '@/components/court/CrossExamDialog';
 import { useForenzStore } from '@/store/useForenzStore';
 import { usePlanStore } from '@/store/usePlanStore';
 import { useAuditStore } from '@/store/useAuditStore';
@@ -137,6 +138,9 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const [auditOpen, setAuditOpen] = useState(false);
   const [pdfExportOpen, setPdfExportOpen] = useState(false);
   const [pdfExportScope, setPdfExportScope] = useState('selected'); // 'selected' | 'all'
+  const [crossExamOpen, setCrossExamOpen] = useState(false);
+  const [crossExamTarget, setCrossExamTarget] = useState(null);
+  const [crossExamKind, setCrossExamKind] = useState('contradiction');
   const replayRef = useRef(null);
   const pulseRef = useRef(null);
   const abortControllerRef = useRef(null);
@@ -163,6 +167,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const setPricingModalOpen = usePlanStore((s) => s.setPricingModalOpen);
   const canAddDocument = usePlanStore((s) => s.canAddDocument);
   const logAction = useAuditStore((s) => s.logAction);
+  const auditLogs = useAuditStore((s) => s.logs);
 
   const openPaywall = useCallback((reason) => {
     logAction('PAYWALL_OPENED', { reason });
@@ -890,6 +895,31 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     showToast('PDF report bol úspešne vygenerovaný.');
   };
 
+  const handleDossierExported = (result) => {
+    logAction('COURT_DOSSIER_EXPORTED', {
+      scope: pdfExportScope,
+      zipSha256: result?.zipSha256,
+      tip: result?.chainOfCustody?.tip
+    });
+    trackCourtDossierExported(result?.manifest?.length || 5);
+    showToast('Court Dossier ZIP bol vygenerovaný.');
+  };
+
+  const openCrossExam = useCallback((target, kind = 'contradiction') => {
+    setCrossExamTarget(target);
+    setCrossExamKind(kind);
+    setCrossExamOpen(true);
+  }, []);
+
+  const handleCrossExamGenerated = useCallback((out) => {
+    logAction('CROSS_EXAM_GENERATED', {
+      mode: out?.mode?.id || out?.mode,
+      count: out?.questions?.length || 0,
+      source: out?.source
+    });
+    trackCrossExamGenerated(out?.mode?.id || 'mild', out?.questions?.length || 0);
+  }, [logAction]);
+
   // Replay controls
   const stopReplay = useCallback(() => {
     if (replayRef.current) {
@@ -1201,6 +1231,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                     onJumpToPerson={handleJumpToPerson}
                     onJumpToEdge={handleJumpToEdge}
                     onJumpToContradiction={handleJumpToContradiction}
+                    onCrossExamine={(c) => openCrossExam(c, 'contradiction')}
                     readOnly={readOnly}
                   />
                 </Suspense>
@@ -1281,12 +1312,17 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                       person={selectedPerson}
                       edge={selectedEdge}
                       onShowEvidence={handleJumpToArchive}
+                      onCrossExamine={(p) => openCrossExam(p, 'person')}
                       onClose={() => {
                         setSelectedPerson(null);
                         setSelectedEdge(null);
                       }}
                     />
-                    <RedFlagsPanel redFlags={visibleRedFlags} />
+                    <RedFlagsPanel
+                      redFlags={visibleRedFlags}
+                      contradictions={visibleContradictions}
+                      onCrossExamine={(c) => openCrossExam(c, 'contradiction')}
+                    />
                   </div>
                 </CollapsibleSidebar>
               </div>
@@ -1389,18 +1425,33 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         isOpen={pdfExportOpen}
         onClose={handlePdfDialogClose}
         onExported={handlePdfExported}
+        onDossierExported={handleDossierExported}
         documents={pdfExportScope === 'all' ? documents : (selectedDocId ? documents.filter((d) => d.id === selectedDocId) : documents)}
         persons={pdfExportScope === 'all' ? persons : visiblePersons}
         relationships={pdfExportScope === 'all' ? relationships : visibleEdges}
         redFlags={pdfExportScope === 'all' ? redFlags : visibleRedFlags}
         contradictions={pdfExportScope === 'all' ? contradictions : visibleContradictions}
         events={pdfExportScope === 'all' ? events : visibleEvents}
+        claims={pdfExportScope === 'all' ? claims : visibleClaims}
+        auditLogs={auditLogs}
         graphCanvasElement={typeof document !== 'undefined' ? document.querySelector('.relative.flex-1 canvas') : null}
+        mapElement={typeof document !== 'undefined' ? document.querySelector('[data-testid="alibi-map"], .leaflet-container') : null}
         scopeTitle={
           pdfExportScope === 'all'
             ? 'Kompletný vyšetrovací archív'
             : (selectedDocId ? `Výpoveď: ${documents.find((d) => d.id === selectedDocId)?.title || selectedDocId}` : 'Celý prípad')
         }
+      />
+
+      <CrossExamDialog
+        isOpen={crossExamOpen}
+        onClose={() => setCrossExamOpen(false)}
+        target={crossExamTarget}
+        targetKind={crossExamKind}
+        documents={documents}
+        claims={claims}
+        contradictions={contradictions}
+        onGenerated={handleCrossExamGenerated}
       />
     </div>
   );

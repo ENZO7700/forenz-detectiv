@@ -2,26 +2,35 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import WelcomeIntroModal from '@/components/forenz/WelcomeIntroModal';
+import { I18nProvider } from '@/i18n/i18nContext';
 
 describe('WelcomeIntroModal (3x Welcome Onboarding)', () => {
-  it('zobrazí prvý krok sprievodcu s možnosťou prejsť ďalej', () => {
+  it('zobrazí sprievodcu s možnosťou pokračovať', () => {
     const handleClose = vi.fn();
-    render(<WelcomeIntroModal open={true} onClose={handleClose} />);
+    render(
+      <I18nProvider>
+        <WelcomeIntroModal open={true} onClose={handleClose} />
+      </I18nProvider>
+    );
 
-    // Krok 1 text
-    expect(screen.getByText(/Sprievodca systémom/i)).toBeInTheDocument();
-    expect(screen.getByText(/Skenovanie a extrakcia slovenských výpovedí/i)).toBeInTheDocument();
+    // Titulok a funkcie
+    expect(screen.getByText(/Odhaľte rozpory a nemožné alibi za minúty/i)).toBeInTheDocument();
+    expect(screen.getByText(/AI extrakcia výpovedí/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Detekcia rozporov/i })).toBeInTheDocument();
+    expect(screen.getByText(/Alibi mapa/i)).toBeInTheDocument();
 
-    // Klik na tlačidlo "Ďalej"
-    const nextBtn = screen.getByRole('button', { name: /Ďalej/i });
-    fireEvent.click(nextBtn);
-
-    // Krok 2 text v hlavičke
-    expect(screen.getByText(/Krok 2 zo 3/i)).toBeInTheDocument();
+    // Klik na tlačidlo "Pokračovať — nahrať spis"
+    const continueBtn = screen.getByRole('button', { name: /Pokračovať|welcome\.continue/i });
+    fireEvent.click(continueBtn);
+    expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
   it('nezobrazí modal, keď je open=false', () => {
-    const { container } = render(<WelcomeIntroModal open={false} onClose={() => {}} />);
+    const { container } = render(
+      <I18nProvider>
+        <WelcomeIntroModal open={false} onClose={() => {}} />
+      </I18nProvider>
+    );
     expect(container.firstChild).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Users, MapPin, Car, Network, Flag, AlertOctagon, CalendarClock, ExternalLink, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Users, MapPin, Car, Network, Flag, AlertOctagon, CalendarClock, ExternalLink, FileText, ChevronDown, ChevronUp, Gavel } from 'lucide-react';
 
 const STATUS = {
   pending: { label: 'Čaká', cls: 'bg-amber-500/15 text-amber-300 border border-amber-500/30' },
@@ -53,6 +53,7 @@ export default function ArchiveMetaPanel({
   onJumpToPerson,
   _onJumpToEdge,
   onJumpToContradiction,
+  onCrossExamine,
   readOnly
 }) {
   const [expandedQuotes, setExpandedQuotes] = useState({});
@@ -147,13 +148,28 @@ export default function ArchiveMetaPanel({
             {docContradictions.length > 0 && (
               <Section title="Detegované rozpory" accent="red">
                 {docContradictions.map((c) => (
-                  <LinkRow key={c.id} onClick={() => onJumpToContradiction(c)}>
-                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${c.severity === 'high' ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}`}>
-                      {c.severity}
-                    </span>
-                    <span className="ml-1 text-xs text-slate-300">{c.type?.replace(/_/g, ' ')}</span>
-                    {c.explanation && <span className="block text-[10px] text-slate-400">{c.explanation}</span>}
-                  </LinkRow>
+                  <div key={c.id} className="flex items-stretch">
+                    <div className="flex-1 min-w-0">
+                      <LinkRow onClick={() => onJumpToContradiction(c)}>
+                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${c.severity === 'high' ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}`}>
+                          {c.severity}
+                        </span>
+                        <span className="ml-1 text-xs text-slate-300">{c.type?.replace(/_/g, ' ')}</span>
+                        {c.explanation && <span className="block text-[10px] text-slate-400">{c.explanation}</span>}
+                      </LinkRow>
+                    </div>
+                    {onCrossExamine && (
+                      <button
+                        type="button"
+                        onClick={() => onCrossExamine(c)}
+                        className="px-2 text-amber-400 hover:text-amber-300 hover:bg-slate-800/80 transition-colors"
+                        title="Krížový výsluch"
+                        data-testid="archive-cross-exam"
+                      >
+                        <Gavel className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 ))}
               </Section>
             )}

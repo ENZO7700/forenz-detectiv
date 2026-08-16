@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./src/*"]
     },
@@ -19,4 +20,4 @@
   },
   "include": ["src/**/*", "base44/**/*"],
   "exclude": ["node_modules", "dist"]
-} 
+}

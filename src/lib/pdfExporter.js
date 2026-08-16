@@ -1,5 +1,22 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { generateCaseIntegrityDigest } from '@/utils/cryptoUtils';
+import { generateCaseIntegrityDigest } from '../utils/cryptoUtils.js';
+
+/** Helvetica/WinAnsi cannot encode Slovak diacritics — transliterate for PDF drawText. */
+function pdfSafe(text) {
+  return String(text ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[ľĺ]/gi, (ch) => (ch === ch.toUpperCase() ? 'L' : 'l'))
+    .replace(/[ďťň]/gi, (ch) => {
+      const base = { ď: 'd', Ď: 'D', ť: 't', Ť: 'T', ň: 'n', Ň: 'N' };
+      return base[ch] || ch;
+    })
+    .replace(/[^\x20-\x7E\n\r\t]/g, '?');
+}
+
+function drawSafeText(page, text, opts) {
+  page.drawText(pdfSafe(text), opts);
+}
 
 /**
  * Súdny PDF Exporter s kryptografickým SHA-256 hashóm a reťazcom dôkazov.
@@ -20,7 +37,9 @@ export async function exportForensicCasePdf({
     includeMapAlibi: true,
     includeAuditLog: true
   },
-  customSha256 = null
+  customSha256 = null,
+  download = true,
+  fixedGeneratedAt = null
 }) {
   // 1. Výpočet kryptografického kontrolného súčtu (SHA-256)
   const sha256Digest = customSha256 || await generateCaseIntegrityDigest({
@@ -29,15 +48,21 @@ export async function exportForensicCasePdf({
     redFlags,
     contradictions,
     events,
-    caseTitle: scopeTitle
+    caseTitle: scopeTitle,
+    generatedAt: fixedGeneratedAt
   });
 
   const lang = typeof window !== 'undefined' ? localStorage.getItem('forenz_lang') : 'sk';
   const caseLabel = lang === 'cs' ? 'KAUZA' : 'KAUZA';
   const dateLabel = lang === 'cs' ? 'DATUM' : 'DÁTUM';
   const localeTag = lang === 'cs' ? 'cs-CZ' : 'sk-SK';
+  const stampDate = fixedGeneratedAt ? new Date(fixedGeneratedAt) : new Date();
 
   const pdfDoc = await PDFDocument.create();
+  if (fixedGeneratedAt) {
+    pdfDoc.setCreationDate(stampDate);
+    pdfDoc.setModificationDate(stampDate);
+  }
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
@@ -76,7 +101,7 @@ export async function exportForensicCasePdf({
     color: rgb(0.96, 0.62, 0.04) // amber-500
   });
 
-  currentPage.drawText('PROTOKOL O FORENZNEJ ANALÝZE SPISU A ROZPOROV', {
+  drawSafeText(currentPage, 'PROTOKOL O FORENZNEJ ANALÝZE SPISU A ROZPOROV', {
     x: MARGIN,
     y: PAGE_HEIGHT - 28,
     size: 13,
@@ -84,7 +109,7 @@ export async function exportForensicCasePdf({
     color: rgb(1, 1, 1)
   });
 
-  currentPage.drawText(`${caseLabel}: ${scopeTitle.toUpperCase()}  |  ${dateLabel}: ${new Date().toLocaleString(localeTag)}`, {
+  drawSafeText(currentPage, `${caseLabel}: ${scopeTitle.toUpperCase()}  |  ${dateLabel}: ${stampDate.toLocaleString(localeTag)}`, {
     x: MARGIN,
     y: PAGE_HEIGHT - 44,
     size: 8,
@@ -92,7 +117,7 @@ export async function exportForensicCasePdf({
     color: rgb(0.7, 0.75, 0.82)
   });
 
-  currentPage.drawText(`SHA-256 HASH INTEGRITY: ${sha256Digest.slice(0, 48)}...`, {
+  drawSafeText(currentPage, `SHA-256 HASH INTEGRITY: ${sha256Digest.slice(0, 48)}...`, {
     x: MARGIN,
     y: PAGE_HEIGHT - 60,
     size: 7,
@@ -104,7 +129,7 @@ export async function exportForensicCasePdf({
 
   const drawSectionTitle = (title) => {
     checkPageBreak(35);
-    currentPage.drawText(title.toUpperCase(), {
+    drawSafeText(currentPage, title.toUpperCase(), {
       x: MARGIN,
       y: cursorY,
       size: 10,
@@ -145,7 +170,7 @@ export async function exportForensicCasePdf({
       borderWidth: 1
     });
 
-    currentPage.drawText(s.val, {
+    drawSafeText(currentPage, s.val, {
       x: bx + 10,
       y: cursorY - 18,
       size: 14,
@@ -153,7 +178,7 @@ export async function exportForensicCasePdf({
       color: rgb(0.08, 0.24, 0.65)
     });
 
-    currentPage.drawText(s.label, {
+    drawSafeText(currentPage, s.label, {
       x: bx + 10,
       y: cursorY - 30,
       size: 7,
@@ -168,14 +193,14 @@ export async function exportForensicCasePdf({
   if (documents.length > 0) {
     documents.slice(0, 10).forEach((doc) => {
       checkPageBreak(18);
-      currentPage.drawText(`• ${doc.title || doc.file_name || 'Dokument'}`, {
+      drawSafeText(currentPage, `• ${doc.title || doc.file_name || 'Dokument'}`, {
         x: MARGIN + 5,
         y: cursorY,
         size: 8,
         font: fontBold,
         color: rgb(0.2, 0.25, 0.35)
       });
-      currentPage.drawText(`Dĺžka: ${(doc.content || '').length} znakov | Dátum vloženia: ${doc.created_at || 'Neuvedený'}`, {
+      drawSafeText(currentPage, `Dĺžka: ${(doc.content || '').length} znakov | Dátum vloženia: ${doc.created_at || 'Neuvedený'}`, {
         x: MARGIN + 220,
         y: cursorY,
         size: 7.5,
@@ -203,7 +228,7 @@ export async function exportForensicCasePdf({
         borderWidth: 1
       });
 
-      currentPage.drawText(`[KRITICKÝ ROZPOR] ${c.entity_ref || c.person || 'Nezrovnalosť'}: ${c.type || 'Fyzikálny nesúlad'}`, {
+      drawSafeText(currentPage, `[KRITICKÝ ROZPOR] ${c.entity_ref || c.person || 'Nezrovnalosť'}: ${c.type || 'Fyzikálny nesúlad'}`, {
         x: MARGIN + 10,
         y: cursorY - 14,
         size: 9,
@@ -212,7 +237,7 @@ export async function exportForensicCasePdf({
       });
 
       const exp = (c.explanation || c.description || '').slice(0, 120);
-      currentPage.drawText(exp, {
+      drawSafeText(currentPage, exp, {
         x: MARGIN + 10,
         y: cursorY - 28,
         size: 8,
@@ -222,7 +247,7 @@ export async function exportForensicCasePdf({
 
       if (c.quoteA || c.quoteB) {
         const qSnippet = `Citácia: "${(c.quoteA || c.quoteB || '').slice(0, 110)}"`;
-        currentPage.drawText(qSnippet, {
+        drawSafeText(currentPage, qSnippet, {
           x: MARGIN + 10,
           y: cursorY - 42,
           size: 7.5,
@@ -236,7 +261,7 @@ export async function exportForensicCasePdf({
 
     redFlags.slice(0, 6).forEach((rf) => {
       checkPageBreak(25);
-      currentPage.drawText(`• [VAROVANIE] ${rf.description || rf}`, {
+      drawSafeText(currentPage, `• [VAROVANIE] ${rf.description || rf}`, {
         x: MARGIN + 5,
         y: cursorY,
         size: 8,
@@ -287,7 +312,7 @@ export async function exportForensicCasePdf({
     borderWidth: 1
   });
 
-  currentPage.drawText('Potenciálne relevantné ustanovenie: § 346 (Krivá výpoveď a krivá prísaha)', {
+  drawSafeText(currentPage, 'Potenciálne relevantné ustanovenie: § 346 (Krivá výpoveď a krivá prísaha)', {
     x: MARGIN + 10,
     y: cursorY - 16,
     size: 8.5,
@@ -295,7 +320,7 @@ export async function exportForensicCasePdf({
     color: rgb(0.08, 0.24, 0.65)
   });
 
-  currentPage.drawText('Normatívna doložka: Závery protokolu majú informatívny a analytický charakter.', {
+  drawSafeText(currentPage, 'Normatívna doložka: Závery protokolu majú informatívny a analytický charakter.', {
     x: MARGIN + 10,
     y: cursorY - 30,
     size: 7.5,
@@ -303,7 +328,7 @@ export async function exportForensicCasePdf({
     color: rgb(0.25, 0.3, 0.4)
   });
 
-  currentPage.drawText('Kryptografická pečať garantuje, že analyzované vstupné dáta neboli dodatočne zmenené.', {
+  drawSafeText(currentPage, 'Kryptografická pečať garantuje, že analyzované vstupné dáta neboli dodatočne zmenené.', {
     x: MARGIN + 10,
     y: cursorY - 44,
     size: 7.5,
@@ -311,7 +336,7 @@ export async function exportForensicCasePdf({
     color: rgb(0.2, 0.2, 0.2)
   });
 
-  currentPage.drawText('Vyžaduje finálne posúdenie advokátom / vyšetrovateľom: ÁNO (STRICT HUMAN IN THE LOOP)', {
+  drawSafeText(currentPage, 'Vyžaduje finálne posúdenie advokátom / vyšetrovateľom: ÁNO (STRICT HUMAN IN THE LOOP)', {
     x: MARGIN + 10,
     y: cursorY - 60,
     size: 8,
@@ -334,7 +359,7 @@ export async function exportForensicCasePdf({
       color: rgb(0.85, 0.88, 0.92)
     });
 
-    page.drawText(`ForenzDetectiv Forensic Protocol  |  Strana ${i + 1} z ${pageCount}`, {
+    drawSafeText(page, `ForenzDetectiv Forensic Protocol  |  Strana ${i + 1} z ${pageCount}`, {
       x: MARGIN,
       y: 20,
       size: 7,
@@ -342,7 +367,7 @@ export async function exportForensicCasePdf({
       color: rgb(0.45, 0.5, 0.55)
     });
 
-    page.drawText(`SHA-256: ${sha256Digest.slice(0, 32)}...`, {
+    drawSafeText(page, `SHA-256: ${sha256Digest.slice(0, 32)}...`, {
       x: PAGE_WIDTH - MARGIN - 170,
       y: 20,
       size: 7,
@@ -352,14 +377,19 @@ export async function exportForensicCasePdf({
   }
 
   const pdfBytes = await pdfDoc.save();
-  const blob = new Blob([pdfBytes.buffer], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `forenz-protokol-${scopeTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-')}-${new Date().toISOString().slice(0, 10)}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  return { sha256: sha256Digest };
+  const bytes = pdfBytes instanceof Uint8Array ? pdfBytes : new Uint8Array(pdfBytes);
+
+  if (download && typeof document !== 'undefined') {
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `forenz-protokol-${scopeTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-')}-${stampDate.toISOString().slice(0, 10)}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  return { sha256: sha256Digest, pdfBytes: bytes };
 }

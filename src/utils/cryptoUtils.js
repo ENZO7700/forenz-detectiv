@@ -49,11 +49,12 @@ export async function generateCaseIntegrityDigest({
   redFlags = [],
   contradictions = [],
   events = [],
-  caseTitle = 'ForenzDetectiv Case'
+  caseTitle = 'ForenzDetectiv Case',
+  generatedAt = null
 }) {
   const payload = {
     caseTitle,
-    generatedAt: new Date().toISOString(),
+    generatedAt: generatedAt || new Date().toISOString(),
     documents: (documents || []).map(d => ({
       id: d.id,
       title: d.title || d.file_name,
@@ -70,4 +71,34 @@ export async function generateCaseIntegrityDigest({
 
   const digestHex = await calculateSha256Digest(JSON.stringify(payload));
   return `sha256:${digestHex}`;
+}
+
+/**
+ * Deterministic SHA-256 chain of custody for court dossiers.
+ * Each link hashes: previousDigest + payload canonical JSON.
+ */
+export async function buildSha256Chain(links = [], { seed = 'forenz-detectiv-custody-v1' } = {}) {
+  const chain = [];
+  let previous = await calculateSha256Digest(seed);
+
+  for (const link of links) {
+    const payload = typeof link === 'string' ? link : JSON.stringify(link);
+    const digest = await calculateSha256Digest(`${previous}|${payload}`);
+    const entry = {
+      index: chain.length,
+      label: link?.label || link?.name || `link-${chain.length}`,
+      digest: `sha256:${digest}`,
+      previousDigest: `sha256:${previous}`,
+      timestamp: link?.timestamp || null
+    };
+    chain.push(entry);
+    previous = digest;
+  }
+
+  return {
+    algorithm: 'SHA-256',
+    seed,
+    tip: `sha256:${previous}`,
+    links: chain
+  };
 }

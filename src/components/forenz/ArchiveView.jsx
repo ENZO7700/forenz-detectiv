@@ -19,6 +19,7 @@ export default function ArchiveView({
   onJumpToPerson,
   onJumpToEdge,
   onJumpToContradiction,
+  onCrossExamine,
   readOnly
 }) {
   const effectiveDocId = selectedDocId || documents[0]?.id || null;
@@ -61,6 +62,7 @@ export default function ArchiveView({
           onJumpToPerson={onJumpToPerson}
           onJumpToEdge={onJumpToEdge}
           onJumpToContradiction={onJumpToContradiction}
+          onCrossExamine={onCrossExamine}
           readOnly={readOnly}
         />
       </div>
