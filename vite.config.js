@@ -10,12 +10,9 @@ const __dirname = path.dirname(__filename);
 // https://vite.dev/config/
 export default defineConfig({
   server: {
-    host: true,
+    host: 'localhost',
     port: 5173,
-    strictPort: false,
-    hmr: {
-      clientPort: 5173
-    }
+    strictPort: false
   },
   plugins: [
     base44({
