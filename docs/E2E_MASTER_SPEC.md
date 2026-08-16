@@ -8,7 +8,8 @@ Mapovanie 12 scenárov na **Playwright** (`e2e/master/*.spec.js`) a existujúce 
 # Unit + legal + upload gates (rýchle, CI-friendly)
 npm test
 
-# Browser E2E — Playwright štartuje Vite s VITE_ENABLE_DEMO=true (demo BA–KE)
+# Browser E2E — Playwright štartuje Vite na **127.0.0.1:5174** s `VITE_ENABLE_DEMO=true`
+# (+ `window.__FORENZ_E2E_DEMO__` v addInitScript). Port 5174 = oddelený od bežného `npm run dev` (5173).
 npm run test:e2e
 
 # Len master suite

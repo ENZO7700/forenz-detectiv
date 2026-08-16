@@ -7,9 +7,12 @@ import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
 export async function gotoApp(page, pathName = '/') {
+  await page.addInitScript(() => {
+    window.__FORENZ_E2E_DEMO__ = true;
+  });
   await page.goto(pathName, { waitUntil: 'domcontentloaded' });
   // Mobile header h1 is in DOM but CSS-hidden on desktop — assert via body text
-  await expect(page.locator('body')).toContainText('ForenzDetectiv', { timeout: 30_000 });
+  await expect(page.locator('body')).toContainText(/ForenzDetectiv|ForenzDetektív/i, { timeout: 30_000 });
 }
 
 export async function dismissQuickTipIfPresent(page) {

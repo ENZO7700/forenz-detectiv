@@ -27,6 +27,7 @@ export default function MobileBottomNav({ activeView, onTabChange, onSherlock })
 
   return (
     <nav
+      data-testid="mobile-bottom-nav"
       className="lg:hidden shrink-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 text-slate-100"
       style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
     >

@@ -1,7 +1,8 @@
 // playwright.config.js
 import { defineConfig, devices } from '@playwright/test';
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:5173';
+const PORT = process.env.PLAYWRIGHT_PORT || '5174';
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
@@ -29,8 +30,9 @@ export default defineConfig({
     }
   ],
   webServer: {
-    // Demo BA–KE must be on for master E2E (isDemoEnabled requires VITE_ENABLE_DEMO=true)
-    command: 'npm run dev -- --host 127.0.0.1 --port 5173',
+    // Dedicated E2E port (5174) avoids clashes with a stuck `npm run dev` on 5173.
+    // Demo BA–KE: window.__FORENZ_E2E_DEMO__ via addInitScript + VITE_ENABLE_DEMO.
+    command: `npm run dev -- --host 127.0.0.1 --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: false,
     timeout: 120_000,
