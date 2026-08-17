@@ -19,7 +19,9 @@ for (const file of testFiles) {
   const relPath = path.join('tests', file);
   process.stdout.write(`▶ ${file.padEnd(38)} `);
   try {
-    const out = execSync(`node --test "${relPath}"`, {
+    // Node 22.14 cannot import .ts from tests without stripping types.
+    // GitHub Actions Node 22.x is the same gate as npm test.
+    const out = execSync(`node --experimental-strip-types --test "${relPath}"`, {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'pipe']
     });
