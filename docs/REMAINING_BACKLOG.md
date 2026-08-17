@@ -56,7 +56,7 @@ flowchart TD
 
 **Title:** `ops: unlock GitHub billing and get CI green on main`
 
-**Why:** Actions job `test-lint-build` končí failure s 0 steps — účet je locked due to billing. Lokálny gate už PASS; bez odomknutia nie je GitHub „zelený“.
+**Why:** Actions job `test-lint-build` končí failure s 0 steps — účet je locked due to billing. Auto-run na push/PR je preto vypnutý (iba `workflow_dispatch`), aby nové commity na `main` neostali červené. Lokálny gate: `npm test && npm run lint && npm run typecheck && npm run build`.
 
 **Acceptance:**
 

@@ -1,10 +1,11 @@
 name: CI
 
+# GitHub-hosted runners currently fail immediately (billing lock, 0 steps, no runner).
+# Auto-run on push/PR posts a red check even though Vercel and the local gate pass.
+# Re-enable `push` / `pull_request` after billing is unlocked (docs/REMAINING_BACKLOG.md RB-01).
+# Local / Cloud Agent gate: npm test && npm run lint && npm run typecheck && npm run build
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   check:
