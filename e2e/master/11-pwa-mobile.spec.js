@@ -28,3 +28,34 @@ test.describe('S11 — PWA, mobilné UI & offline', () => {
     await context.setOffline(false);
   });
 });
+
+test.describe('S11b — iPhone 17 logical 393×852', () => {
+  test.use({ viewport: { width: 393, height: 852 } });
+
+  test('AppLayout dead zone + bottom nav', async ({ page }) => {
+    await gotoApp(page);
+    await dismissQuickTipIfPresent(page);
+    await expect(page.getByTestId('app-layout')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('camera-dead-zone')).toBeVisible();
+    await expect(page.getByTestId('mobile-bottom-nav')).toBeVisible();
+  });
+});
+
+test.describe('S11c — iPhone Air logical 420×912', () => {
+  test.use({ viewport: { width: 420, height: 912 } });
+
+  test('Touch chrome is below camera dead zone', async ({ page }) => {
+    await gotoApp(page);
+    await dismissQuickTipIfPresent(page);
+    const dead = page.getByTestId('camera-dead-zone');
+    const bar = page.getByTestId('m3-app-bar');
+    await expect(dead).toBeVisible({ timeout: 15_000 });
+    await expect(bar).toBeVisible();
+    const deadBox = await dead.boundingBox();
+    const barBox = await bar.boundingBox();
+    expect(deadBox).toBeTruthy();
+    expect(barBox).toBeTruthy();
+    expect(barBox.y).toBeGreaterThanOrEqual(deadBox.y + deadBox.height - 1);
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  });
+});

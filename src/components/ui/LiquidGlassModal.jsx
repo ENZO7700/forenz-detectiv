@@ -15,7 +15,7 @@ export default function LiquidGlassModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto" role="dialog" aria-modal="true">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto pt-[var(--camera-inset-top)] pb-[var(--safe-bottom)]" role="dialog" aria-modal="true">
         {/* Pozadie s hlbokým rozostrením */}
         <motion.div
           initial={{ opacity: 0 }}

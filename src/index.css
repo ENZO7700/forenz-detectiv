@@ -38,6 +38,29 @@
     --glass-border-subtle: rgba(255, 255, 255, 0.35);
     --glass-shadow: 0 16px 36px rgba(11, 59, 140, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
     --glass-blur: 24px;
+
+    /* iPhone 17 / Air camera + home-indicator insets */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --camera-inset-top: var(--safe-top);
+    --nav-h: 0px;
+    --sheet-offset: 1.5rem;
+  }
+
+  @media (max-width: 1023px) {
+    :root {
+      --camera-inset-top: max(var(--safe-top), 54px);
+      --nav-h: 3.5rem;
+      --sheet-offset: calc(var(--nav-h) + max(0.5rem, var(--safe-bottom)));
+    }
+  }
+
+  /* iPhone Air 6.5" 420×912 @3x — largest top inset in the 17 lineup (68pt) */
+  @media only screen and (device-width: 420px) and (device-height: 912px)
+    and (-webkit-device-pixel-ratio: 3) {
+    :root {
+      --camera-inset-top: 68px;
+    }
   }
 
   .dark {
@@ -74,6 +97,12 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100dvh;
   }
 
   body {
@@ -288,3 +317,19 @@
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Camera / Dynamic Island dead zone — no touch above the island */
+.camera-dead-zone {
+  height: var(--camera-inset-top);
+  width: 100%;
+  flex-shrink: 0;
+  pointer-events: none;
+  touch-action: none;
+}
+
+.touch-below-camera {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}

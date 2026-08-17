@@ -24,6 +24,7 @@ import HomeHero from '@/components/forenz/HomeHero';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ViewSkeleton } from '@/components/ui/SkeletonViews';
 import AppHeader from '@/components/forenz/AppHeader';
+import AppLayout from '@/components/layout/AppLayout';
 import PricingModal from '@/components/pricing/PricingModal';
 import PaywallGate from '@/components/pricing/PaywallGate';
 import TrustPackModal from '@/components/trust/TrustPackModal';
@@ -965,53 +966,52 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="h-dvh flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
-  return (
-    <div className="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
-      {/* 100% Responzívny Forenzný Header */}
-      <AppHeader
-        documents={documents}
-        persons={persons}
-        relationships={relationships}
-        redFlags={redFlags}
-        contradictions={contradictions}
-        flaggedPassages={flaggedPassages}
-        plan={plan}
-        showStats={showStats}
-        setShowStats={setShowStats}
-        activeShare={activeShare}
-        handleShare={handleShare}
-        handleRevokeShare={handleRevokeShare}
-        readOnly={readOnly}
-        scanning={scanning}
-        handleScan={handleScan}
-        handleBulkScan={handleBulkScan}
-        bulkProgress={bulkProgress}
-        onCancelProcessing={handleCancelProcessing}
-        onExport={handleExport}
-        onExportAll={handleExportAll}
-        onClearCase={() => {
-          if (window.confirm('Naozaj chcete zavrieť aktuálny spis a vrátiť sa na domovskú obrazovku?')) {
-            clearCase();
-          }
-        }}
-        onOpenMobileMenu={() => setMobileMenuOpen(true)}
-        onOpenSearch={() => setSearchOpen(true)}
-        onOpenIntro={() => setIntroOpen(true)}
-        onOpenPricing={() => setPricingModalOpen(true)}
-        onOpenTrust={() => setTrustOpen(true)}
-        onOpenAudit={() => setAuditOpen(true)}
-        onOpenReferral={() => setReferralOpen(true)}
-        onNavigateIdentity={() => setActiveView('identity')}
-        sharedBy={sharedBy}
-      />
+  const chromeHeader = (
+    <AppHeader
+      documents={documents}
+      persons={persons}
+      relationships={relationships}
+      redFlags={redFlags}
+      contradictions={contradictions}
+      flaggedPassages={flaggedPassages}
+      plan={plan}
+      showStats={showStats}
+      setShowStats={setShowStats}
+      activeShare={activeShare}
+      handleShare={handleShare}
+      handleRevokeShare={handleRevokeShare}
+      readOnly={readOnly}
+      scanning={scanning}
+      handleScan={handleScan}
+      handleBulkScan={handleBulkScan}
+      bulkProgress={bulkProgress}
+      onCancelProcessing={handleCancelProcessing}
+      onExport={handleExport}
+      onExportAll={handleExportAll}
+      onClearCase={() => {
+        if (window.confirm('Naozaj chcete zavrieť aktuálny spis a vrátiť sa na domovskú obrazovku?')) {
+          clearCase();
+        }
+      }}
+      onOpenMobileMenu={() => setMobileMenuOpen(true)}
+      onOpenSearch={() => setSearchOpen(true)}
+      onOpenIntro={() => setIntroOpen(true)}
+      onOpenPricing={() => setPricingModalOpen(true)}
+      onOpenTrust={() => setTrustOpen(true)}
+      onOpenAudit={() => setAuditOpen(true)}
+      onOpenReferral={() => setReferralOpen(true)}
+      onNavigateIdentity={() => setActiveView('identity')}
+      sharedBy={sharedBy}
+    />
+  );
 
-      {bulkProgress && (
+  const bulkBanner = bulkProgress ? (
         <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3 text-xs text-slate-300 shrink-0 shadow-md">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <Loader2 className="w-4 h-4 text-blue-400 animate-spin shrink-0" />
@@ -1067,20 +1067,66 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
             </button>
           </div>
         </div>
-      )}
+  ) : null;
 
-      {!readOnly && (
-        <StatsBar
-          documents={documents}
-          persons={persons}
-          relationships={relationships}
-          redFlags={redFlags}
-          flaggedPassages={flaggedPassages}
-          open={showStats}
-          onOpenChange={setShowStats}
-        />
+  return (
+    <>
+    <AppLayout
+      appBar={chromeHeader}
+      banner={bulkBanner}
+      nav={<MobileBottomNav activeView={activeView} onTabChange={handleViewChange} onSherlock={handleSherlockTab} />}
+      overlays={(
+        <>
+          {!readOnly && (
+            <StatsBar
+              documents={documents}
+              persons={persons}
+              relationships={relationships}
+              redFlags={redFlags}
+              flaggedPassages={flaggedPassages}
+              open={showStats}
+              onOpenChange={setShowStats}
+            />
+          )}
+          <SherlockChat
+            persons={visiblePersons}
+            edges={visibleEdges}
+            redFlags={visibleRedFlags}
+            flaggedPassages={visibleFlaggedPassages}
+            claims={visibleClaims}
+            events={visibleEvents}
+            contradictions={visibleContradictions}
+            openSignal={sherlockSignal}
+          />
+          {(toast || storeToast) && (
+            <div
+              role="status"
+              data-testid="app-toast"
+              className="fixed left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-white/80 backdrop-blur-3xl border border-white text-blue-800 text-sm shadow-xl"
+              style={{ bottom: 'calc(var(--sheet-offset) + 0.5rem)' }}
+            >
+              {toast || storeToast}
+            </div>
+          )}
+          {mobileMenuOpen && (
+            <MobileDrawer
+              user={currentUser}
+              activeView={activeView}
+              onNavigate={handleViewChange}
+              onClose={() => setMobileMenuOpen(false)}
+              onLogout={handleLogout}
+              onOpenIntro={() => setIntroOpen(true)}
+              onOpenPricing={() => setPricingModalOpen(true)}
+              onOpenTrust={() => setTrustOpen(true)}
+              onOpenReferral={() => setReferralOpen(true)}
+              onOpenAudit={() => setAuditOpen(true)}
+              plan={plan}
+              alertCount={redFlags.length + contradictions.length}
+            />
+          )}
+        </>
       )}
-
+    >
       {/* Navigation View Tabs (Desktop & Tablet) */}
       <div className="hidden lg:flex shrink-0 items-center px-4 py-2 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
         <div className="flex items-center gap-1.5">
@@ -1182,6 +1228,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                       locations={locations}
                       claims={claims}
                       contradictions={contradictions}
+                      persons={persons}
                     />
                   </Suspense>
                 </ErrorBoundary>
@@ -1321,47 +1368,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           </motion.div>
         </AnimatePresence>
       )}
-
-      {/* Sherlock AI Chat - Globálne plávajúce okno dostupné vo všetkých pohľadoch */}
-      <SherlockChat
-        persons={visiblePersons}
-        edges={visibleEdges}
-        redFlags={visibleRedFlags}
-        flaggedPassages={visibleFlaggedPassages}
-        claims={visibleClaims}
-        events={visibleEvents}
-        contradictions={visibleContradictions}
-        openSignal={sherlockSignal}
-      />
-
-      {(toast || storeToast) && (
-        <div
-          role="status"
-          data-testid="app-toast"
-          className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-white/80 backdrop-blur-3xl border border-white text-blue-800 text-sm shadow-xl"
-        >
-          {toast || storeToast}
-        </div>
-      )}
-
-      {mobileMenuOpen && (
-        <MobileDrawer
-          user={currentUser}
-          activeView={activeView}
-          onNavigate={handleViewChange}
-          onClose={() => setMobileMenuOpen(false)}
-          onLogout={handleLogout}
-          onOpenIntro={() => setIntroOpen(true)}
-          onOpenPricing={() => setPricingModalOpen(true)}
-          onOpenTrust={() => setTrustOpen(true)}
-          onOpenReferral={() => setReferralOpen(true)}
-          onOpenAudit={() => setAuditOpen(true)}
-          plan={plan}
-          alertCount={redFlags.length + contradictions.length}
-        />
-      )}
-
-      <MobileBottomNav activeView={activeView} onTabChange={handleViewChange} onSherlock={handleSherlockTab} />
+    </AppLayout>
 
       <QuickSearchDialog
         open={searchOpen}
@@ -1442,6 +1449,6 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         contradictions={contradictions}
         onGenerated={handleCrossExamGenerated}
       />
-    </div>
+    </>
   );
 }

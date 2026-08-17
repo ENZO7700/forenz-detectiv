@@ -6,6 +6,7 @@ import { resolveLocationCoords } from '../../../base44/shared/geospatialEngine.t
 import { MapPin, AlertTriangle, Filter } from 'lucide-react';
 import { trackAlibiChecked } from '@/lib/analytics';
 import { useAuditStore } from '@/store/useAuditStore';
+import AlibiImpossibleShareCard from './AlibiImpossibleShareCard';
 
 const createCustomIcon = (color, label) => {
   return L.divIcon({
@@ -38,9 +39,11 @@ export default function MapView({
   locations = [],
   claims = [],
   contradictions = [],
+  persons = [],
   className = ''
 }) {
   const [selectedPersonFilter, setSelectedPersonFilter] = useState('ALL');
+  const [selectedRoute, setSelectedRoute] = useState(null);
 
   const mapPoints = useMemo(() => {
     const points = [];
@@ -192,6 +195,13 @@ export default function MapView({
         </div>
       </div>
 
+      {/* Alibi Impossible Share Card Modal */}
+      <AlibiImpossibleShareCard
+        routes={[selectedRoute]}
+        persons={persons}
+        onClose={() => setSelectedRoute(null)}
+      />
+
       {/* Map Container s tmavou témou */}
       <div className="flex-1 w-full h-full min-h-[360px] relative z-0 bg-slate-950">
         <MapContainer
@@ -236,6 +246,9 @@ export default function MapView({
                 dashArray: '6, 8',
                 opacity: 0.9
               }}
+              eventHandlers={{
+                click: () => setSelectedRoute(route)
+              }}
             >
               <Popup>
                 <div className="p-2 max-w-xs text-slate-900 font-sans">
@@ -243,6 +256,15 @@ export default function MapView({
                     <AlertTriangle className="w-4 h-4" /> Nemožné alibi: {route.subject}
                   </div>
                   <p className="text-xs text-slate-700 leading-relaxed">{route.explanation}</p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedRoute(route);
+                    }}
+                    className="mt-2 w-full px-3 py-1.5 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Zobraziť detail
+                  </button>
                 </div>
               </Popup>
             </Polyline>

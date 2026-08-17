@@ -80,7 +80,7 @@ export default function StatsBar({
     <div
       ref={panelRef}
       data-testid="stats-drawer-root"
-      className="fixed z-40 right-20 lg:right-24 bottom-[calc(3.5rem+max(0.5rem,env(safe-area-inset-bottom,0px))+0.5rem)] lg:bottom-6 flex flex-col items-end gap-2 pointer-events-none"
+      className="fixed z-40 right-20 lg:right-24 bottom-[calc(var(--sheet-offset)+0.5rem)] lg:bottom-6 flex flex-col items-end gap-2 pointer-events-none"
     >
       <AnimatePresence>
         {open && (

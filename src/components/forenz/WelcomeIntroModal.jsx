@@ -36,7 +36,7 @@ export default function WelcomeIntroModal({ open, onClose }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-xl p-2 sm:p-4 md:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-xl p-2 sm:p-4 md:p-6 overflow-y-auto pt-[var(--camera-inset-top)] pb-[var(--safe-bottom)]">
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}

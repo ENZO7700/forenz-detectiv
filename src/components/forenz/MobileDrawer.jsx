@@ -105,6 +105,7 @@ export default function MobileDrawer({
         animate={{ x: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="absolute left-0 top-0 h-full w-[80%] max-w-xs bg-slate-900 border-r border-slate-800 rounded-r-2xl shadow-2xl flex flex-col"
+        style={{ paddingTop: 'var(--camera-inset-top)' }}
       >
         <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-3 min-w-0">
@@ -116,7 +117,7 @@ export default function MobileDrawer({
               <p className="text-[10px] text-slate-400 truncate">{user?.email || 'Hosť'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 shrink-0">
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 min-h-[44px] min-w-[44px] shrink-0" aria-label="Zavrieť menu">
             <X className="w-5 h-5" />
           </button>
         </div>

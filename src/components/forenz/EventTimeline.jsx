@@ -14,6 +14,7 @@ export default function EventTimeline({
   const [selectedPersonFilter, setSelectedPersonFilter] = useState(selectedPerson?.name || 'all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [onlyConflicts, setOnlyConflicts] = useState(false);
+  const [onlyAlibi, setOnlyAlibi] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
 
   const eventTypes = useMemo(() => {
@@ -36,6 +37,27 @@ export default function EventTimeline({
     });
   }, [events]);
 
+  // Pomocná funkce na identifikáciu alibi událostí
+  const hasAlibiPerson = useMemo(() => {
+    const alibiPersonNames = new Set(
+      persons.filter((p) => p.type === 'alibi').map((p) => p.name.toLowerCase())
+    );
+    return alibiPersonNames;
+  }, [persons]);
+
+  const isEventAlibi = (ev) => {
+    if (!Array.isArray(ev.persons)) return false;
+    return ev.persons.some((p) => hasAlibiPerson.has(p.toLowerCase()));
+  };
+
+  const hasEventConflict = (ev) => {
+    return contradictions.some(
+      (c) =>
+        (ev.description && c.explanation && ev.description.toLowerCase().includes(c.entity_ref?.toLowerCase())) ||
+        (ev.persons && ev.persons.some((p) => c.entity_ref?.toLowerCase().includes(p.toLowerCase())))
+    );
+  };
+
   const filteredEvents = useMemo(() => {
     return sortedEvents.filter((ev) => {
       if (selectedPersonFilter !== 'all') {
@@ -47,13 +69,12 @@ export default function EventTimeline({
         return false;
       }
 
-      if (onlyConflicts) {
-        const hasConflict = contradictions.some(
-          (c) =>
-            (ev.description && c.explanation && ev.description.toLowerCase().includes(c.entity_ref?.toLowerCase())) ||
-            (ev.persons && ev.persons.some((p) => c.entity_ref?.toLowerCase().includes(p.toLowerCase())))
-        );
-        if (!hasConflict) return false;
+      if (onlyConflicts && !hasEventConflict(ev)) {
+        return false;
+      }
+
+      if (onlyAlibi && !isEventAlibi(ev)) {
+        return false;
       }
 
       if (search.trim()) {
@@ -68,7 +89,7 @@ export default function EventTimeline({
 
       return true;
     });
-  }, [sortedEvents, selectedPersonFilter, typeFilter, onlyConflicts, search, contradictions]);
+  }, [sortedEvents, selectedPersonFilter, typeFilter, onlyConflicts, onlyAlibi, search, contradictions, hasAlibiPerson]);
 
   return (
     <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden p-4">
@@ -108,6 +129,17 @@ export default function EventTimeline({
           >
             <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
             Iba rozpory
+          </button>
+          <button
+            onClick={() => setOnlyAlibi((v) => !v)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${
+              onlyAlibi
+                ? 'bg-blue-950 text-blue-300 border border-blue-800 shadow-sm'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+            }`}
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-blue-400" />
+            Iba alibi
           </button>
         </div>
       </div>
@@ -174,11 +206,8 @@ export default function EventTimeline({
         ) : (
           <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gradient-to-b before:from-blue-500 before:via-indigo-500 before:to-slate-800">
             {filteredEvents.map((ev, idx) => {
-              const hasConflict = contradictions.some(
-                (c) =>
-                  (ev.description && c.explanation && ev.description.toLowerCase().includes(c.entity_ref?.toLowerCase())) ||
-                  (ev.persons && ev.persons.some((p) => c.entity_ref?.toLowerCase().includes(p.toLowerCase())))
-              );
+              const hasConflict = hasEventConflict(ev);
+              const hasAlibi = isEventAlibi(ev);
               const isExpanded = expandedId === (ev.id || idx);
 
               return (
@@ -192,7 +221,9 @@ export default function EventTimeline({
                   {/* Časový bod (Dot na osi) */}
                   <div
                     className={`absolute -left-[29px] top-3.5 w-3.5 h-3.5 rounded-full border-2 border-slate-900 z-10 transition-transform group-hover:scale-125 ${
-                      hasConflict ? 'bg-red-500 shadow-md shadow-red-500/40' : 'bg-blue-500 shadow-md shadow-blue-500/40'
+                      hasConflict ? 'bg-red-500 shadow-md shadow-red-500/40' :
+                      hasAlibi ? 'bg-blue-500 shadow-md shadow-blue-500/40' :
+                      'bg-indigo-500 shadow-md shadow-indigo-500/40'
                     }`}
                   />
 
@@ -202,7 +233,9 @@ export default function EventTimeline({
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                       hasConflict
                         ? 'bg-red-950/25 border-red-900/60 hover:border-red-700'
-                        : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 shadow-sm'
+                        : hasAlibi
+                          ? 'bg-blue-950/25 border-blue-900/60 hover:border-blue-700'
+                          : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 shadow-sm'
                     }`}
                   >
                     {/* Horný riadok: Čas, Dátum & Typ */}
