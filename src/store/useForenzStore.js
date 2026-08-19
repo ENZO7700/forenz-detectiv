@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { base44 } from '../api/base44Client.js';
-import { saveCaseOffline, getCaseOffline } from '../lib/offlineDb.js';
+import { saveCaseOffline, getCaseOffline, sanitizeCasePayload, purgeInvalidOfflineDocuments } from '../lib/offlineDb.js';
 import { trackContradictionDetected } from '../lib/analytics.js';
 
 export const useForenzStore = create((set, get) => ({
@@ -171,7 +171,7 @@ export const useForenzStore = create((set, get) => ({
         docs = d; ppl = p; rels = r; flags = f; flagged = fp; clms = c; evs = e; locs = l; vehs = v; contras = ct; ovs = o;
       }
 
-      const freshData = {
+      const freshData = sanitizeCasePayload({
         documents: docs || [],
         persons: ppl || [],
         relationships: rels || [],
@@ -183,7 +183,7 @@ export const useForenzStore = create((set, get) => ({
         vehicles: vehs || [],
         contradictions: contras || [],
         overrides: ovs || []
-      };
+      });
 
       set({
         ...freshData,
@@ -199,20 +199,12 @@ export const useForenzStore = create((set, get) => ({
       saveCaseOffline('current', freshData);
     } catch (err) {
       console.error('Fetch zlyhal, skúšam načítať z offline cache:', err);
+      await purgeInvalidOfflineDocuments();
       const offline = await getCaseOffline('current');
       if (offline) {
+        const safe = sanitizeCasePayload(offline);
         set({
-          documents: offline.documents || [],
-          persons: offline.persons || [],
-          relationships: offline.relationships || [],
-          redFlags: offline.redFlags || [],
-          flaggedPassages: offline.flaggedPassages || [],
-          claims: offline.claims || [],
-          events: offline.events || [],
-          locations: offline.locations || [],
-          vehicles: offline.vehicles || [],
-          contradictions: offline.contradictions || [],
-          overrides: offline.overrides || [],
+          ...safe,
           loading: false
         });
         get().showToast('Načítané z offline vyšetrovacieho archívu');

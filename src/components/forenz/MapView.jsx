@@ -45,17 +45,35 @@ export default function MapView({
   const [selectedPersonFilter, setSelectedPersonFilter] = useState('ALL');
   const [selectedRoute, setSelectedRoute] = useState(null);
 
+  const safeLocations = useMemo(
+    () => (locations || []).filter((loc) => loc && (loc.name || loc.address)),
+    [locations]
+  );
+  const safeClaims = useMemo(
+    () => (claims || []).filter((c) => c && c.id),
+    [claims]
+  );
+  const safeContradictions = useMemo(
+    () => (contradictions || []).filter((c) => c && c.id),
+    [contradictions]
+  );
+  const safePersons = useMemo(
+    () => (persons || []).filter((p) => p && p.name),
+    [persons]
+  );
+
   const mapPoints = useMemo(() => {
     const points = [];
     const seen = new Set();
 
-    locations.forEach((loc) => {
-      const coords = resolveLocationCoords(loc.name || loc.address);
-      if (coords && !seen.has(loc.name)) {
-        seen.add(loc.name);
+    safeLocations.forEach((loc) => {
+      const label = (loc.name || loc.address || '').trim();
+      const coords = resolveLocationCoords(label);
+      if (coords && label && !seen.has(label)) {
+        seen.add(label);
         points.push({
-          id: loc.id || loc.name,
-          name: loc.name,
+          id: loc.id || label,
+          name: label,
           address: loc.address,
           lat: coords.lat,
           lng: coords.lng,
@@ -65,14 +83,15 @@ export default function MapView({
       }
     });
 
-    claims.forEach((c) => {
-      if (c.location && !seen.has(c.location)) {
-        const coords = resolveLocationCoords(c.location);
+    safeClaims.forEach((c) => {
+      const claimLocation = (c.location || '').trim();
+      if (claimLocation && !seen.has(claimLocation)) {
+        const coords = resolveLocationCoords(claimLocation);
         if (coords) {
-          seen.add(c.location);
+          seen.add(claimLocation);
           points.push({
             id: c.id,
-            name: c.location,
+            name: claimLocation,
             subject: c.subject,
             time: c.event_time,
             lat: coords.lat,
@@ -85,15 +104,15 @@ export default function MapView({
     });
 
     return points;
-  }, [locations, claims]);
+  }, [safeLocations, safeClaims]);
 
   const impossibleRoutes = useMemo(() => {
     const routes = [];
-    contradictions
+    safeContradictions
       .filter((c) => c.type === 'geospatial_impossible_travel' || c.type === 'geografická_nesúlad' || c.type === 'Geograficky nemožné alibi')
       .forEach((c) => {
-        const claimA = claims.find((cl) => cl.id === c.claim_a_id);
-        const claimB = claims.find((cl) => cl.id === c.claim_b_id);
+        const claimA = safeClaims.find((cl) => cl.id === c.claim_a_id);
+        const claimB = safeClaims.find((cl) => cl.id === c.claim_b_id);
         const locA = c.locationA || c.locA || claimA?.location;
         const locB = c.locationB || c.locB || claimB?.location;
 
@@ -116,7 +135,7 @@ export default function MapView({
         }
       });
     return routes;
-  }, [contradictions, claims]);
+  }, [safeContradictions, safeClaims]);
 
   const trackedAlibiRef = useRef(false);
   useEffect(() => {
@@ -196,11 +215,13 @@ export default function MapView({
       </div>
 
       {/* Alibi Impossible Share Card Modal */}
-      <AlibiImpossibleShareCard
-        routes={[selectedRoute]}
-        persons={persons}
-        onClose={() => setSelectedRoute(null)}
-      />
+      {selectedRoute && (
+        <AlibiImpossibleShareCard
+          routes={[selectedRoute]}
+          persons={safePersons}
+          onClose={() => setSelectedRoute(null)}
+        />
+      )}
 
       {/* Map Container s tmavou témou */}
       <div className="flex-1 w-full h-full min-h-[360px] relative z-0 bg-slate-950">
@@ -220,7 +241,7 @@ export default function MapView({
             <Marker
               key={pt.id}
               position={[pt.lat, pt.lng]}
-              icon={createCustomIcon(pt.color, pt.name.slice(0, 2).toUpperCase())}
+              icon={createCustomIcon(pt.color, (pt.name || '—').slice(0, 2).toUpperCase())}
             >
               <Popup>
                 <div className="p-1 min-w-[140px] text-slate-900 font-sans">
