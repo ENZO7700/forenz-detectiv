@@ -20,7 +20,8 @@ export default function AlibiImpossibleShareCard({
   const [exportSuccess, setExportSuccess] = useState(false);
   const cardRef = useRef(null);
 
-  const selectedRoute = routes[selectedRouteIndex] || null;
+  const validRoutes = routes.filter(Boolean);
+  const selectedRoute = validRoutes[selectedRouteIndex] || validRoutes[0] || null;
 
   // Formátovanie vzdialenosti
   const formatDistance = (km) => {
@@ -89,7 +90,7 @@ export default function AlibiImpossibleShareCard({
     return person?.name || subject;
   };
 
-  if (routes.length === 0) {
+  if (validRoutes.length === 0 || !selectedRoute) {
     return null;
   }
 
@@ -136,21 +137,21 @@ export default function AlibiImpossibleShareCard({
               
               <div className="flex items-center gap-2">
                 {/* Navigácia medzi routami */}
-                {routes.length > 1 && (
+                {validRoutes.length > 1 && (
                   <div className="flex items-center gap-1 bg-slate-900/60 rounded-xl p-1">
                     <button
-                      onClick={() => setSelectedRouteIndex((i) => (i > 0 ? i - 1 : routes.length - 1))}
-                      disabled={routes.length <= 1}
+                      onClick={() => setSelectedRouteIndex((i) => (i > 0 ? i - 1 : validRoutes.length - 1))}
+                      disabled={validRoutes.length <= 1}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-40 transition-colors"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="px-2 text-xs font-semibold text-slate-300">
-                      {selectedRouteIndex + 1} / {routes.length}
+                      {selectedRouteIndex + 1} / {validRoutes.length}
                     </span>
                     <button
-                      onClick={() => setSelectedRouteIndex((i) => (i < routes.length - 1 ? i + 1 : 0))}
-                      disabled={routes.length <= 1}
+                      onClick={() => setSelectedRouteIndex((i) => (i < validRoutes.length - 1 ? i + 1 : 0))}
+                      disabled={validRoutes.length <= 1}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-40 transition-colors"
                     >
                       <ChevronRight className="w-4 h-4" />

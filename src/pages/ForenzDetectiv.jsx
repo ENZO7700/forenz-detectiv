@@ -31,7 +31,7 @@ import TrustPackModal from '@/components/trust/TrustPackModal';
 import ReferralModal from '@/components/referral/ReferralModal';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import PdfExportDialog from '@/components/export/PdfExportDialog';
-import { saveDocumentOffline, saveCaseOffline } from '@/lib/offlineDb';
+import { saveDocumentOffline, saveCaseOffline, sanitizeCasePayload } from '@/lib/offlineDb';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated, trackCourtDossierExported, trackCrossExamGenerated } from '@/lib/analytics';
 import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin, Search, XOctagon } from 'lucide-react';
@@ -228,8 +228,11 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     const edges = [];
     for (let i = 0; i < persons.length; i++) {
       for (let j = i + 1; j < persons.length; j++) {
-        if (persons[i].document_id !== persons[j].document_id && namesMatch(persons[i].name, persons[j].name)) {
-          edges.push({ source: persons[i].id, target: persons[j].id });
+        const a = persons[i];
+        const b = persons[j];
+        if (!a?.name || !b?.name || !a?.id || !b?.id) continue;
+        if (a.document_id !== b.document_id && namesMatch(a.name, b.name)) {
+          edges.push({ source: a.id, target: b.id });
         }
       }
     }
@@ -237,7 +240,9 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   }, [persons]);
 
   const visiblePersons = useMemo(
-    () => (selectedDocId ? persons.filter((p) => p.document_id === selectedDocId) : persons),
+    () => (selectedDocId
+      ? persons.filter((p) => p?.id && p?.name && p.document_id === selectedDocId)
+      : persons.filter((p) => p?.id && p?.name)),
     [persons, selectedDocId]
   );
   const visibleEdges = useMemo(
@@ -258,7 +263,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     [claims, selectedDocId]
   );
   const visibleEvents = useMemo(
-    () => (selectedDocId ? events.filter((e) => e.document_id === selectedDocId) : events),
+    () => {
+      const valid = events.filter((e) => e && (e.id || e.title));
+      return selectedDocId ? valid.filter((e) => e.document_id === selectedDocId) : valid;
+    },
     [events, selectedDocId]
   );
   const visibleContradictions = useMemo(
@@ -447,7 +455,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       if (!doc.__localOnly) {
         await fetchData();
       } else {
-        await saveCaseOffline('current', {
+        await saveCaseOffline('current', sanitizeCasePayload({
           documents: [doc, ...(documents || [])].map(({ __localOnly, ...rest }) => rest),
           persons,
           relationships,
@@ -455,8 +463,11 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           redFlags,
           events,
           locations,
-          claims
-        });
+          claims,
+          vehicles,
+          flaggedPassages: flaggedPassages || [],
+          overrides: overrides || []
+        }));
         setSelectedDocId(doc.id);
       }
 
@@ -1222,7 +1233,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           >
             {activeView === 'map' ? (
               <div className="flex-1 p-2 lg:p-4 min-h-0 flex flex-col">
-                <ErrorBoundary isWidget={true}>
+                <ErrorBoundary isWidget={true} onReset={() => fetchData()}>
                   <Suspense fallback={<ViewSkeleton type="map" label="Načítavam Alibi mapu..." />}>
                     <MapView
                       locations={locations}
@@ -1234,7 +1245,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                 </ErrorBoundary>
               </div>
             ) : activeView === 'timeline' ? (
-              <ErrorBoundary isWidget={true}>
+              <ErrorBoundary isWidget={true} onReset={() => fetchData()}>
                 <Suspense fallback={<ViewSkeleton type="timeline" label="Načítavam časovú os..." />}>
                   <EventTimeline
                     events={visibleEvents}

@@ -5,6 +5,114 @@ const DB_VERSION = 2;
 
 let dbPromise = null;
 
+function isRecord(value) {
+  return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asString(value, fallback = '') {
+  if (value == null) return fallback;
+  return String(value);
+}
+
+function sanitizeEntityList(list, sanitizer) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  for (const item of list) {
+    const cleaned = sanitizer(item);
+    if (cleaned) out.push(cleaned);
+  }
+  return out;
+}
+
+function sanitizeWithId(item) {
+  if (!isRecord(item)) return null;
+  const id = asString(item.id).trim();
+  if (!id) return null;
+  return { ...item, id };
+}
+
+/** Valid document for offline storage — requires id + title */
+export function sanitizeDocument(doc) {
+  if (!isRecord(doc)) return null;
+  const id = asString(doc.id).trim();
+  const title = asString(doc.title).trim();
+  if (!id || !title) return null;
+  return {
+    ...doc,
+    id,
+    title,
+    status: asString(doc.status, 'pending') || 'pending',
+    image_url: doc.image_url ?? null,
+    source_kind: doc.source_kind ?? 'upload',
+    created_date: doc.created_date || new Date().toISOString()
+  };
+}
+
+export function sanitizePerson(person) {
+  if (!isRecord(person)) return null;
+  const id = asString(person.id).trim();
+  const name = asString(person.name).trim();
+  if (!id || !name) return null;
+  return { ...person, id, name };
+}
+
+export function sanitizeEvent(event) {
+  if (!isRecord(event)) return null;
+  const id = asString(event.id).trim() || `ev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const persons = Array.isArray(event.persons)
+    ? event.persons.filter((p) => typeof p === 'string' && p.trim()).map((p) => p.trim())
+    : [];
+  return { ...event, id, persons };
+}
+
+export function sanitizeLocation(loc) {
+  if (!isRecord(loc)) return null;
+  const name = asString(loc.name || loc.address).trim();
+  if (!name) return null;
+  const id = asString(loc.id).trim() || name;
+  return { ...loc, id, name };
+}
+
+export function sanitizeClaim(claim) {
+  if (!isRecord(claim)) return null;
+  const id = asString(claim.id).trim();
+  if (!id) return null;
+  return { ...claim, id };
+}
+
+/** Strip null entries and incomplete entities from a case snapshot */
+export function sanitizeCasePayload(raw = {}) {
+  if (!isRecord(raw)) {
+    return {
+      documents: [],
+      persons: [],
+      relationships: [],
+      redFlags: [],
+      flaggedPassages: [],
+      claims: [],
+      events: [],
+      locations: [],
+      vehicles: [],
+      contradictions: [],
+      overrides: []
+    };
+  }
+
+  return {
+    documents: sanitizeEntityList(raw.documents, sanitizeDocument),
+    persons: sanitizeEntityList(raw.persons, sanitizePerson),
+    relationships: sanitizeEntityList(raw.relationships, sanitizeWithId),
+    redFlags: sanitizeEntityList(raw.redFlags, sanitizeWithId),
+    flaggedPassages: sanitizeEntityList(raw.flaggedPassages, sanitizeWithId),
+    claims: sanitizeEntityList(raw.claims, sanitizeClaim),
+    events: sanitizeEntityList(raw.events, sanitizeEvent),
+    locations: sanitizeEntityList(raw.locations, sanitizeLocation),
+    vehicles: sanitizeEntityList(raw.vehicles, sanitizeWithId),
+    contradictions: sanitizeEntityList(raw.contradictions, sanitizeWithId),
+    overrides: sanitizeEntityList(raw.overrides, sanitizeWithId)
+  };
+}
+
 export function getDb() {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
@@ -30,17 +138,22 @@ export function getDb() {
 
 // Uloženie dokumentu a súboru do IndexedDB (kapacita 50 MB - 1 GB+)
 export async function saveDocumentOffline(doc, fileBlob = null) {
+  const clean = sanitizeDocument(doc);
+  if (!clean) {
+    console.warn('[OfflineDB] Preskočené uloženie nekompletného dokumentu (chýba id/title)');
+    return false;
+  }
   try {
     const db = await getDb();
     await db.put('documents', {
-      ...doc,
+      ...clean,
       savedAt: new Date().toISOString()
     });
-    if (fileBlob && doc.id) {
+    if (fileBlob && clean.id) {
       await db.put('file_blobs', {
-        id: doc.id,
+        id: clean.id,
         blob: fileBlob,
-        name: doc.title,
+        name: clean.title,
         type: fileBlob.type || 'application/pdf',
         size: fileBlob.size
       });
@@ -56,7 +169,8 @@ export async function saveDocumentOffline(doc, fileBlob = null) {
 export async function getAllDocumentsOffline() {
   try {
     const db = await getDb();
-    return (await db.getAll('documents')) || [];
+    const raw = (await db.getAll('documents')) || [];
+    return sanitizeEntityList(raw, sanitizeDocument);
   } catch (err) {
     console.warn('[OfflineDB] Načítanie dokumentov zlyhalo:', err);
     return [];
@@ -76,12 +190,13 @@ export async function getFileBlobOffline(docId) {
 
 // Uloženie kompletného vyšetrovacieho spisu offline
 export async function saveCaseOffline(caseId = 'current', caseData = {}) {
+  const sanitized = sanitizeCasePayload(caseData);
   try {
     const db = await getDb();
     await db.put('cases', {
       id: caseId,
       updatedAt: new Date().toISOString(),
-      ...caseData
+      ...sanitized
     });
     return true;
   } catch (err) {
@@ -94,15 +209,49 @@ export async function saveCaseOffline(caseId = 'current', caseData = {}) {
 export async function getCaseOffline(caseId = 'current') {
   try {
     const db = await getDb();
-    return (await db.get('cases', caseId)) || null;
+    const raw = (await db.get('cases', caseId)) || null;
+    if (!raw) return null;
+    const { id, updatedAt, savedAt, ...payload } = raw;
+    const sanitized = sanitizeCasePayload(payload);
+    const dropped =
+      (payload.documents?.length || 0) - sanitized.documents.length +
+      (payload.persons?.length || 0) - sanitized.persons.length +
+      (payload.events?.length || 0) - sanitized.events.length +
+      (payload.locations?.length || 0) - sanitized.locations.length;
+    if (dropped > 0) {
+      console.warn(`[OfflineDB] Odstránených ${dropped} nekompletných záznamov z offline cache`);
+      await saveCaseOffline(caseId, sanitized);
+    }
+    return { id, updatedAt, ...sanitized };
   } catch (err) {
     console.warn('[OfflineDB] Nepodarilo sa načítať dáta z offline cache:', err);
     return null;
   }
 }
 
+/** Odstráni nekompletné dokumenty z documents store */
+export async function purgeInvalidOfflineDocuments() {
+  try {
+    const db = await getDb();
+    const raw = (await db.getAll('documents')) || [];
+    let removed = 0;
+    for (const doc of raw) {
+      if (!sanitizeDocument(doc)) {
+        await db.delete('documents', doc.id);
+        if (doc?.id) await db.delete('file_blobs', doc.id);
+        removed += 1;
+      }
+    }
+    return removed;
+  } catch (err) {
+    console.warn('[OfflineDB] Purge invalid documents failed:', err);
+    return 0;
+  }
+}
+
 // Uloženie OCR extrakcie pre rýchly offline prístup
 export async function cacheAnalysisOffline(documentId, data) {
+  if (!documentId) return;
   try {
     const db = await getDb();
     await db.put('analysis_cache', {
