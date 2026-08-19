@@ -61,7 +61,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './tests/setup.js',
-    include: ['tests/**/*.{test,spec}.{js,jsx,ts,tsx}'],
-    exclude: ['node_modules', 'dist', 'tests/integrity.test.js', 'tests/legalIntegration.test.js', 'tests/diagnostics.test.js']
+    // Vitest cannot bundle node:test — root tests/*.test.js run via npm test (node --test).
+    include: ['tests/components/**/*.{test,spec}.{jsx,tsx}'],
+    exclude: ['node_modules', 'dist']
   }
 });
