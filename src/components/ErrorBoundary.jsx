@@ -71,6 +71,7 @@ export default class ErrorBoundary extends React.Component {
             <h4 className="text-sm font-semibold text-slate-100">Modul zlyhal</h4>
             <p className="text-xs text-slate-400 max-w-xs mt-1 mb-3">
               {this.state.error?.message || 'Nastala neočakávaná chyba pri vykresľovaní.'}
+              {' '}Skúste obnoviť modul. Ak problém pretrváva, vymažte lokálne dáta prehliadača (IndexedDB) a nahrajte spis znova.
             </p>
             <button
               onClick={this.handleReset}

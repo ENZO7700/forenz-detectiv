@@ -17,16 +17,29 @@ export default function EventTimeline({
   const [onlyAlibi, setOnlyAlibi] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
 
+  const safePersons = useMemo(
+    () => (persons || []).filter((p) => p && typeof p.name === 'string' && p.name.trim()),
+    [persons]
+  );
+  const safeEvents = useMemo(
+    () => (events || []).filter((e) => e && (e.id || e.title)),
+    [events]
+  );
+  const safeContradictions = useMemo(
+    () => (contradictions || []).filter((c) => c && c.id),
+    [contradictions]
+  );
+
   const eventTypes = useMemo(() => {
     const set = new Set();
-    events.forEach((e) => {
+    safeEvents.forEach((e) => {
       if (e.type) set.add(e.type);
     });
     return Array.from(set);
-  }, [events]);
+  }, [safeEvents]);
 
   const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => {
+    return [...safeEvents].sort((a, b) => {
       const dateA = a.date || '';
       const dateB = b.date || '';
       if (dateA !== dateB) return dateA.localeCompare(dateB);
@@ -35,15 +48,15 @@ export default function EventTimeline({
       const timeB = parseTimeToMinutes(b.time || b.time_start || '') ?? 9999;
       return timeA - timeB;
     });
-  }, [events]);
+  }, [safeEvents]);
 
   // Pomocná funkce na identifikáciu alibi událostí
   const hasAlibiPerson = useMemo(() => {
     const alibiPersonNames = new Set(
-      persons.filter((p) => p.type === 'alibi').map((p) => p.name.toLowerCase())
+      safePersons.filter((p) => p.type === 'alibi').map((p) => p.name.toLowerCase())
     );
     return alibiPersonNames;
-  }, [persons]);
+  }, [safePersons]);
 
   const isEventAlibi = (ev) => {
     if (!Array.isArray(ev.persons)) return false;
@@ -51,10 +64,10 @@ export default function EventTimeline({
   };
 
   const hasEventConflict = (ev) => {
-    return contradictions.some(
+    return safeContradictions.some(
       (c) =>
         (ev.description && c.explanation && ev.description.toLowerCase().includes(c.entity_ref?.toLowerCase())) ||
-        (ev.persons && ev.persons.some((p) => c.entity_ref?.toLowerCase().includes(p.toLowerCase())))
+        (ev.persons && ev.persons.some((p) => c.entity_ref?.toLowerCase().includes(String(p).toLowerCase())))
     );
   };
 
@@ -89,7 +102,7 @@ export default function EventTimeline({
 
       return true;
     });
-  }, [sortedEvents, selectedPersonFilter, typeFilter, onlyConflicts, onlyAlibi, search, contradictions, hasAlibiPerson]);
+  }, [sortedEvents, selectedPersonFilter, typeFilter, onlyConflicts, onlyAlibi, search, safeContradictions, hasAlibiPerson]);
 
   return (
     <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden p-4">
@@ -155,10 +168,10 @@ export default function EventTimeline({
           onChange={(e) => setSelectedPersonFilter(e.target.value)}
           className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 outline-none"
         >
-          <option value="all">Všetky osoby ({persons.length})</option>
-          {persons.map((p) => (
+          <option value="all">Všetky osoby ({safePersons.length})</option>
+          {safePersons.map((p) => (
             <option key={p.id} value={p.name}>
-              {p.name} ({p.type})
+              {p.name} ({p.type || '—'})
             </option>
           ))}
         </select>
@@ -300,7 +313,7 @@ export default function EventTimeline({
                               key={pIdx}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const pObj = persons.find((p) => p.name === name);
+                                const pObj = safePersons.find((p) => p.name === name);
                                 if (pObj && onSelectPerson) onSelectPerson(pObj);
                               }}
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 text-blue-300 border border-slate-700 font-medium text-[10px] hover:bg-slate-700 transition-colors"

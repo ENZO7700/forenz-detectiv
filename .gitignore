@@ -1,7 +1,14 @@
-#env
+# Environment (keep .env.example tracked — exception must come last)
 .env
 .env.*
+.env*
 !.env.example
+
+# Dependencies and build output
+node_modules
+dist
+dist-ssr
+.vite
 
 # Logs
 /logs
@@ -12,12 +19,8 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Local / editor
 *.local
-
-# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -28,15 +31,14 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
-.vite
+# Base44 / Vercel / archives
 base44/.app.jsonc
+.vercel
 *.zip
 *kópia*
 *kopia*
 
-.vercel
-.env*
+# Test artifacts
 playwright-report/
 test-results/
 blob-report/
