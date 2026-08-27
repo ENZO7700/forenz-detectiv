@@ -38,6 +38,13 @@ import ReferralModal from '@/components/referral/ReferralModal';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import PdfExportDialog from '@/components/export/PdfExportDialog';
 import { saveDocumentOffline, saveCaseOffline, sanitizeCasePayload, cacheAnalysisOffline } from '@/lib/offlineDb';
+import {
+  shouldSyncBulkViaOfflineOnly,
+  buildBulkOfflineSuccessMessage,
+  buildBulkAnalyzeFailureMessage,
+  casePayloadFromStore,
+  mergeLocalDocuments
+} from '@/lib/bulkUploadSync';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated, trackCourtDossierExported, trackCrossExamGenerated } from '@/lib/analytics';
 import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin, Search, XOctagon } from 'lucide-react';
@@ -661,6 +668,22 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       const fileConcStart = (plan === 'free' || plan === undefined) ? 1 : 2;
       const fileConcMax = (plan === 'free' || plan === undefined) ? 1 : (isMobile ? 2 : 4);
 
+      let localOnlyCount = 0;
+      let cloudCount = 0;
+      let analyzeFailed = 0;
+      const localDocSnapshots = [];
+      const trackCreateDocument = async (fields, uploadFileForOffline = null) => {
+        const doc = await createDocumentRecord(fields, uploadFileForOffline);
+        if (doc?.__localOnly) {
+          localOnlyCount++;
+          const { __localOnly, ...stored } = doc;
+          localDocSnapshots.push(stored);
+        } else {
+          cloudCount++;
+        }
+        return doc;
+      };
+
       // Pipeline: PDF chunk alebo preprocess → upload → create → analyze (concurrency capped)
       await mapWithAdaptiveConcurrency(cappedBatch, fileConcStart, fileConcMax, async (file) => {
         if (controller.signal.aborted || slotsLeft < 1) return;
@@ -672,7 +695,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
             pageConcurrency,
             signal: controller.signal,
             uploadBinary: uploadBinaryToStorage,
-            createDocument: (fields) => createDocumentRecord(fields),
+            createDocument: (fields, uploadFile) => trackCreateDocument(fields, uploadFile),
             onPageProgress: ({ pageNumber, pageCount, statusText, percent }) => {
               setBulkProgress((p) => ({
                 ...p,
@@ -712,7 +735,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         if (controller.signal.aborted) return;
 
         const ocrFields = ocrResult?.ok ? buildOcrDocumentPatch(ocrResult) : {};
-        const doc = await createDocumentRecord({
+        const doc = await trackCreateDocument({
           title: file.name,
           image_url: file_url || URL.createObjectURL(uploadFile),
           status: 'pending',
@@ -728,6 +751,15 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
         if (controller.signal.aborted) return;
 
+        if (doc?.__localOnly) {
+          setBulkProgress((p) => ({
+            ...p,
+            done: (p?.done || 0) + 1,
+            statusText: `Uložené lokálne: ${file.name}`
+          }));
+          return;
+        }
+
         setBulkProgress((p) => ({
           ...p,
           analyzing: (p?.analyzing || 0) + 1,
@@ -737,15 +769,36 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           await invokeAnalyze(doc, file.name);
           setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
         } catch {
+          analyzeFailed++;
           setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1, failed: (p?.failed || 0) + 1 }));
         }
       });
-      await fetchData();
+
+      if (shouldSyncBulkViaOfflineOnly({ localOnlyCount, cloudCount })) {
+        const state = useForenzStore.getState();
+        await saveCaseOffline('current', sanitizeCasePayload(casePayloadFromStore(state)));
+        if (state.documents?.length && !state.selectedDocId) {
+          setSelectedDocId(state.documents[0].id);
+        }
+        showToast(buildBulkOfflineSuccessMessage(cappedBatch.length));
+      } else if (cloudCount > 0) {
+        await fetchData();
+        if (localDocSnapshots.length) {
+          const merged = mergeLocalDocuments(useForenzStore.getState().documents, localDocSnapshots);
+          setDocuments(merged);
+          await saveCaseOffline('current', sanitizeCasePayload(casePayloadFromStore({ ...useForenzStore.getState(), documents: merged })));
+        }
+        const analyzeMsg = buildBulkAnalyzeFailureMessage(analyzeFailed);
+        if (analyzeMsg) showToast(analyzeMsg);
+      } else {
+        await fetchData();
+      }
     } catch (e) {
       if (controller.signal.aborted || e?.name === 'AbortError') {
         showToast('Hromadné spracovanie bolo zastavené.');
       } else {
         console.error(e);
+        showToast('Hromadné nahrávanie zlyhalo. Skúste to znova alebo nahrajte súbory po jednom.');
       }
     } finally {
       abortControllerRef.current = null;
