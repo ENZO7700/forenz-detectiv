@@ -34,6 +34,40 @@ const TITLE_NAME_RE = new RegExp(
   `[-–—]\\s*(${NAME_TOKEN}\\s+${NAME_TOKEN})(?:\\.(?:txt|pdf|png|jpe?g|webp|docx|odt))?$`,
   'i'
 );
+const MERIT_NAME = `(?:${FULL_NAME}|${NAME_TOKEN})`;
+const SK_LEFT = String.raw `(?:^|[^\p{L}\p{N}])`;
+const SK_RIGHT = String.raw `(?=$|[^\p{L}\p{N}])`;
+const MERIT_FLAGS = 'giu';
+const MERIT_OSOBOU_RE = new RegExp(`${SK_LEFT}(?:s\\s+)?osob(?:ou|a)\\s+(${MERIT_NAME})${SK_RIGHT}`, MERIT_FLAGS);
+const MERIT_BOL_RE = new RegExp(`${SK_LEFT}(${MERIT_NAME})\\s+bol(?:a)?\\s+([^.,;\\n]{2,80})`, MERIT_FLAGS);
+const MERIT_VERB_RE = new RegExp(
+  `${SK_LEFT}(${MERIT_NAME})\\s+(?:to\\s+)?(?:dohodil|dohodila|financoval|financovala|nosil|nosila|robil(?:a)?)${SK_RIGHT}`,
+  MERIT_FLAGS
+);
+const MERIT_ROBIL_S_OSOBOU_RE = new RegExp(
+  `${SK_LEFT}robil(?:a)?\\s+s\\s+osob(?:ou|a)\\s+(${MERIT_NAME})${SK_RIGHT}`,
+  MERIT_FLAGS
+);
+const MERIT_INVESTIGATOR_RE = new RegExp(
+  `${SK_LEFT}Vyšetrovateľ[^.:\\n]{0,60}?\\b(${MERIT_NAME})${SK_RIGHT}`,
+  MERIT_FLAGS
+);
+const QA_RELATION_RE = new RegExp(
+  `${SK_LEFT}v\\s+akom\\s+vzťahu\\s+ste\\s+s\\s+osob(?:ou|a)\\s+(${MERIT_NAME})${SK_RIGHT}`,
+  MERIT_FLAGS
+);
+const NON_PERSON_TOKENS = new Set([
+  'zapisnica',
+  'otazka',
+  'odpoved',
+  'vysetrovatel',
+  'partizanske',
+  'slovensko',
+  'bratislava',
+  'petris',
+  'factory',
+  'bark'
+]);
 
 /** True for png/jpeg/webp (and related) uploads eligible for client OCR. */
 export function isImageUploadFile(file) {
@@ -133,6 +167,130 @@ function attachAlias(primaryPerson, aliasName, aliasNames) {
   }
 }
 
+function normalizePersonKey(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '');
+}
+
+function isLikelyPersonName(name) {
+  const clean = stripTrailingDateFromName(name);
+  if (!clean || clean.length < 2) return false;
+  const tokens = clean.split(/\s+/);
+  if (tokens.some((t) => NON_PERSON_TOKENS.has(normalizePersonKey(t)))) return false;
+  if (/^(Otázka|Odpoveď|ZÁPISNICA|Vyšetrovateľ)/i.test(clean)) return false;
+  return /^[A-ZÁÄČĎÉÍĽĹĽŇÓÔŔŠŤÚÝŽ]/.test(clean);
+}
+
+function collectMeritMentions(fullText, safeLines) {
+  const mentions = new Map();
+  const text = fullText || safeLines.join('\n');
+
+  const register = (rawName, details, quote, label) => {
+    const name = stripTrailingDateFromName(rawName);
+    if (!isLikelyPersonName(name)) return;
+    const key = normalizePersonKey(name);
+    const existing = mentions.get(key);
+    const entry = {
+      name,
+      details: details || '',
+      quote: (quote || '').slice(0, 500),
+      label: label || ''
+    };
+    if (!existing) {
+      mentions.set(key, entry);
+      return;
+    }
+    if (entry.details && !existing.details.includes(entry.details)) {
+      existing.details = existing.details ? `${existing.details}; ${entry.details}` : entry.details;
+    }
+    if (entry.label && !existing.label) existing.label = entry.label;
+    if (entry.quote.length > existing.quote.length) existing.quote = entry.quote;
+  };
+
+  const scan = (re, handler) => {
+    re.lastIndex = 0;
+    let match;
+    while ((match = re.exec(text)) !== null) {
+      // Skip boundary prefix capture offset — name is always group 1
+      handler(match);
+    }
+  };
+
+  scan(MERIT_ROBIL_S_OSOBOU_RE, (m) => register(m[1], 'spojka', m[0], ''));
+  scan(MERIT_OSOBOU_RE, (m) => register(m[1], '', m[0], ''));
+  scan(MERIT_BOL_RE, (m) => register(m[1], m[2].trim(), m[0], ''));
+  scan(MERIT_VERB_RE, (m) => {
+    const verb = m[0].match(/\b(dohodil|dohodila|financoval|financovala|nosil|nosila|robil(?:a)?)\b/i);
+    const hint = verb?.[0]?.toLowerCase().includes('financov')
+      ? 'financovanie'
+      : verb?.[0] || '';
+    register(m[1], hint, m[0], '');
+  });
+  scan(MERIT_INVESTIGATOR_RE, (m) => register(m[1], 'Vyšetrovateľ', m[0], ''));
+
+  const qaLabels = new Map();
+  scan(QA_RELATION_RE, (m) => {
+    const name = stripTrailingDateFromName(m[1]);
+    if (!name) return;
+    const idx = m.index ?? text.indexOf(m[0]);
+    const after = text.slice(idx, idx + 400);
+    const answerMatch = after.match(/Odpoveď:\s*([^.\n]+)/i);
+    if (answerMatch) qaLabels.set(normalizePersonKey(name), answerMatch[1].trim());
+  });
+
+  for (const [key, entry] of mentions) {
+    if (qaLabels.has(key)) entry.label = qaLabels.get(key);
+  }
+
+  return [...mentions.values()];
+}
+
+function buildHubRelationships(hubName, persons, mentions, documentId, documentTitle) {
+  if (!hubName) return [];
+  const hubKey = normalizePersonKey(hubName);
+  const relationships = [];
+
+  for (const person of persons) {
+    if (normalizePersonKey(person.name) === hubKey) continue;
+    const mention = mentions.find((m) => normalizePersonKey(m.name) === normalizePersonKey(person.name));
+    relationships.push({
+      id: stableEntityId('rel', documentId, `${hubName}_${person.name}`),
+      document_id: documentId,
+      document_title: documentTitle,
+      source_name: hubName,
+      target_name: person.name,
+      label: mention?.label || 'spomínaný vo výpovedi',
+      description: mention?.quote || person.details || ''
+    });
+  }
+
+  return relationships;
+}
+
+/** Sync per-document entity counters used by ArchiveFilmstrip / DocumentList. */
+export function syncDocumentEntityCounts(doc, entities = {}) {
+  if (!doc?.id) return doc;
+  const docId = doc.id;
+  const personCount = (entities.persons || []).filter((p) => p.document_id === docId).length;
+  const relationshipCount = (entities.relationships || []).filter((r) => r.document_id === docId).length;
+  const redFlagCount = (entities.redFlags || []).filter((r) => r.document_id === docId).length;
+  const flaggedCount = (entities.flaggedPassages || []).filter((p) => p.document_id === docId).length;
+  return {
+    ...doc,
+    person_count: personCount,
+    relationship_count: relationshipCount,
+    red_flag_count: redFlagCount || flaggedCount
+  };
+}
+
+function applyEntityCountsToDocuments(documents, documentId, mergedEntities) {
+  return (documents || []).map((d) =>
+    d.id === documentId ? syncDocumentEntityCounts(d, mergedEntities) : d
+  );
+}
+
 /**
  * Heuristic entity extraction from OCR/text for offline timeline/graph views.
  * Slovak zápisnica: riadok „meno, priezvisko“ + kontext podozrivý/zadržaný → persons[0] (osoba 1).
@@ -204,6 +362,31 @@ export function buildEntitiesFromOcrText(text, lines, documentId, documentTitle 
     }
   }
 
+  const fullText = String(text || safeLines.join('\n'));
+  const meritMentions = collectMeritMentions(fullText, safeLines);
+  for (const mention of meritMentions) {
+    const key = normalizePersonKey(mention.name);
+    if (aliasNames.has(key)) continue;
+    if (primaryPerson && normalizePersonKey(primaryPerson.name) === key) continue;
+    addPerson(persons, personNames, aliasNames, {
+      name: mention.name,
+      type: 'iná osoba',
+      documentId,
+      documentTitle,
+      details: mention.details || 'Spomenuté vo výpovedi / merit',
+      idSeed: mention.name
+    });
+  }
+
+  const hubName = primaryPerson?.name || persons[0]?.name || null;
+  const relationships = buildHubRelationships(
+    hubName,
+    persons,
+    meritMentions,
+    documentId,
+    documentTitle
+  );
+
   for (const line of safeLines) {
     TIME_RE.lastIndex = 0;
     let timeMatch;
@@ -267,7 +450,7 @@ export function buildEntitiesFromOcrText(text, lines, documentId, documentTitle 
       ? `OCR: ${charCount} znakov, ${persons.length} osôb, ${events.length} časových údajov`
       : '';
 
-  return { persons, events, claims, flaggedPassages, summary };
+  return { persons, relationships, events, claims, flaggedPassages, summary };
 }
 
 export function buildOcrDocumentPatch(ocrResult) {
@@ -327,12 +510,22 @@ export function mergeClientOcrIntoCase(caseSnapshot, analysisPayload, documentId
     ];
   }
 
+  const mergedPersons = [...(base.persons || []), ...(entities.persons || [])];
+  const mergedRelationships = [...(base.relationships || []), ...(entities.relationships || [])];
+  const mergedFlagged = [...(base.flaggedPassages || []), ...(entities.flaggedPassages || [])];
+  documents = applyEntityCountsToDocuments(documents, documentId, {
+    persons: mergedPersons,
+    relationships: mergedRelationships,
+    flaggedPassages: mergedFlagged,
+    redFlags: base.redFlags || []
+  });
+
   return {
     documents,
-    persons: [...(base.persons || []), ...(entities.persons || [])],
-    relationships: base.relationships || [],
+    persons: mergedPersons,
+    relationships: mergedRelationships,
     redFlags: base.redFlags || [],
-    flaggedPassages: [...(base.flaggedPassages || []), ...(entities.flaggedPassages || [])],
+    flaggedPassages: mergedFlagged,
     claims: [...(base.claims || []), ...(entities.claims || [])],
     events: [...(base.events || []), ...(entities.events || [])],
     locations: base.locations || [],
@@ -351,17 +544,28 @@ export function replaceDocumentEntitiesInCase(caseSnapshot, documentId, entities
     d.id === documentId ? { ...d, ...documentPatch, status: d.status === 'pending' ? 'done' : d.status } : d
   );
 
+  const mergedPersons = [...withoutDoc(base.persons), ...(entities.persons || [])];
+  const mergedRelationships = [...withoutDoc(base.relationships), ...(entities.relationships || [])];
+  const mergedFlagged = [...withoutDoc(base.flaggedPassages), ...(entities.flaggedPassages || [])];
+  const syncedDocuments = applyEntityCountsToDocuments(documents, documentId, {
+    persons: mergedPersons,
+    relationships: mergedRelationships,
+    flaggedPassages: mergedFlagged,
+    redFlags: base.redFlags || []
+  });
+
   return {
     ...base,
-    documents,
-    persons: [...withoutDoc(base.persons), ...(entities.persons || [])],
-    flaggedPassages: [...withoutDoc(base.flaggedPassages), ...(entities.flaggedPassages || [])],
+    documents: syncedDocuments,
+    persons: mergedPersons,
+    relationships: mergedRelationships,
+    flaggedPassages: mergedFlagged,
     claims: [...withoutDoc(base.claims), ...(entities.claims || [])],
     events: [...withoutDoc(base.events), ...(entities.events || [])]
   };
 }
 
-/** Re-run client extraction for docs that have stored text but zero linked persons. */
+/** Re-run client extraction for docs with stored text but missing/stale entities. */
 export function rehydrateMissingEntities(caseSnapshot) {
   const base = caseSnapshot || {};
   const docs = base.documents || [];
@@ -371,11 +575,23 @@ export function rehydrateMissingEntities(caseSnapshot) {
   for (const doc of docs) {
     const text = doc.extracted_text;
     if (!text || String(text).length < 20) continue;
-    const hasPersons = (result.persons || []).some((p) => p.document_id === doc.id);
-    if (hasPersons) continue;
 
     const entities = buildEntitiesFromOcrText(text, null, doc.id, doc.title || '');
-    if (!entities.persons?.length) continue;
+    const expectedPersons = entities.persons?.length || 0;
+    const expectedRelationships = entities.relationships?.length || 0;
+    if (!expectedPersons) continue;
+
+    const currentPersons = (result.persons || []).filter((p) => p.document_id === doc.id);
+    const currentRelationships = (result.relationships || []).filter((r) => r.document_id === doc.id);
+    const storedPersonCount = doc.person_count ?? currentPersons.length;
+
+    const needsRehydrate =
+      currentPersons.length === 0 ||
+      currentPersons.length !== expectedPersons ||
+      storedPersonCount !== expectedPersons ||
+      (expectedRelationships > 0 && currentRelationships.length === 0);
+
+    if (!needsRehydrate) continue;
 
     result = replaceDocumentEntitiesInCase(result, doc.id, entities, { summary: entities.summary });
     changed = true;
