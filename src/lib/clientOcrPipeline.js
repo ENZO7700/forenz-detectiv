@@ -3,6 +3,9 @@ import { parseTimeToMinutes } from './forenzUtils.js';
 export const OCR_TIMEOUT_MS = 90_000;
 export const OCR_LOW_CONFIDENCE = 60;
 
+/** Bump when client-side entity extraction logic changes (drives idempotent rehydrate). */
+export const CLIENT_EXTRACTION_VERSION = 4;
+
 const IMAGE_EXT = /\.(png|jpe?g|webp|bmp|gif)$/i;
 const TIME_RE = /\b(\d{1,2})[:.](\d{2})\b/g;
 const NAME_TOKEN = '[A-ZÁÄČĎÉÍĽĹĽŇÓÔŔŠŤÚÝŽ][a-záäčďéíľĺľňóôŕšťúýž]+';
@@ -34,26 +37,35 @@ const TITLE_NAME_RE = new RegExp(
   `[-–—]\\s*(${NAME_TOKEN}\\s+${NAME_TOKEN})(?:\\.(?:txt|pdf|png|jpe?g|webp|docx|odt))?$`,
   'i'
 );
-const MERIT_NAME = `(?:${FULL_NAME}|${NAME_TOKEN})`;
+/** Merit patterns require Meno Priezvisko — single-token captures caused sentence-fragment false positives. */
+const MERIT_FULL_NAME = FULL_NAME;
 const SK_LEFT = String.raw `(?:^|[^\p{L}\p{N}])`;
 const SK_RIGHT = String.raw `(?=$|[^\p{L}\p{N}])`;
 const MERIT_FLAGS = 'giu';
-const MERIT_OSOBOU_RE = new RegExp(`${SK_LEFT}(?:s\\s+)?osob(?:ou|a)\\s+(${MERIT_NAME})${SK_RIGHT}`, MERIT_FLAGS);
-const MERIT_BOL_RE = new RegExp(`${SK_LEFT}(${MERIT_NAME})\\s+bol(?:a)?\\s+([^.,;\\n]{2,80})`, MERIT_FLAGS);
+const MERIT_OSOBOU_RE = new RegExp(`${SK_LEFT}(?:s\\s+)?osob(?:ou|a)\\s+(${MERIT_FULL_NAME})${SK_RIGHT}`, MERIT_FLAGS);
+const MERIT_BOL_RE = new RegExp(`${SK_LEFT}(${MERIT_FULL_NAME})\\s+bol(?:a)?\\s+([^.,;\\n]{2,80})`, MERIT_FLAGS);
 const MERIT_VERB_RE = new RegExp(
-  `${SK_LEFT}(${MERIT_NAME})\\s+(?:to\\s+)?(?:dohodil|dohodila|financoval|financovala|nosil|nosila|robil(?:a)?)${SK_RIGHT}`,
+  `${SK_LEFT}(${MERIT_FULL_NAME})\\s+(?:dohodil|dohodila|financoval|financovala|nosil|nosila|robil(?:a)?)${SK_RIGHT}`,
   MERIT_FLAGS
 );
 const MERIT_ROBIL_S_OSOBOU_RE = new RegExp(
-  `${SK_LEFT}robil(?:a)?\\s+s\\s+osob(?:ou|a)\\s+(${MERIT_NAME})${SK_RIGHT}`,
+  `${SK_LEFT}robil(?:a)?\\s+s\\s+osob(?:ou|a)\\s+(${MERIT_FULL_NAME})${SK_RIGHT}`,
+  MERIT_FLAGS
+);
+const MERIT_SHORT_FINANCE_RE = new RegExp(
+  `${SK_LEFT}(${NAME_TOKEN})\\s+to\\s+financoval(?:a)?${SK_RIGHT}`,
   MERIT_FLAGS
 );
 const MERIT_INVESTIGATOR_RE = new RegExp(
-  `${SK_LEFT}Vyšetrovateľ[^.:\\n]{0,60}?\\b(${MERIT_NAME})${SK_RIGHT}`,
+  `${SK_LEFT}Vyšetrovateľ[^\\n]{0,80}?(${MERIT_FULL_NAME})${SK_RIGHT}`,
+  MERIT_FLAGS
+);
+const MERIT_JUDR_RE = new RegExp(
+  `${SK_LEFT}JUDr\\.?\\s+(${MERIT_FULL_NAME})${SK_RIGHT}`,
   MERIT_FLAGS
 );
 const QA_RELATION_RE = new RegExp(
-  `${SK_LEFT}v\\s+akom\\s+vzťahu\\s+ste\\s+s\\s+osob(?:ou|a)\\s+(${MERIT_NAME})${SK_RIGHT}`,
+  `${SK_LEFT}v\\s+akom\\s+vzťahu\\s+ste\\s+s\\s+osob(?:ou|a)\\s+(${MERIT_FULL_NAME})${SK_RIGHT}`,
   MERIT_FLAGS
 );
 const NON_PERSON_TOKENS = new Set([
@@ -66,8 +78,92 @@ const NON_PERSON_TOKENS = new Set([
   'bratislava',
   'petris',
   'factory',
-  'bark'
+  'bark',
+  'tatragene',
+  'remeta',
+  'eb-eu',
+  'eb',
+  'eu',
+  'to',
+  'sa',
+  'si',
+  'mi',
+  'ti',
+  'ho',
+  'ju',
+  'ich',
+  'som',
+  'sme',
+  'ste',
+  'bol',
+  'bola',
+  'boli',
+  'aj',
+  'na',
+  'do',
+  'po',
+  'za',
+  'od',
+  'ku',
+  'pri',
+  'bez',
+  'alebo',
+  'ako',
+  'kto',
+  'kde',
+  'kedy',
+  'ja',
+  'on',
+  'ona',
+  'my',
+  'vy',
+  'ten',
+  'ta',
+  'ak',
+  'proste',
+  'vtedy',
+  'následne',
+  'nasledne',
+  'postup',
+  'jeho',
+  'raz',
+  'tam',
+  'teda',
+  'poriadku',
+  'zákona',
+  'zakona',
+  'trestného',
+  'trestneho',
+  'trestný',
+  'trestny',
+  'pz',
+  'mjr',
+  'judr',
+  'konateľ',
+  'konatel',
+  'licenciu',
+  'účtovníctvo',
+  'uctovnictvo'
 ]);
+/** Single-token given names that legitimately appear without a surname in merit text. */
+const KNOWN_SINGLE_GIVEN_NAMES = new Set(['lubo', 'lubomir', 'lubomír']);
+/** Substrings that disqualify a candidate person name (legal boilerplate, clitics in multi-token noise). */
+const PERSON_NAME_REJECT_RES = [
+  /\bsom\b/i,
+  /\bporiadku\b/i,
+  /\bzákona\b/i,
+  /\bporiadok\b/i,
+  /\btrestného\b/i,
+  /\btrestný\b/i,
+  /\bs\.r\.o\b/i,
+  /\bfactory\b/i
+];
+
+/** Weak fallback — must not imply a stronger semantic relation than the text supports. */
+const FALLBACK_RELATION_LABEL = 'spomenutý vo výpovedi';
+
+/** Common Slovak masculine animate surname case endings (generic; no hardcoded surnames). */
+const SK_SURNAME_CASE_SUFFIXES = ['ovi', 'om', 'ami', 'ov', 'a', 'u', 'e', 'y', 'i'];
 
 /** True for png/jpeg/webp (and related) uploads eligible for client OCR. */
 export function isImageUploadFile(file) {
@@ -134,12 +230,33 @@ function stableEntityId(prefix, documentId, seed) {
 }
 
 function addPerson(persons, personNames, aliasNames, opts) {
-  const { name, type, documentId, documentTitle, details, idSeed, insertAtFront = false } = opts;
-  const clean = stripTrailingDateFromName(name);
-  if (!clean) return null;
-  const key = clean.toLowerCase();
+  const {
+    name,
+    type,
+    documentId,
+    documentTitle,
+    details,
+    idSeed,
+    insertAtFront = false,
+    allowSingleGivenName = false
+  } = opts;
+  const clean = stripTrailingNameParticles(stripTrailingDateFromName(name));
+  if (
+    !clean ||
+    (!isLikelyPersonName(clean) && !(allowSingleGivenName && isLikelySingleGivenName(clean)))
+  ) {
+    return null;
+  }
+  const key = normalizePersonKey(clean);
   if (personNames.has(key) || aliasNames.has(key)) {
-    return persons.find((p) => p.name.toLowerCase() === key) || null;
+    return persons.find((p) => normalizePersonKey(p.name) === key) || null;
+  }
+  // Collapse surname-only into an already-known fuller name
+  for (const existing of persons) {
+    const canonical = canonicalizeAgainstKnownNames(clean, [existing.name], aliasNames);
+    if (canonical && normalizePersonKey(canonical) === normalizePersonKey(existing.name) && canonical !== clean) {
+      return existing;
+    }
   }
   const person = {
     id: stableEntityId('p', documentId, idSeed || clean),
@@ -156,9 +273,9 @@ function addPerson(persons, personNames, aliasNames, opts) {
 }
 
 function attachAlias(primaryPerson, aliasName, aliasNames) {
-  const clean = stripTrailingDateFromName(aliasName);
+  const clean = stripTrailingNameParticles(stripTrailingDateFromName(aliasName));
   if (!clean || !primaryPerson) return;
-  aliasNames.add(clean.toLowerCase());
+  aliasNames.add(normalizePersonKey(clean));
   const note = `Predošlé meno: ${clean}`;
   if (primaryPerson.details && primaryPerson.details !== 'Rozpoznané z OCR textu') {
     if (!primaryPerson.details.includes(clean)) primaryPerson.details = `${primaryPerson.details}; ${note}`;
@@ -174,26 +291,153 @@ function normalizePersonKey(name) {
     .replace(/\p{M}/gu, '');
 }
 
-function isLikelyPersonName(name) {
-  const clean = stripTrailingDateFromName(name);
-  if (!clean || clean.length < 2) return false;
-  const tokens = clean.split(/\s+/);
-  if (tokens.some((t) => NON_PERSON_TOKENS.has(normalizePersonKey(t)))) return false;
-  if (/^(Otázka|Odpoveď|ZÁPISNICA|Vyšetrovateľ)/i.test(clean)) return false;
-  return /^[A-ZÁÄČĎÉÍĽĹĽŇÓÔŔŠŤÚÝŽ]/.test(clean);
+/** Drop trailing Slovak clitics accidentally captured into a name (e.g. "Ján to"). */
+function stripTrailingNameParticles(name) {
+  const tokens = String(name || '').trim().split(/\s+/).filter(Boolean);
+  while (tokens.length > 1 && NON_PERSON_TOKENS.has(normalizePersonKey(tokens[tokens.length - 1]))) {
+    tokens.pop();
+  }
+  return tokens.join(' ').trim();
 }
 
-function collectMeritMentions(fullText, safeLines) {
+function surnameStemKey(token) {
+  let key = normalizePersonKey(token);
+  // Strip common masculine animate case endings, longest first
+  const ordered = [...SK_SURNAME_CASE_SUFFIXES].sort((a, b) => b.length - a.length);
+  for (const suf of ordered) {
+    if (key.length > suf.length + 2 && key.endsWith(suf)) {
+      key = key.slice(0, -suf.length);
+      break;
+    }
+  }
+  return key;
+}
+
+/**
+ * Canonicalize a mention against names already discovered in this document.
+ * - Full-name exact / alias match
+ * - Surname-only or declined surname → matching discovered full name / surname
+ * Returns null when the form cannot be resolved safely (do not invent identity).
+ */
+function canonicalizeAgainstKnownNames(rawName, knownNames, aliasNames) {
+  const cleaned = stripTrailingNameParticles(
+    stripTrailingDateFromName(normalizeNameToNominative(rawName))
+  );
+  if (!cleaned) return null;
+  const key = normalizePersonKey(cleaned);
+  if (aliasNames?.has?.(key)) return null;
+
+  for (const known of knownNames) {
+    if (normalizePersonKey(known) === key) return known;
+  }
+
+  const tokens = cleaned.split(/\s+/);
+  const mentionSurname = tokens[tokens.length - 1];
+  const mentionStem = surnameStemKey(mentionSurname);
+
+  // Surname-only or declined surname matching a known full name's surname
+  const surnameHits = knownNames.filter((known) => {
+    const parts = String(known).split(/\s+/);
+    if (!parts.length) return false;
+    const knownSurname = parts[parts.length - 1];
+    const knownKey = normalizePersonKey(knownSurname);
+    const mentionKey = normalizePersonKey(mentionSurname);
+    if (knownKey === mentionKey) return true;
+    if (surnameStemKey(knownSurname) === mentionStem && mentionStem.length >= 3) return true;
+    return false;
+  });
+
+  if (surnameHits.length === 1) return surnameHits[0];
+  // Ambiguous or unresolved — do not invent
+  if (tokens.length === 1) return null;
+  return cleaned;
+}
+
+function normalizeTokenToNominative(token, isSurname = false) {
+  const key = normalizePersonKey(token);
+  const suffixes = isSurname
+    ? ['ovi', 'om', 'omu', 'ami', 'a', 'u', 'e', 'y', 'i']
+    : ['ovi', 'om', 'omu', 'em'];
+  const ordered = [...suffixes].sort((a, b) => b.length - a.length);
+  for (const suf of ordered) {
+    if (key.length > suf.length + 2 && key.endsWith(suf)) {
+      const stem = token.slice(0, token.length - suf.length);
+      if (!stem) return token;
+      return stem.charAt(0).toUpperCase() + stem.slice(1);
+    }
+  }
+  return token;
+}
+
+function normalizeNameToNominative(name) {
+  const tokens = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!tokens.length) return '';
+  if (tokens.length === 1) return normalizeTokenToNominative(tokens[0], true);
+  return tokens
+    .map((token, idx) => normalizeTokenToNominative(token, idx === tokens.length - 1))
+    .join(' ');
+}
+
+function isLikelyPersonName(name) {
+  const clean = stripTrailingNameParticles(stripTrailingDateFromName(name));
+  if (!clean || clean.length < 2) return false;
+  if (PERSON_NAME_REJECT_RES.some((re) => re.test(clean))) return false;
+
+  const tokens = clean.split(/\s+/).filter(Boolean);
+  if (tokens.some((t) => NON_PERSON_TOKENS.has(normalizePersonKey(t)))) return false;
+  if (/^(Otázka|Odpoveď|ZÁPISNICA|Vyšetrovateľ)/i.test(clean)) return false;
+  if (!/^[A-ZÁÄČĎÉÍĽĹĽŇÓÔŔŠŤÚÝŽ]/.test(clean)) return false;
+
+  if (tokens.length === 1) {
+    return KNOWN_SINGLE_GIVEN_NAMES.has(normalizePersonKey(tokens[0]));
+  }
+
+  if (NON_PERSON_TOKENS.has(normalizePersonKey(tokens[0]))) return false;
+
+  const substantive = tokens.filter((t) => !NON_PERSON_TOKENS.has(normalizePersonKey(t)));
+  return substantive.length >= 2;
+}
+
+/** Single-token given name in merit context (e.g. „Ľubo to financoval“, „Ján to financoval“). */
+function isLikelySingleGivenName(token) {
+  const clean = stripTrailingNameParticles(stripTrailingDateFromName(token));
+  if (!clean) return false;
+  const key = normalizePersonKey(clean);
+  if (KNOWN_SINGLE_GIVEN_NAMES.has(key)) return true;
+  if (clean.length < 3 || NON_PERSON_TOKENS.has(key)) return false;
+  if (PERSON_NAME_REJECT_RES.some((re) => re.test(clean))) return false;
+  return /^[A-ZÁÄČĎÉÍĽĹĽŇÓÔŔŠŤÚÝŽ][a-záäčďéíľĺľňóôŕšťúýž]{2,}$/.test(clean);
+}
+
+function collectMeritMentions(fullText, safeLines, knownNames = [], aliasNames = new Set()) {
   const mentions = new Map();
   const text = fullText || safeLines.join('\n');
 
-  const register = (rawName, details, quote, label) => {
-    const name = stripTrailingDateFromName(rawName);
-    if (!isLikelyPersonName(name)) return;
-    const key = normalizePersonKey(name);
+  const register = (rawName, details, quote, label, opts = {}) => {
+    const nominative = normalizeNameToNominative(rawName);
+    const canonical = canonicalizeAgainstKnownNames(nominative, knownNames, aliasNames);
+    const name = canonical || stripTrailingNameParticles(stripTrailingDateFromName(nominative));
+    const allowSingleGiven = opts.allowSingleGivenName === true;
+    if (!isLikelyPersonName(name) && !(allowSingleGiven && isLikelySingleGivenName(name))) return;
+    // Unresolved surname-only declined form — skip rather than invent
+    if (!canonical && String(rawName || '').trim().split(/\s+/).length === 1 && !allowSingleGiven) {
+      const asIs = stripTrailingNameParticles(stripTrailingDateFromName(rawName));
+      if (!isLikelyPersonName(asIs)) return;
+      // Allow single-token Capitalized nominative when it looks like a given name/surname
+      // but reject if it looks like a declined form of an unknown stem (ends with case suffix
+      // and stem is shorter than original by a typical ending).
+      const stem = surnameStemKey(asIs);
+      const bare = normalizePersonKey(asIs);
+      if (stem !== bare && stem.length >= 3 && !knownNames.some((k) => surnameStemKey(k.split(/\s+/).pop()) === stem)) {
+        return;
+      }
+    }
+    const resolved = canonical || name;
+    const key = normalizePersonKey(resolved);
+    if (aliasNames.has(key)) return;
     const existing = mentions.get(key);
     const entry = {
-      name,
+      name: resolved,
       details: details || '',
       quote: (quote || '').slice(0, 500),
       label: label || ''
@@ -213,7 +457,6 @@ function collectMeritMentions(fullText, safeLines) {
     re.lastIndex = 0;
     let match;
     while ((match = re.exec(text)) !== null) {
-      // Skip boundary prefix capture offset — name is always group 1
       handler(match);
     }
   };
@@ -221,6 +464,9 @@ function collectMeritMentions(fullText, safeLines) {
   scan(MERIT_ROBIL_S_OSOBOU_RE, (m) => register(m[1], 'spojka', m[0], ''));
   scan(MERIT_OSOBOU_RE, (m) => register(m[1], '', m[0], ''));
   scan(MERIT_BOL_RE, (m) => register(m[1], m[2].trim(), m[0], ''));
+  scan(MERIT_SHORT_FINANCE_RE, (m) =>
+    register(m[1], 'financovanie', m[0], '', { allowSingleGivenName: true })
+  );
   scan(MERIT_VERB_RE, (m) => {
     const verb = m[0].match(/\b(dohodil|dohodila|financoval|financovala|nosil|nosila|robil(?:a)?)\b/i);
     const hint = verb?.[0]?.toLowerCase().includes('financov')
@@ -229,10 +475,25 @@ function collectMeritMentions(fullText, safeLines) {
     register(m[1], hint, m[0], '');
   });
   scan(MERIT_INVESTIGATOR_RE, (m) => register(m[1], 'Vyšetrovateľ', m[0], ''));
+  scan(MERIT_JUDR_RE, (m) => register(m[1], 'Vyšetrovateľ', m[0], ''));
+
+  // Surname-only mentions: only canonicalize onto already-known persons (never invent)
+  const surnameMentionRe = new RegExp(
+    `${SK_LEFT}(?:p[aá]n(?:a|om)?|pani)?\\s*(${NAME_TOKEN})${SK_RIGHT}`,
+    MERIT_FLAGS
+  );
+  scan(surnameMentionRe, (m) => {
+    const canonical = canonicalizeAgainstKnownNames(m[1], knownNames, aliasNames);
+    if (!canonical) return;
+    if (normalizePersonKey(canonical) === normalizePersonKey(m[1])) return; // already nominative full capture elsewhere
+    register(canonical, '', m[0], '');
+  });
 
   const qaLabels = new Map();
   scan(QA_RELATION_RE, (m) => {
-    const name = stripTrailingDateFromName(m[1]);
+    const nominative = normalizeNameToNominative(m[1]);
+    const name = canonicalizeAgainstKnownNames(nominative, knownNames, aliasNames)
+      || stripTrailingNameParticles(stripTrailingDateFromName(nominative));
     if (!name) return;
     const idx = m.index ?? text.indexOf(m[0]);
     const after = text.slice(idx, idx + 400);
@@ -247,6 +508,11 @@ function collectMeritMentions(fullText, safeLines) {
   return [...mentions.values()];
 }
 
+/**
+ * Hub relationships from primary subject to other persons.
+ * `description` must carry the exact source fragment when available.
+ * Semantic labels only when grounded in Q&A/text; otherwise weak fallback.
+ */
 function buildHubRelationships(hubName, persons, mentions, documentId, documentTitle) {
   if (!hubName) return [];
   const hubKey = normalizePersonKey(hubName);
@@ -255,14 +521,19 @@ function buildHubRelationships(hubName, persons, mentions, documentId, documentT
   for (const person of persons) {
     if (normalizePersonKey(person.name) === hubKey) continue;
     const mention = mentions.find((m) => normalizePersonKey(m.name) === normalizePersonKey(person.name));
+    const quote = (mention?.quote || '').trim();
+    const qaLabel = (mention?.label || '').trim();
+    // Only use a stronger label when we have an explicit Q&A answer; otherwise weak fallback
+    const label = qaLabel || FALLBACK_RELATION_LABEL;
     relationships.push({
       id: stableEntityId('rel', documentId, `${hubName}_${person.name}`),
       document_id: documentId,
       document_title: documentTitle,
       source_name: hubName,
       target_name: person.name,
-      label: mention?.label || 'spomínaný vo výpovedi',
-      description: mention?.quote || person.details || ''
+      label,
+      // Exact supporting fragment when present; never pretend details are a quote
+      description: quote || ''
     });
   }
 
@@ -281,7 +552,8 @@ export function syncDocumentEntityCounts(doc, entities = {}) {
     ...doc,
     person_count: personCount,
     relationship_count: relationshipCount,
-    red_flag_count: redFlagCount || flaggedCount
+    red_flag_count: redFlagCount || flaggedCount,
+    client_extraction_version: CLIENT_EXTRACTION_VERSION
   };
 }
 
@@ -363,7 +635,12 @@ export function buildEntitiesFromOcrText(text, lines, documentId, documentTitle 
   }
 
   const fullText = String(text || safeLines.join('\n'));
-  const meritMentions = collectMeritMentions(fullText, safeLines);
+  // Pass 1: seed knownNames with primary + role-labelled persons already extracted
+  let knownNames = persons.map((p) => p.name);
+  let meritMentions = collectMeritMentions(fullText, safeLines, knownNames, aliasNames);
+
+  // Pass 2: after registering full-name merit hits, re-scan so declined surnames
+  // can canonicalize onto newly discovered nominatives (still never invents identities).
   for (const mention of meritMentions) {
     const key = normalizePersonKey(mention.name);
     if (aliasNames.has(key)) continue;
@@ -373,8 +650,25 @@ export function buildEntitiesFromOcrText(text, lines, documentId, documentTitle 
       type: 'iná osoba',
       documentId,
       documentTitle,
-      details: mention.details || 'Spomenuté vo výpovedi / merit',
-      idSeed: mention.name
+      details: mention.details || FALLBACK_RELATION_LABEL,
+      idSeed: mention.name,
+      allowSingleGivenName: mention.details === 'financovanie'
+    });
+  }
+  knownNames = persons.map((p) => p.name);
+  meritMentions = collectMeritMentions(fullText, safeLines, knownNames, aliasNames);
+  for (const mention of meritMentions) {
+    const key = normalizePersonKey(mention.name);
+    if (aliasNames.has(key)) continue;
+    if (primaryPerson && normalizePersonKey(primaryPerson.name) === key) continue;
+    addPerson(persons, personNames, aliasNames, {
+      name: mention.name,
+      type: 'iná osoba',
+      documentId,
+      documentTitle,
+      details: mention.details || FALLBACK_RELATION_LABEL,
+      idSeed: mention.name,
+      allowSingleGivenName: mention.details === 'financovanie'
     });
   }
 
@@ -584,8 +878,10 @@ export function rehydrateMissingEntities(caseSnapshot) {
     const currentPersons = (result.persons || []).filter((p) => p.document_id === doc.id);
     const currentRelationships = (result.relationships || []).filter((r) => r.document_id === doc.id);
     const storedPersonCount = doc.person_count ?? currentPersons.length;
+    const versionStale = doc.client_extraction_version !== CLIENT_EXTRACTION_VERSION;
 
     const needsRehydrate =
+      versionStale ||
       currentPersons.length === 0 ||
       currentPersons.length !== expectedPersons ||
       storedPersonCount !== expectedPersons ||
@@ -593,7 +889,10 @@ export function rehydrateMissingEntities(caseSnapshot) {
 
     if (!needsRehydrate) continue;
 
-    result = replaceDocumentEntitiesInCase(result, doc.id, entities, { summary: entities.summary });
+    result = replaceDocumentEntitiesInCase(result, doc.id, entities, {
+      summary: entities.summary,
+      client_extraction_version: CLIENT_EXTRACTION_VERSION
+    });
     changed = true;
   }
 
