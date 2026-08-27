@@ -5,6 +5,7 @@ import { Download, Copy, Share2, Eye, EyeOff, Check, Loader2, Sparkles } from 'l
 import AlibiShareCard from './AlibiShareCard';
 import { exportElementAsPng, copyElementImageToClipboard } from '@/utils/imageExporter';
 import { usePlanStore } from '@/store/usePlanStore';
+import { isMonetizationEnabled } from '@/lib/monetization';
 import { trackShareCardGenerated } from '@/lib/analytics';
 
 export default function ShareModal({
@@ -20,6 +21,7 @@ export default function ShareModal({
   const setPricingModalOpen = usePlanStore((s) => s.setPricingModalOpen);
 
   const requirePro = () => {
+    if (!isMonetizationEnabled) return false;
     if (plan === 'free') {
       onClose();
       setPricingModalOpen(false, 'pro_feature');

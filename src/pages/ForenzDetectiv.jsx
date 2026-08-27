@@ -47,6 +47,7 @@ import { usePlanStore } from '@/store/usePlanStore';
 import { useAuditStore } from '@/store/useAuditStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { appParams } from '@/lib/app-params';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 // Lazy-loaded ťažké moduly pre rýchly počiatočný štart aplikácie
 const GraphCanvas = lazy(() => import('@/components/forenz/GraphCanvas'));
@@ -170,6 +171,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const auditLogs = useAuditStore((s) => s.logs);
 
   const openPaywall = useCallback((reason) => {
+    if (!isMonetizationEnabled) return;
     logAction('PAYWALL_OPENED', { reason });
     setPricingModalOpen(false, reason);
   }, [setPricingModalOpen, logAction]);
@@ -881,7 +883,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   }, []);
 
   const handleExport = async () => {
-    if (plan === 'free') {
+    if (isMonetizationEnabled && plan === 'free') {
       openPaywall('pro_feature');
       return;
     }
@@ -890,7 +892,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   };
 
   const handleExportAll = async () => {
-    if (plan === 'free') {
+    if (isMonetizationEnabled && plan === 'free') {
       openPaywall('pro_feature');
       return;
     }
@@ -1013,10 +1015,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       onOpenMobileMenu={() => setMobileMenuOpen(true)}
       onOpenSearch={() => setSearchOpen(true)}
       onOpenIntro={() => setIntroOpen(true)}
-      onOpenPricing={() => setPricingModalOpen(true)}
+      onOpenPricing={isMonetizationEnabled ? () => setPricingModalOpen(true) : undefined}
       onOpenTrust={() => setTrustOpen(true)}
       onOpenAudit={() => setAuditOpen(true)}
-      onOpenReferral={() => setReferralOpen(true)}
+      onOpenReferral={isMonetizationEnabled ? () => setReferralOpen(true) : undefined}
       onNavigateIdentity={() => setActiveView('identity')}
       sharedBy={sharedBy}
     />
@@ -1127,9 +1129,9 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
               onClose={() => setMobileMenuOpen(false)}
               onLogout={handleLogout}
               onOpenIntro={() => setIntroOpen(true)}
-              onOpenPricing={() => setPricingModalOpen(true)}
+              onOpenPricing={isMonetizationEnabled ? () => setPricingModalOpen(true) : undefined}
               onOpenTrust={() => setTrustOpen(true)}
-              onOpenReferral={() => setReferralOpen(true)}
+              onOpenReferral={isMonetizationEnabled ? () => setReferralOpen(true) : undefined}
               onOpenAudit={() => setAuditOpen(true)}
               plan={plan}
               alertCount={redFlags.length + contradictions.length}
@@ -1402,26 +1404,32 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         onClose={() => setIntroOpen(false)}
       />
 
+      {isMonetizationEnabled && (
       <PricingModal
         isOpen={pricingModalOpen}
         onClose={() => setPricingModalOpen(false)}
       />
+      )}
 
+      {isMonetizationEnabled && (
       <PaywallGate
         isOpen={!!paywallReason}
         onClose={() => setPricingModalOpen(false, null)}
         reason={paywallReason || 'limit_cases'}
       />
+      )}
 
       <TrustPackModal
         isOpen={trustOpen}
         onClose={() => setTrustOpen(false)}
       />
 
+      {isMonetizationEnabled && (
       <ReferralModal
         isOpen={referralOpen}
         onClose={() => setReferralOpen(false)}
       />
+      )}
 
       <AuditLogViewer
         isOpen={auditOpen}

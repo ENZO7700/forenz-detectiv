@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 const VALID_LICENSE_KEYS = {
   'PRO-LAWYER-2026': { plan: 'pro', validDays: 365 },
@@ -52,6 +53,7 @@ export const usePlanStore = create((set, get) => ({
   },
 
   canCreateCase: (currentCaseCount) => {
+    if (!isMonetizationEnabled) return true;
     const { plan, caseCount } = get();
     if (plan === 'pro' || plan === 'agency') return true;
     const count = typeof currentCaseCount === 'number' ? currentCaseCount : caseCount;
@@ -59,6 +61,7 @@ export const usePlanStore = create((set, get) => ({
   },
 
   canAddDocument: (currentDocCount = 0) => {
+    if (!isMonetizationEnabled) return true;
     const { plan } = get();
     if (plan === 'pro' || plan === 'agency') return true;
     return currentDocCount < 5;
