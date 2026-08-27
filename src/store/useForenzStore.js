@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { base44 } from '../api/base44Client.js';
 import { saveCaseOffline, getCaseOffline, sanitizeCasePayload, purgeInvalidOfflineDocuments } from '../lib/offlineDb.js';
 import { trackContradictionDetected } from '../lib/analytics.js';
+import { mergeCloudCaseWithLocal } from '../lib/bulkUploadSync.js';
+import { hasAuthToken } from '../lib/guestMode.js';
 import { resolveEntityArrayUpdate, makeEntityArraySetter } from './entityArraySetter.js';
 
 export { resolveEntityArrayUpdate } from './entityArraySetter.js';
@@ -121,9 +123,7 @@ export const useForenzStore = create((set, get) => ({
       return;
     }
 
-    const hasAuthToken =
-      typeof window !== 'undefined' &&
-      !!(localStorage.getItem('base44_access_token') || localStorage.getItem('token'));
+    const hasToken = hasAuthToken();
 
     await purgeInvalidOfflineDocuments();
 
@@ -143,7 +143,7 @@ export const useForenzStore = create((set, get) => ({
     };
 
     // Guest / offline-first: show cached case immediately when backend is unavailable
-    if (!hasAuthToken && !scope?.creatorId) {
+    if (!hasToken && !scope?.creatorId) {
       const loaded = await loadOfflineSnapshot(null);
       if (loaded) {
         return;
@@ -220,18 +220,23 @@ export const useForenzStore = create((set, get) => ({
         if (restored) return;
       }
 
+      const inMemory = sanitizeCasePayload(get());
+      const mergedData = sanitizeCasePayload(
+        mergeCloudCaseWithLocal(freshData, inMemory)
+      );
+
       set({
-        ...freshData,
+        ...mergedData,
         loading: false
       });
 
-      if (freshData.contradictions && freshData.contradictions.length > 0) {
-        const hasAlibi = freshData.contradictions.some((c) => c.type === 'alibi' || c.severity === 'high' || c.is_alibi_conflict);
-        trackContradictionDetected(freshData.contradictions.length, hasAlibi);
+      if (mergedData.contradictions && mergedData.contradictions.length > 0) {
+        const hasAlibi = mergedData.contradictions.some((c) => c.type === 'alibi' || c.severity === 'high' || c.is_alibi_conflict);
+        trackContradictionDetected(mergedData.contradictions.length, hasAlibi);
       }
 
       // Uloženie do offline IndexedDB
-      saveCaseOffline('current', freshData);
+      saveCaseOffline('current', mergedData);
     } catch (err) {
       console.error('Fetch zlyhal, skúšam načítať z offline cache:', err);
       const restored = await loadOfflineSnapshot('Načítané z offline vyšetrovacieho archívu');

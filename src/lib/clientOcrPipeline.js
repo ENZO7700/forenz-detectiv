@@ -161,9 +161,22 @@ export function mergeClientOcrIntoCase(caseSnapshot, analysisPayload, documentId
   const entities = analysisPayload?.entities || {};
   const patch = analysisPayload?.documentPatch || {};
 
-  const documents = (base.documents || []).map((d) =>
+  let documents = (base.documents || []).map((d) =>
     d.id === documentId ? { ...d, ...patch, status: d.status === 'pending' ? 'done' : d.status } : d
   );
+
+  if (documentId && !documents.some((d) => d.id === documentId)) {
+    documents = [
+      {
+        id: documentId,
+        title: analysisPayload?.documentTitle || 'Neznámy spis',
+        status: 'done',
+        source_kind: 'upload',
+        ...patch
+      },
+      ...documents
+    ];
+  }
 
   return {
     documents,
