@@ -6,7 +6,8 @@ import {
   sanitizeCasePayload,
   sanitizeDocument,
   sanitizePerson,
-  sanitizeEvent
+  sanitizeEvent,
+  casePayloadNeedsRepair
 } from '../src/lib/offlineDb.js';
 
 describe('4. 💾 Offline IndexedDB & Sync Conflict Resolution Test Suite', () => {
@@ -46,6 +47,19 @@ describe('4. 💾 Offline IndexedDB & Sync Conflict Resolution Test Suite', () =
     assert.strictEqual(cleaned.locations.length, 1);
     assert.strictEqual(sanitizePerson({ id: 'p', name: '' }), null);
     assert.strictEqual(sanitizeEvent({ persons: [null, 'X'] }).persons.length, 1);
+  });
+
+  test('4.1d sanitizeCasePayload normalizes non-array entity fields (legacy IDB corruption)', () => {
+    const cleaned = sanitizeCasePayload({
+      documents: { id: 'd1', title: 'Bad object' },
+      persons: 'not-an-array',
+      events: [{ id: 'e1', title: 'OK', persons: ['Anna'] }]
+    });
+    assert.deepStrictEqual(cleaned.documents, []);
+    assert.deepStrictEqual(cleaned.persons, []);
+    assert.strictEqual(cleaned.events.length, 1);
+    assert.strictEqual(casePayloadNeedsRepair({ documents: {} }), true);
+    assert.strictEqual(casePayloadNeedsRepair({ documents: [] }), false);
   });
 
   test('4.2 Conflict Resolution: Logika Last-Write-Wins so zlučovaním entít', () => {
