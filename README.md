@@ -34,7 +34,7 @@ Postavené na platforme **Base44** (backend-as-a-service: auth, databáza, integ
 - **Zustand State Management & Offline IndexedDB** — centralizovaný reaktívny store s offline ukladaním prípadov v teréne.
 - **1-tip onboarding** — `QuickTip` pri prvom behu; plný `WelcomeIntroModal` len cez drawer „Sprievodca“ (neblokuje start). Primárny CTA je nahratie reálneho spisu — **žiadny produkčný demo spis**.
 - **Liquid Glass Design System** — moderná frosted glass estetika, 3D hĺbka, neon-glow indikátory a vstavaný Dark/Light theme toggle.
-- **Automatizovaná testovacia sada** — 23 integritných testov backendu (`npm test`) a 16 UI testov cez Vitest (`npm run test:vitest`, scope `tests/components/`).
+- **Automatizovaná testovacia sada** — 28 integritných testov backendu (`npm test`) a 16 UI testov cez Vitest (`npm run test:vitest`, scope `tests/components/`).
 - **PDF export** — oficiálny vyšetrovací protokol s tabuľkou osôb, červenými vlajkami a grafom.
 
 ---
@@ -121,6 +121,25 @@ Skopíruj [`.env.example`](.env.example) → `.env.local`:
 - Produkt **neobsahuje** demo/synthetic case (žiadne BA–KE CTA, žiadne `VITE_ENABLE_DEMO`).
 - Primárny tok je vždy **upload → chunk → AI analýza → rozpory**.
 - Stripe je **fail-closed**: bez publishable key na fronte a `STRIPE_SECRET_KEY` na Base44 backende checkout zlyhá — žiadny mock checkout ani klientsky upgrade pred platbou.
+
+### Backend nedostupný (503) / hosťovský režim
+
+Hosted Base44 backend pre `appId` môže vracať **503**, kým nie je app publishnutá alebo nemá nastavený `MISTRAL_API_KEY`. Frontend **nepoužíva mock auth** — bez prihlásenia beží v **hosťovskom / offline režime**:
+
+| Funkcia | Bez backendu (503) | S backendom + `MISTRAL_API_KEY` |
+|---------|------------------|----------------------------------|
+| Navigácia, UI, offline cache | ✅ | ✅ |
+| Upload PNG / text / PDF (client OCR) | ✅ lokálne | ✅ + cloud AI |
+| `analyzeDocument` (Pixtral) | ❌ → client OCR fallback | ✅ |
+| Prihlásenie / sync medzi zariadeniami | ❌ | ✅ |
+
+**Čo treba pre plný upload → AI pipeline:**
+
+1. `base44 login` → `base44 secret set MISTRAL_API_KEY …` → publish app (`base44 deploy` / dashboard).
+2. Vercel env: `VITE_BASE44_APP_ID`, prípadne `VITE_BASE44_API_KEY`; v Base44 auth origins pridať `https://forenzdetectiv.vercel.app`.
+3. Lokálne: `base44 dev` (backend + frontend naraz).
+
+Ak po neúspešnom uploade padajú taby „Alibi & Mapa" / „Časová os" (`Modul zlyhal`), vymaž site data (DevTools → Application → Clear site data) — staré poškodené IndexedDB záznamy sa pri načítaní automaticky opravujú, no extrémne legacy cache môže vyžadovať reset.
 
 ### Spustenie testov & Kontrola kvality
 ```bash

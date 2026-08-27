@@ -80,6 +80,29 @@ export function sanitizeClaim(claim) {
   return { ...claim, id };
 }
 
+const CASE_ENTITY_KEYS = [
+  'documents',
+  'persons',
+  'relationships',
+  'redFlags',
+  'flaggedPassages',
+  'claims',
+  'events',
+  'locations',
+  'vehicles',
+  'contradictions',
+  'overrides'
+];
+
+/** True when legacy IDB stored an entity list as a non-array (e.g. object after a bad write). */
+export function casePayloadNeedsRepair(raw = {}) {
+  if (!isRecord(raw)) return true;
+  return CASE_ENTITY_KEYS.some((key) => {
+    const val = raw[key];
+    return val != null && !Array.isArray(val);
+  });
+}
+
 /** Strip null entries and incomplete entities from a case snapshot */
 export function sanitizeCasePayload(raw = {}) {
   if (!isRecord(raw)) {
@@ -213,13 +236,19 @@ export async function getCaseOffline(caseId = 'current') {
     if (!raw) return null;
     const { id, updatedAt, savedAt, ...payload } = raw;
     const sanitized = sanitizeCasePayload(payload);
+    const needsRepair = casePayloadNeedsRepair(payload);
     const dropped =
-      (payload.documents?.length || 0) - sanitized.documents.length +
-      (payload.persons?.length || 0) - sanitized.persons.length +
-      (payload.events?.length || 0) - sanitized.events.length +
-      (payload.locations?.length || 0) - sanitized.locations.length;
-    if (dropped > 0) {
-      console.warn(`[OfflineDB] Odstránených ${dropped} nekompletných záznamov z offline cache`);
+      (Array.isArray(payload.documents) ? payload.documents.length : 0) - sanitized.documents.length +
+      (Array.isArray(payload.persons) ? payload.persons.length : 0) - sanitized.persons.length +
+      (Array.isArray(payload.events) ? payload.events.length : 0) - sanitized.events.length +
+      (Array.isArray(payload.locations) ? payload.locations.length : 0) - sanitized.locations.length;
+    if (dropped > 0 || needsRepair) {
+      if (dropped > 0) {
+        console.warn(`[OfflineDB] Odstránených ${dropped} nekompletných záznamov z offline cache`);
+      }
+      if (needsRepair) {
+        console.warn('[OfflineDB] Opravená poškodená štruktúra offline cache (entity pole nebolo pole)');
+      }
       await saveCaseOffline(caseId, sanitized);
     }
     return { id, updatedAt, ...sanitized };

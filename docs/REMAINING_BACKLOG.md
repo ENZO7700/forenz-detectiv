@@ -44,7 +44,6 @@ Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo hard-removed, PDF chu
 ```mermaid
 flowchart TD
   T1[RB01_GitHub_Billing_CI] --> T2[RB02_PostHog_Live]
-  T2 --> T3[RB03_ContradictionDetected_Wire]
   T2 --> T4[RB04_Looker_Dashboard]
   T5[RB05_Stripe_Checkout_Function] --> T6[RB06_TWA_Fingerprint]
   T4 --> T7[RB07_Beta_Ads]
@@ -88,7 +87,7 @@ flowchart TD
 
 ---
 
-## RB-03 — Wire `trackContradictionDetected` on real detection
+## RB-03 — Wire `trackContradictionDetected` on real detection ✅
 
 **Title:** `fix(analytics): fire contradiction_detected on real detection`
 
@@ -96,8 +95,8 @@ flowchart TD
 
 **Acceptance:**
 
-- [ ] Po úspešnom `detectContradictions` / store update reálnych rozporov sa volá `trackContradictionDetected(count, hasAlibiConflict)`
-- [ ] `npm test` + lint/typecheck PASS; žiadne PII v properties
+- [x] Po úspešnom `detectContradictions` / store update reálnych rozporov sa volá `trackContradictionDetected(count, hasAlibiConflict)` — `useForenzStore.setContradictions` + `fetchData` po cloude
+- [x] `npm test` + lint/typecheck PASS; žiadne PII v properties
 
 **Owner hint:** Frontend. Súbory: `useForenzStore.js`, handlery v `ForenzDetectiv.jsx` / contradiction engine callback.
 
