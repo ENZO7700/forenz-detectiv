@@ -5,7 +5,9 @@ import {
   buildBulkOfflineSuccessMessage,
   buildBulkAnalyzeFailureMessage,
   casePayloadFromStore,
-  mergeLocalDocuments
+  mergeLocalDocuments,
+  mergeCloudCaseWithLocal,
+  shouldSkipFetchAfterUpload
 } from '../src/lib/bulkUploadSync.js';
 
 describe('Bulk PNG / offline upload sync', () => {
@@ -51,5 +53,26 @@ describe('Bulk PNG / offline upload sync', () => {
     const merged = mergeLocalDocuments(cloud, local);
     assert.deepEqual(merged.map((d) => d.id), ['doc_local', 'doc_local2', 'cloud-1']);
     assert.deepEqual(mergeLocalDocuments(cloud, [{ id: 'cloud-1', title: 'dup' }]), cloud);
+  });
+
+  test('mergeCloudCaseWithLocal keeps guest txt docs when cloud list is empty', () => {
+    const merged = mergeCloudCaseWithLocal(
+      { documents: [], persons: [], events: [], claims: [] },
+      {
+        documents: [{ id: 'doc_txt', title: 'vypoved.txt', status: 'done' }],
+        persons: [],
+        events: [],
+        claims: []
+      }
+    );
+    assert.equal(merged.documents.length, 1);
+    assert.equal(merged.documents[0].title, 'vypoved.txt');
+  });
+
+  test('shouldSkipFetchAfterUpload true for guest offline session', () => {
+    assert.equal(
+      shouldSkipFetchAfterUpload({ localOnlyCount: 0, cloudCount: 0, guestOffline: true }),
+      true
+    );
   });
 });

@@ -37,12 +37,13 @@ import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import PdfExportDialog from '@/components/export/PdfExportDialog';
 import { saveDocumentOffline, saveCaseOffline, sanitizeCasePayload, cacheAnalysisOffline, getFileBlobOffline } from '@/lib/offlineDb';
 import {
-  shouldSyncBulkViaOfflineOnly,
   buildBulkOfflineSuccessMessage,
   buildBulkAnalyzeFailureMessage,
   casePayloadFromStore,
-  mergeLocalDocuments
+  mergeLocalDocuments,
+  shouldSkipFetchAfterUpload
 } from '@/lib/bulkUploadSync';
+import { isGuestOfflineSession } from '@/lib/guestMode';
 import { withAiRetry } from '@/lib/aiRetry';
 import { trackFileUploaded, trackContradictionViewed, trackPdfExported, trackCaseCreated, trackCourtDossierExported, trackCrossExamGenerated } from '@/lib/analytics';
 import { Network, Loader2, Layers, Users, FileText, ShieldAlert, Clock, MapPin, Search, XOctagon } from 'lucide-react';
@@ -315,16 +316,14 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   };
 
   const createDocumentRecord = async (fields, uploadFileForOffline = null) => {
-    try {
-      return await base44.entities.Document.create(fields);
-    } catch (entityErr) {
-      console.warn('[Upload] Cloud entity create 403/offline, saving locally:', entityErr);
-      const doc = {
-        id: 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-        ...fields,
-        status: fields.status === 'pending' ? 'done' : (fields.status || 'done'),
-        created_date: new Date().toISOString()
-      };
+    const buildLocalDoc = () => ({
+      id: 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      ...fields,
+      status: fields.status === 'pending' ? 'done' : (fields.status || 'done'),
+      created_date: new Date().toISOString()
+    });
+
+    const persistLocalDoc = async (doc) => {
       const prev = useForenzStore.getState().documents;
       const safePrev = Array.isArray(prev) ? prev : [];
       setDocuments([doc, ...safePrev]);
@@ -336,6 +335,27 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         }
       }
       return { ...doc, __localOnly: true };
+    };
+
+    // Guest/offline: skip cloud entity create — it can "succeed" without persisting and fetchData wipes the UI.
+    if (isGuestOfflineSession()) {
+      return persistLocalDoc(buildLocalDoc());
+    }
+
+    try {
+      const cloudDoc = await base44.entities.Document.create(fields);
+      return cloudDoc;
+    } catch (entityErr) {
+      console.warn('[Upload] Cloud entity create 403/offline, saving locally:', entityErr);
+      return persistLocalDoc(buildLocalDoc());
+    }
+  };
+
+  const persistLocalCaseSnapshot = async () => {
+    const state = useForenzStore.getState();
+    await saveCaseOffline('current', sanitizeCasePayload(casePayloadFromStore(state)));
+    if (state.documents?.length && !state.selectedDocId) {
+      setSelectedDocId(state.documents[0].id);
     }
   };
 
@@ -544,41 +564,30 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           ...buildOcrDocumentPatch(ocrShape)
         }, textFile);
 
-        if (!doc.__localOnly) {
-          await fetchData();
+        if (doc.__localOnly) {
+          await persistLocalCaseSnapshot();
         } else {
-          await saveCaseOffline('current', sanitizeCasePayload({
-            documents: [doc, ...(documents || [])].map(({ __localOnly, ...rest }) => rest),
-            persons,
-            relationships,
-            contradictions,
-            redFlags,
-            events,
-            locations,
-            claims,
-            vehicles,
-            flaggedPassages: flaggedPassages || [],
-            overrides: overrides || []
-          }));
-          setSelectedDocId(doc.id);
+          await fetchData();
         }
 
         await applyClientOcrAnalysis(doc, ocrShape);
         showToast(`Textový spis "${file.name}" spracovaný (offline režim).`);
 
-        try {
-          setBulkProgress({
-            total: 1,
-            done: 0,
-            analyzing: 1,
-            failed: 0,
-            percent: 75,
-            statusText: `AI extrakcia: ${file.name}...`
-          });
-          await invokeAnalyze(doc, file.name);
-          if (!doc.__localOnly) await fetchData();
-        } catch (err) {
-          console.warn('[Upload] Cloud AI skipped for text file:', err);
+        if (!doc.__localOnly && !isGuestOfflineSession()) {
+          try {
+            setBulkProgress({
+              total: 1,
+              done: 0,
+              analyzing: 1,
+              failed: 0,
+              percent: 75,
+              statusText: `AI extrakcia: ${file.name}...`
+            });
+            await invokeAnalyze(doc, file.name);
+            await fetchData();
+          } catch (err) {
+            console.warn('[Upload] Cloud AI skipped for text file:', err);
+          }
         }
         return;
       }
@@ -621,20 +630,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       if (!doc.__localOnly) {
         await fetchData();
       } else {
-        await saveCaseOffline('current', sanitizeCasePayload({
-          documents: [doc, ...(documents || [])].map(({ __localOnly, ...rest }) => rest),
-          persons,
-          relationships,
-          contradictions,
-          redFlags,
-          events,
-          locations,
-          claims,
-          vehicles,
-          flaggedPassages: flaggedPassages || [],
-          overrides: overrides || []
-        }));
-        setSelectedDocId(doc.id);
+        await persistLocalCaseSnapshot();
       }
 
       if (controller.signal.aborted) {
@@ -837,7 +833,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           const textBlob = new Blob([textResult.text], { type: 'text/plain;charset=utf-8' });
           const textFile = new File([textBlob], file.name, { type: 'text/plain' });
           const file_url = await uploadBinaryToStorage(textFile);
-          const doc = await createDocumentRecord({
+          const doc = await trackCreateDocument({
             title: file.name,
             image_url: file_url,
             status: 'pending',
@@ -905,12 +901,8 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         }
       });
 
-      if (shouldSyncBulkViaOfflineOnly({ localOnlyCount, cloudCount })) {
-        const state = useForenzStore.getState();
-        await saveCaseOffline('current', sanitizeCasePayload(casePayloadFromStore(state)));
-        if (state.documents?.length && !state.selectedDocId) {
-          setSelectedDocId(state.documents[0].id);
-        }
+      if (shouldSkipFetchAfterUpload({ localOnlyCount, cloudCount, guestOffline: isGuestOfflineSession() })) {
+        await persistLocalCaseSnapshot();
         showToast(buildBulkOfflineSuccessMessage(cappedBatch.length));
       } else if (cloudCount > 0) {
         await fetchData();
