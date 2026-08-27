@@ -142,12 +142,14 @@ Skopíruj [`.env.example`](.env.example) → `.env.local`:
 - Primárny tok je vždy **upload → chunk → AI analýza → rozpory**.
 - Monetizácia (Stripe / paywall / license keys) je **hard-disabled** pre ostré testovanie — limity dokumentov neplatia.
 
-### Backend nedostupný (503) / hosťovský režim
+### Backend / hosťovský režim
 
-Hosted Base44 backend pre `appId` môže vracať **503**, kým nie je app publishnutá alebo nemá nastavený `MISTRAL_API_KEY`. Frontend **nepoužíva mock auth** — bez prihlásenia beží v **hosťovskom / offline režime**:
+Produkčný frontend na Vercel je napojený na Base44 appId **`6a7ed366df1f1138ad653044`** (`VITE_BASE44_APP_ID`). Entity API vracia **200**. Cloud AI (`analyzeDocument` / Pixtral) vyžaduje server-only secret `MISTRAL_API_KEY` v Base44 + deploy functions.
 
-| Funkcia | Bez backendu (503) | S backendom + `MISTRAL_API_KEY` |
-|---------|------------------|----------------------------------|
+Bez prihlásenia beží app v **hosťovskom / offline režime** (client OCR + IndexedDB):
+
+| Funkcia | Guest / bez Mistral | S backendom + `MISTRAL_API_KEY` |
+|---------|---------------------|--------------------------------|
 | Navigácia, UI, offline cache | ✅ | ✅ |
 | Upload PNG / text / PDF (client OCR) | ✅ lokálne | ✅ + cloud AI |
 | `analyzeDocument` (Pixtral) | ❌ → client OCR fallback | ✅ |
@@ -155,9 +157,9 @@ Hosted Base44 backend pre `appId` môže vracať **503**, kým nie je app publis
 
 **Čo treba pre plný upload → AI pipeline:**
 
-1. `base44 login` → `base44 secret set MISTRAL_API_KEY …` → publish app (`base44 deploy` / dashboard).
-2. Vercel env: `VITE_BASE44_APP_ID`, prípadne `VITE_BASE44_API_KEY`; v Base44 auth origins pridať `https://forenz-detectiv.vercel.app` (a alias `https://forenzdetectiv.vercel.app`).
-3. Lokálne: `base44 dev` (backend + frontend naraz).
+1. `npx base44 login` → `npx base44 secret set MISTRAL_API_KEY …` (pre live appId) → `npx base44 deploy` / dashboard publish functions.
+2. Vercel Production: `VITE_BASE44_APP_ID=6a7ed366df1f1138ad653044`, `VITE_BASE44_APP_BASE_URL=https://app.base44.com`; v Base44 auth origins: `https://forenz-detectiv.vercel.app` (+ alias).
+3. Lokálne: `npx base44 dev` (backend + frontend naraz).
 
 Ak po neúspešnom uploade padajú taby „Alibi & Mapa" / „Časová os" (`Modul zlyhal`), vymaž site data (DevTools → Application → Clear site data) — staré poškodené IndexedDB záznamy sa pri načítaní automaticky opravujú, no extrémne legacy cache môže vyžadovať reset.
 
@@ -182,7 +184,8 @@ base44 secret set MISTRAL_API_KEY your_key_here
 
 ### Onboarding & docs
 - First-run UX = 1 tip (`QuickTip`); plný sprievodca je v draweri (neblokuje start).
-- Remaining ops backlog (RB-01..07): [`docs/REMAINING_BACKLOG.md`](docs/REMAINING_BACKLOG.md)
+- Remaining ops backlog (RB-01..07 + RB-AI): [`docs/REMAINING_BACKLOG.md`](docs/REMAINING_BACKLOG.md)
+- Production freeze report: [`docs/PROD_READY.md`](docs/PROD_READY.md)
 - Master E2E (12 scenárov): [`docs/E2E_MASTER_SPEC.md`](docs/E2E_MASTER_SPEC.md) — `npm run test:e2e`
 - TWA / Play: [`docs/TWA_SETUP.md`](docs/TWA_SETUP.md)
 - Stripe: [`docs/STRIPE_SETUP.md`](docs/STRIPE_SETUP.md)
