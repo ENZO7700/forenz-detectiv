@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense, laz
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { prepareFileForUpload, isImageUploadFile } from '@/lib/imageProcessor';
+import { isTextUploadFile, extractTextFromUpload, textResultToOcrShape } from '@/lib/textFileProcessor';
 import {
   runOcrWithFallback,
   buildOcrAnalysisPayload,
@@ -37,7 +38,7 @@ import TrustPackModal from '@/components/trust/TrustPackModal';
 import ReferralModal from '@/components/referral/ReferralModal';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import PdfExportDialog from '@/components/export/PdfExportDialog';
-import { saveDocumentOffline, saveCaseOffline, sanitizeCasePayload, cacheAnalysisOffline } from '@/lib/offlineDb';
+import { saveDocumentOffline, saveCaseOffline, sanitizeCasePayload, cacheAnalysisOffline, getFileBlobOffline } from '@/lib/offlineDb';
 import {
   shouldSyncBulkViaOfflineOnly,
   buildBulkOfflineSuccessMessage,
@@ -219,7 +220,8 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   }, []);
 
   const graphEdges = useMemo(() => {
-    return relationships
+    return (relationships || [])
+      .filter((r) => r && r.id && r.source_name && r.target_name)
       .map((r) => {
         const s = persons.find((p) => p.document_id === r.document_id && p.name === r.source_name);
         const t = persons.find((p) => p.document_id === r.document_id && p.name === r.target_name);
@@ -345,7 +347,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
   const invokeAnalyze = async (doc, title) => {
     if (doc?.__localOnly) return null;
-    return withAiRetry(
+    const res = await withAiRetry(
       () => base44.functions.invoke('analyzeDocument', {
         documentId: doc.id,
         documentTitle: title || doc.title
@@ -358,6 +360,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         }
       }
     );
+    if (res?.data && res.data.ok === false) {
+      throw new Error(res.data.error || 'AI analýza zlyhala');
+    }
+    return res;
   };
 
   const applyClientOcrAnalysis = async (doc, ocrResult) => {
@@ -392,6 +398,23 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       } catch (err) {
         console.warn('[OCR] Cloud document patch skipped:', err);
       }
+    }
+  };
+
+  const analyzeWithClientFallback = async (doc, title, imageSource, controller) => {
+    if (doc?.__localOnly) return { usedClient: false };
+    try {
+      await invokeAnalyze(doc, title);
+      return { usedClient: false };
+    } catch (err) {
+      console.warn('[Upload] Cloud AI unavailable, trying client OCR/text fallback:', err);
+      if (!imageSource) return { usedClient: false, error: err };
+      const ocrResult = await runOcrWithFallback(imageSource, { signal: controller?.signal });
+      if (ocrResult?.ok) {
+        await applyClientOcrAnalysis(doc, ocrResult);
+        return { usedClient: true, ocrResult };
+      }
+      return { usedClient: false, error: err };
     }
   };
 
@@ -459,7 +482,12 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           signal: controller.signal,
           uploadBinary: uploadBinaryToStorage,
           createDocument: (fields) => createDocumentRecord(fields),
-          analyzeDocument: (doc) => invokeAnalyze(doc, doc.title),
+          analyzeDocument: async (pageDoc, pageFile) => {
+            const fallback = await analyzeWithClientFallback(pageDoc, pageDoc.title, pageFile, controller);
+            if (fallback.usedClient && fallback.ocrResult?.lowConfidence) {
+              showToast(`Strana ${pageDoc.page_number || ''}: OCR s nízkou spoľahlivosťou.`);
+            }
+          },
           onPageProgress: ({ pageNumber, pageCount, stage, percent, statusText }) => {
             setBulkProgress({
               total: pageCount,
@@ -486,6 +514,78 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           showToast(`PDF má ${result.originalPageCount} strán — spracovaných ${result.pageCount} (limit ${PDF_MAX_PAGES} / plán).`);
         }
         await fetchData();
+        return;
+      }
+
+      if (isTextUploadFile(file)) {
+        setBulkProgress({
+          total: 1,
+          done: 0,
+          analyzing: 1,
+          failed: 0,
+          percent: 20,
+          statusText: `Načítavam text: ${file.name}...`
+        });
+
+        const textResult = await extractTextFromUpload(file);
+        if (controller.signal.aborted) {
+          showToast('Spracovanie bolo zastavené.');
+          return;
+        }
+        if (!textResult.ok) {
+          showToast(textResult.error || 'Nepodarilo sa načítať text zo súboru');
+          return;
+        }
+
+        const ocrShape = textResultToOcrShape(textResult);
+        const textBlob = new Blob([textResult.text], { type: 'text/plain;charset=utf-8' });
+        const textFile = new File([textBlob], file.name, { type: 'text/plain' });
+        const file_url = await uploadBinaryToStorage(textFile);
+
+        const doc = await createDocumentRecord({
+          title: file.name,
+          image_url: file_url,
+          status: 'pending',
+          source_kind: 'text_upload',
+          ...buildOcrDocumentPatch(ocrShape)
+        }, textFile);
+
+        if (!doc.__localOnly) {
+          await fetchData();
+        } else {
+          await saveCaseOffline('current', sanitizeCasePayload({
+            documents: [doc, ...(documents || [])].map(({ __localOnly, ...rest }) => rest),
+            persons,
+            relationships,
+            contradictions,
+            redFlags,
+            events,
+            locations,
+            claims,
+            vehicles,
+            flaggedPassages: flaggedPassages || [],
+            overrides: overrides || []
+          }));
+          setSelectedDocId(doc.id);
+        }
+
+        await applyClientOcrAnalysis(doc, ocrShape);
+        showToast(`Textový spis "${file.name}" spracovaný (offline režim).`);
+
+        try {
+          setBulkProgress({
+            total: 1,
+            done: 0,
+            analyzing: 1,
+            failed: 0,
+            percent: 75,
+            statusText: `AI extrakcia: ${file.name}...`
+          });
+          await invokeAnalyze(doc, file.name);
+          if (!doc.__localOnly) await fetchData();
+        } catch (err) {
+          console.warn('[Upload] Cloud AI skipped for text file:', err);
+        }
         return;
       }
 
@@ -564,8 +664,15 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           percent: 75,
           statusText: `AI extrakcia: ${file.name}...`
         });
-        await invokeAnalyze(doc, file.name);
+        const fallback = await analyzeWithClientFallback(doc, file.name, uploadFile, controller);
         if (!doc.__localOnly) await fetchData();
+        if (fallback.usedClient) {
+          showToast(
+            fallback.ocrResult?.lowConfidence
+              ? `Spis "${file.name}" spracovaný cez OCR (nízka spoľahlivosť).`
+              : `Spis "${file.name}" spracovaný cez OCR (offline režim).`
+          );
+        }
       } catch (err) {
         console.warn('[Upload] Cloud AI invoke unavailable, document loaded into local workspace:', err);
         if (ocrResult?.ok) {
@@ -703,11 +810,11 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
                 statusText: statusText || `${file.name} (s. ${pageNumber}/${pageCount})`
               }));
             },
-            analyzeDocument: async (doc) => {
+            analyzeDocument: async (doc, pageFile) => {
               if (controller.signal.aborted) return;
               setBulkProgress((p) => ({ ...p, analyzing: (p?.analyzing || 0) + 1 }));
               try {
-                await invokeAnalyze(doc, doc.title);
+                await analyzeWithClientFallback(doc, doc.title, pageFile, controller);
               } finally {
                 setBulkProgress((p) => ({
                   ...p,
@@ -720,6 +827,35 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           if (result.ok) {
             const used = (result.parentDoc ? 1 : 0) + (result.pageCount || 0);
             slotsLeft = Number.isFinite(slotsLeft) ? Math.max(0, slotsLeft - used) : slotsLeft;
+          }
+          return;
+        }
+
+        if (isTextUploadFile(file)) {
+          const textResult = await extractTextFromUpload(file);
+          if (controller.signal.aborted) return;
+          if (!textResult.ok) {
+            setBulkProgress((p) => ({ ...p, failed: (p?.failed || 0) + 1, done: (p?.done || 0) + 1 }));
+            return;
+          }
+          const ocrShape = textResultToOcrShape(textResult);
+          const textBlob = new Blob([textResult.text], { type: 'text/plain;charset=utf-8' });
+          const textFile = new File([textBlob], file.name, { type: 'text/plain' });
+          const file_url = await uploadBinaryToStorage(textFile);
+          const doc = await createDocumentRecord({
+            title: file.name,
+            image_url: file_url,
+            status: 'pending',
+            source_kind: 'text_upload',
+            ...buildOcrDocumentPatch(ocrShape)
+          }, textFile);
+          await applyClientOcrAnalysis(doc, ocrShape);
+          if (Number.isFinite(slotsLeft)) slotsLeft = Math.max(0, slotsLeft - 1);
+          setBulkProgress((p) => ({ ...p, done: (p?.done || 0) + 1 }));
+          try {
+            await invokeAnalyze(doc, file.name);
+          } catch {
+            /* client text analysis already applied */
           }
           return;
         }
@@ -766,7 +902,7 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
           statusText: `AI extrakcia: ${file.name}...`
         }));
         try {
-          await invokeAnalyze(doc, file.name);
+          await analyzeWithClientFallback(doc, file.name, uploadFile, controller);
           setBulkProgress((p) => ({ ...p, analyzing: Math.max(0, p.analyzing - 1), done: p.done + 1 }));
         } catch {
           analyzeFailed++;
@@ -830,6 +966,17 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         }
       } catch (err) {
         setBulkProgress(null);
+        const offlineBlob = await getFileBlobOffline(doc.id);
+        const blobSource = offlineBlob?.blob || null;
+        if (blobSource) {
+          const fallback = await runOcrWithFallback(blobSource);
+          if (fallback?.ok) {
+            await applyClientOcrAnalysis(doc, fallback);
+            showToast(`Retry cez OCR (offline): ${doc.title}`);
+            await fetchData();
+            return;
+          }
+        }
         showToast('Retry zlyhal: ' + (err?.message || ''));
       }
       await fetchData();
