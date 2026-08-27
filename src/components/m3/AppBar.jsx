@@ -108,6 +108,7 @@ export default function AppBar({
             <LanguageSwitcher />
           </div>
 
+          {onOpenPricing && (
           <button
             type="button"
             onClick={onOpenPricing}
@@ -123,6 +124,7 @@ export default function AppBar({
             <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
             <span className="uppercase">{plan === 'agency' ? 'Agency' : plan === 'pro' ? 'Pro' : 'Free'}</span>
           </button>
+          )}
         </div>
 
         <div className="hidden lg:flex items-center gap-2 flex-1 max-w-md mx-2">
@@ -218,6 +220,7 @@ export default function AppBar({
               <span>Audit</span>
             </button>
 
+            {onOpenReferral && (
             <button
               type="button"
               onClick={onOpenReferral}
@@ -227,6 +230,7 @@ export default function AppBar({
               <Gift className="w-3.5 h-3.5 text-pink-400" />
               <span>Referral</span>
             </button>
+            )}
           </div>
 
           <div className="hidden md:flex xl:hidden relative" ref={dropdownRef}>
@@ -282,6 +286,7 @@ export default function AppBar({
                   <ScrollText className="w-4 h-4 text-amber-400" />
                   <span>Audit log</span>
                 </button>
+                {onOpenReferral && (
                 <button
                   type="button"
                   onClick={() => { onOpenReferral?.(); setToolsDropdownOpen(false); }}
@@ -290,6 +295,7 @@ export default function AppBar({
                   <Gift className="w-4 h-4 text-pink-400" />
                   <span>Referral program</span>
                 </button>
+                )}
               </div>
             )}
           </div>

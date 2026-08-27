@@ -1,12 +1,6 @@
 import { create } from 'zustand';
 import { isMonetizationEnabled } from '@/lib/monetization';
 
-const VALID_LICENSE_KEYS = {
-  'PRO-LAWYER-2026': { plan: 'pro', validDays: 365 },
-  'ACADEMIA-SK': { plan: 'pro', validDays: 180 },
-  'AGENCY-PARTNER': { plan: 'agency', validDays: 365 }
-};
-
 const getStoredPlan = () => {
   if (typeof window === 'undefined') return 'free';
   return localStorage.getItem('forenz_user_plan') || 'free';
@@ -34,7 +28,13 @@ export const usePlanStore = create((set, get) => ({
   pricingModalOpen: false,
   paywallReason: null,
 
-  setPricingModalOpen: (open, reason = null) => set({ pricingModalOpen: open, paywallReason: reason }),
+  setPricingModalOpen: (open, reason = null) => {
+    if (!isMonetizationEnabled) {
+      set({ pricingModalOpen: false, paywallReason: null });
+      return;
+    }
+    set({ pricingModalOpen: open, paywallReason: reason });
+  },
 
   upgradePlan: (newPlan) => {
     if (typeof window !== 'undefined') {
@@ -52,30 +52,9 @@ export const usePlanStore = create((set, get) => ({
     return next;
   },
 
-  canCreateCase: (currentCaseCount) => {
-    if (!isMonetizationEnabled) return true;
-    const { plan, caseCount } = get();
-    if (plan === 'pro' || plan === 'agency') return true;
-    const count = typeof currentCaseCount === 'number' ? currentCaseCount : caseCount;
-    return count < 2;
-  },
-
-  canAddDocument: (currentDocCount = 0) => {
-    if (!isMonetizationEnabled) return true;
-    const { plan } = get();
-    if (plan === 'pro' || plan === 'agency') return true;
-    return currentDocCount < 5;
-  },
-
-  activateLicenseKey: (key) => {
-    const trimmed = (key || '').trim().toUpperCase();
-    const license = VALID_LICENSE_KEYS[trimmed];
-    if (license) {
-      get().upgradePlan(license.plan);
-      return { success: true, plan: license.plan, days: license.validDays };
-    }
-    return { success: false, error: 'Neplatný alebo expirovaný licenčný kľúč.' };
-  },
+  // Hard-disabled monetization: unlimited cases/docs for production testing
+  canCreateCase: () => true,
+  canAddDocument: () => true,
 
   getReferralLink: () => {
     const { userId } = get();
@@ -88,8 +67,6 @@ export const usePlanStore = create((set, get) => ({
     const urlParams = new URLSearchParams(window.location.search);
     const ref = urlParams.get('ref');
     if (!ref) return;
-
-    // Iba zaznamenaj referral — žiadny automatický Pro upgrade v produkcii
     localStorage.setItem('forenz_incoming_ref', ref);
   }
 }));

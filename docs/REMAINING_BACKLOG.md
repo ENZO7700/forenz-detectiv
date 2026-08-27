@@ -26,7 +26,7 @@ Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo hard-removed, PDF chu
 | PdfExportDialog, bulk ≤20, i18n shell SK/CS | Done | |
 | `canCreateCase` + referral link capture | Done | `?ref=` → `forenz_incoming_ref` only; no auto Pro credit |
 | TWA scaffolding + PNG + docs | Done | fingerprint = placeholder → RB-06 |
-| Stripe fail-closed + `createCheckoutSession` | Done | live keys + payment verification → ops (RB-05) |
+| Stripe fail-closed + `createCheckoutSession` | Paused | Client removed; backend kept → **RB-05** |
 | Looker / Ads **docs** | Done | live dashboard → RB-04 / RB-07 |
 | PDF page-chunking + Document schema push | Done | **PROMPT-OPS-01** |
 | PDF chunk progress UI / cancel / per-page retry | Done | **PROMPT-PROD-01** (`DocumentList`, `pdfPageChunker`, AbortController) |
@@ -34,7 +34,7 @@ Stav: produktový sprint + **PROMPT-OPS-01 cutover** (demo hard-removed, PDF chu
 | Master E2E (Playwright S01–S12) | Done | upload-first (no demo bootstrap) |
 | Lokálny CI gate | Done | focused + lint/typecheck/build |
 | `trackContradictionDetected` mimo demo | Done | **RB-03** |
-| Stripe `createCheckoutSession` | Done | **RB-05** (function shipped; ops: secrets, webhooks, plan sync) |
+| Stripe `createCheckoutSession` | Paused | **RB-05** — restore client + live keys when re-enabling monetization |
 | GitHub Actions zelený | Remaining | billing lock → **RB-01** |
 | PostHog EU prod key | Remaining | **RB-02** |
 | Looker North Star chart | Remaining | **RB-04** |
@@ -124,19 +124,19 @@ flowchart TD
 
 ---
 
-## RB-05 — Stripe live ops (Checkout + plan sync)
+## RB-05 — Stripe re-enable (paused)
 
-**Title:** `ops(stripe): production keys, webhooks, and post-payment plan sync`
+**Title:** `feat(stripe): restore client checkout after monetization pause`
 
-**Why:** [`createCheckoutSession`](../base44/functions/createCheckoutSession/entry.ts) and [`src/lib/stripe.js`](../src/lib/stripe.js) are shipped fail-closed. Remaining work is operational: Stripe Dashboard products/price IDs, Base44 `STRIPE_SECRET_KEY`, and verifying plan upgrade only after payment (success URL / webhook) — not client-side before checkout.
+**Why:** Monetization is hard-disabled for clean production testing (`isMonetizationEnabled = false`, `src/lib/stripe.js` removed, paywall UI not rendered). Backend [`createCheckoutSession`](../base44/functions/createCheckoutSession/entry.ts) remains. Restore client + ops before charging users.
 
 **Acceptance:**
 
-- [ ] `VITE_STRIPE_PUBLIC_KEY` + Base44 `STRIPE_SECRET_KEY` set in production
-- [ ] `redirectToCheckout` redirects to live `session.url`
-- [ ] Plan upgrade happens only after verified payment (webhook or success handler) — not in `PricingModal` before redirect
-- [ ] Bez kľúčov → fail-closed (503 / chybová hláška, žiadny mock upgrade)
-- [ ] Aktualizovaný [`docs/STRIPE_SETUP.md`](STRIPE_SETUP.md) ak sa menia price IDs
+- [ ] Restore Stripe client (`src/lib/stripe.js` or equivalent) + CSP Stripe domains
+- [ ] Set `isMonetizationEnabled = true` and re-wire PricingModal / PaywallGate / AppBar
+- [ ] `VITE_STRIPE_PUBLIC_KEY` + Base44 `STRIPE_SECRET_KEY` in production
+- [ ] Plan upgrade only after verified payment (webhook / success handler)
+- [ ] Update [`docs/STRIPE_SETUP.md`](STRIPE_SETUP.md)
 
 **Owner hint:** Backend + Frontend + ops. Secrets v Base44, nie v gite.
 

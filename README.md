@@ -114,13 +114,13 @@ Skopíruj [`.env.example`](.env.example) → `.env.local`:
 |----------|------|
 | `VITE_SENTRY_DSN` | Error tracking (silent fallback bez DSN) |
 | `VITE_POSTHOG_KEY` / `VITE_POSTHOG_HOST` | Product analytics EU |
-| `VITE_STRIPE_PUBLIC_KEY` | Live Stripe Checkout; bez kľúča = fail-closed (žiadny checkout, žiadny lokálny upgrade) |
+| _(Stripe)_ | **Paused** — see [`docs/STRIPE_SETUP.md`](docs/STRIPE_SETUP.md); no `VITE_STRIPE_*` until RB-05 |
 | `MISTRAL_API_KEY` | Server-only — Base44 secret (`base44 secret set`) + Vercel (`vercel env add`); lokálna kópia v `.env.local` |
 
 ### Upload-first produkcia
 - Produkt **neobsahuje** demo/synthetic case (žiadne BA–KE CTA, žiadne `VITE_ENABLE_DEMO`).
 - Primárny tok je vždy **upload → chunk → AI analýza → rozpory**.
-- Stripe je **fail-closed**: bez publishable key na fronte a `STRIPE_SECRET_KEY` na Base44 backende checkout zlyhá — žiadny mock checkout ani klientsky upgrade pred platbou.
+- Monetizácia (Stripe / paywall / license keys) je **hard-disabled** pre ostré testovanie — limity dokumentov neplatia.
 
 ### Spustenie testov & Kontrola kvality
 ```bash

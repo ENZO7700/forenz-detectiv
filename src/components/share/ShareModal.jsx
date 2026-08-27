@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Download, Copy, Share2, Eye, EyeOff, Check, Loader2, Sparkles } from 'lucide-react';
 import AlibiShareCard from './AlibiShareCard';
 import { exportElementAsPng, copyElementImageToClipboard } from '@/utils/imageExporter';
-import { usePlanStore } from '@/store/usePlanStore';
-import { isMonetizationEnabled } from '@/lib/monetization';
 import { trackShareCardGenerated } from '@/lib/analytics';
 
 export default function ShareModal({
@@ -17,18 +15,8 @@ export default function ShareModal({
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const fullCardRef = useRef(null);
-  const plan = usePlanStore((s) => s.plan);
-  const setPricingModalOpen = usePlanStore((s) => s.setPricingModalOpen);
 
-  const requirePro = () => {
-    if (!isMonetizationEnabled) return false;
-    if (plan === 'free') {
-      onClose();
-      setPricingModalOpen(false, 'pro_feature');
-      return true;
-    }
-    return false;
-  };
+  const requirePro = () => false;
 
   const handleDownload = async () => {
     if (requirePro()) return;
