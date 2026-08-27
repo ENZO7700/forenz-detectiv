@@ -110,10 +110,10 @@ export default function TermsPage() {
               5. Platobné podmienky
             </h2>
             <ul className="space-y-2 list-disc pl-5 text-slate-300">
-              <li>Základný (Free) plán je bezplatný s obmedzeným počtom dokumentov.</li>
-              <li>Platené plány (Pro, Agency) sú spoplatnené mesačným alebo ročným predplatným cez Stripe.</li>
-              <li>Ceny sú uvedené vrátane DPH, pokiaľ nie je uvedené inak.</li>
-              <li>Predplatné sa automaticky obnovuje, pokiaľ ho používateľ nezruší pred koncom fakturačného obdobia.</li>
+              <li>Základný plán je aktuálne bezplatný bez limitu dokumentov (ostré testovanie produkcie).</li>
+              <li>Platené plány (Pro, Agency) cez Stripe sú dočasne pozastavené — aktivácia podľa prevádzkovateľa.</li>
+              <li>Ceny budú uvedené vrátane DPH, pokiaľ nebude uvedené inak.</li>
+              <li>Predplatné (po obnovení monetizácie) sa automaticky obnovuje, pokiaľ ho používateľ nezruší pred koncom fakturačného obdobia.</li>
             </ul>
           </section>
 

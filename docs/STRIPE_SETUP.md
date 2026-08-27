@@ -1,36 +1,27 @@
 # Stripe Setup — ForenzDetectiv Pro
 
-## Fail-closed (produkcia)
+## Status: PAUSED (clean production testing)
 
-Bez `VITE_STRIPE_PUBLIC_KEY` / `VITE_STRIPE_PUBLISHABLE_KEY` a bez `STRIPE_SECRET_KEY` v Base44 secrets:
+Monetization is **hard-disabled** in the frontend:
 
-- [`src/lib/stripe.js`](../src/lib/stripe.js) **nezaktivuje** plán a vráti chybu
-- [`createCheckoutSession`](../base44/functions/createCheckoutSession/entry.ts) vráti **503** (žiadny mock checkout)
-- [`PricingModal`](../src/components/pricing/PricingModal.jsx) zobrazí chybovú hlášku — žiadny voľný upgrade
+- [`src/lib/monetization.js`](../src/lib/monetization.js) → `isMonetizationEnabled = false`
+- [`src/lib/stripe.js`](../src/lib/stripe.js) **removed** (client checkout)
+- `@stripe/*` npm packages **removed**
+- Paywall / Pricing / Referral UI **not rendered**
+- Client license keys (`PRO-LAWYER-2026`, …) **removed**
+- Limits: unlimited cases/docs while paused
 
-## Live mode
+Backend function [`createCheckoutSession`](../base44/functions/createCheckoutSession/entry.ts) remains in the repo for later RB-05 re-enable — do not publish/use until Stripe is restored.
 
-1. Vytvor produkty v Stripe Dashboard:
-   - Pro monthly / Pro yearly (−20 %)
-   - Agency (voliteľné)
-2. Pridaj do `.env.local` / Vercel env:
+## Re-enable checklist (RB-05)
 
-```bash
-VITE_STRIPE_PUBLIC_KEY=pk_live_...
-```
-
-3. Nastav Base44 secret `STRIPE_SECRET_KEY`.
-4. Frontend volá `createCheckoutSession` a redirectuje na `session.url`.
-5. Upgrade plánu až po overení platby (success URL / webhook) — nie v klientovi pred platbou.
-
-## Licenčné kľúče (offline / B2B)
-
-Aktívne kľúče v [`usePlanStore`](../src/store/usePlanStore.js):
-
-- `PRO-LAWYER-2026` → Pro 365 dní
-- `ACADEMIA-SK` → Pro 180 dní
-- `AGENCY-PARTNER` → Agency 365 dní
+1. Restore `src/lib/stripe.js` + `@stripe/stripe-js` (or keep direct `createCheckoutSession` invoke)
+2. Set `isMonetizationEnabled = true` (or env gate)
+3. Wire PricingModal / PaywallGate / AppBar entry points again
+4. Add Stripe domains back to CSP in `index.html`
+5. Set `VITE_STRIPE_PUBLIC_KEY` (Vercel) + Base44 secret `STRIPE_SECRET_KEY`
+6. Stripe Dashboard products / price IDs + webhook / success URL plan sync
 
 ## Referral
 
-`?ref=USER_ID` iba zaznamená referrer do `localStorage` (`forenz_incoming_ref`). **Neudeľuje** automatický Pro kredit.
+`?ref=USER_ID` only stores `forenz_incoming_ref` in localStorage. No Pro credit.

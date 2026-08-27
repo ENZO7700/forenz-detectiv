@@ -106,7 +106,7 @@ export default function PrivacyPage() {
               <li><strong>Poskytovanie služieb</strong> — AI analýza dokumentov, detekcia rozporov, vizualizácia vzťahov.</li>
               <li><strong>Zlepšovanie kvality</strong> — anonymizovaná analytika na zlepšenie UX (iba so súhlasom).</li>
               <li><strong>Bezpečnosť</strong> — detekcia a oprava chýb, ochrana pred zneužitím.</li>
-              <li><strong>Fakturácia</strong> — spracovanie platieb cez Stripe (Stripe je samostatný spracovateľ).</li>
+              <li><strong>Fakturácia</strong> — po obnovení monetizácie spracovanie platieb cez Stripe (aktuálne pozastavené).</li>
             </ul>
           </section>
 
@@ -156,7 +156,7 @@ export default function PrivacyPage() {
             </h2>
             <ul className="space-y-2 list-disc pl-5 text-slate-300">
               <li><strong>Base44</strong> — cloudový backend (uloženie dát, autentifikácia).</li>
-              <li><strong>Stripe</strong> — spracovanie platieb (vlastný spracovateľ podľa GDPR).</li>
+              <li><strong>Stripe</strong> — spracovanie platieb po obnovení monetizácie (vlastný spracovateľ podľa GDPR; aktuálne neaktívne).</li>
               <li><strong>PostHog Cloud (EÚ)</strong> — anonymizovaná analytika (iba so súhlasom).</li>
               <li><strong>Sentry</strong> — sledovanie chýb (anonymizované stack trace).</li>
               <li>Údaje <strong>nie sú</strong> predávané tretím stranám na marketingové účely.</li>
