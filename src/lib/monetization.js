@@ -1,7 +1,7 @@
 /**
- * Monetization (Stripe, paywall, pricing UI) is paused by default for production testing.
- * Set VITE_ENABLE_MONETIZATION=true to re-enable limits and checkout flows.
+ * Monetization is hard-disabled for clean production testing.
+ * Stripe checkout UI and client deps are removed; backend createCheckoutSession
+ * remains for later RB-05 re-enable. Flip to true only after restoring
+ * src/lib/stripe.js + @stripe packages + PricingModal wiring.
  */
-export const isMonetizationEnabled =
-  typeof import.meta !== 'undefined' &&
-  import.meta.env?.VITE_ENABLE_MONETIZATION === 'true';
+export const isMonetizationEnabled = false;

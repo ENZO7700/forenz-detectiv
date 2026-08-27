@@ -32,10 +32,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { ViewSkeleton } from '@/components/ui/SkeletonViews';
 import AppHeader from '@/components/forenz/AppHeader';
 import AppLayout from '@/components/layout/AppLayout';
-import PricingModal from '@/components/pricing/PricingModal';
-import PaywallGate from '@/components/pricing/PaywallGate';
 import TrustPackModal from '@/components/trust/TrustPackModal';
-import ReferralModal from '@/components/referral/ReferralModal';
 import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import PdfExportDialog from '@/components/export/PdfExportDialog';
 import { saveDocumentOffline, saveCaseOffline, sanitizeCasePayload, cacheAnalysisOffline, getFileBlobOffline } from '@/lib/offlineDb';
@@ -149,7 +146,6 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   const [toast, setToast] = useState(null);
   const storeToast = useForenzStore((s) => s.toast);
   const [trustOpen, setTrustOpen] = useState(false);
-  const [referralOpen, setReferralOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [pdfExportOpen, setPdfExportOpen] = useState(false);
   const [pdfExportScope, setPdfExportScope] = useState('selected'); // 'selected' | 'all'
@@ -177,18 +173,12 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   }, [setScanning, setBulkProgress, showToast]);
 
   const plan = usePlanStore((s) => s.plan);
-  const pricingModalOpen = usePlanStore((s) => s.pricingModalOpen);
-  const paywallReason = usePlanStore((s) => s.paywallReason);
-  const setPricingModalOpen = usePlanStore((s) => s.setPricingModalOpen);
   const canAddDocument = usePlanStore((s) => s.canAddDocument);
   const logAction = useAuditStore((s) => s.logAction);
   const auditLogs = useAuditStore((s) => s.logs);
 
-  const openPaywall = useCallback((reason) => {
-    if (!isMonetizationEnabled) return;
-    logAction('PAYWALL_OPENED', { reason });
-    setPricingModalOpen(false, reason);
-  }, [setPricingModalOpen, logAction]);
+  // Monetization hard-disabled — paywall is a no-op
+  const openPaywall = useCallback((_reason) => {}, []);
 
   const fetchStoreData = useForenzStore((s) => s.fetchData);
   const fetchData = useCallback(() => fetchStoreData(scope, initialData), [fetchStoreData, scope, initialData]);
@@ -308,7 +298,9 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
 
   // Upload → validate → prepare → (PDF chunk) → analyzeDocument → contradiction detect
   const remainingDocSlots = () => {
-    if (plan === 'pro' || plan === 'agency') return Number.POSITIVE_INFINITY;
+    if (!isMonetizationEnabled || plan === 'pro' || plan === 'agency') {
+      return Number.POSITIVE_INFINITY;
+    }
     return Math.max(0, 5 - (documents?.length || 0));
   };
 
@@ -736,15 +728,16 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     }
     const batch = validFiles.slice(0, maxBatch);
 
-    const remainingSlots = plan === 'free' || plan === undefined
+    // Monetization paused: no free-tier 5-doc cap
+    const remainingSlots = isMonetizationEnabled && (plan === 'free' || plan === undefined)
       ? Math.max(0, 5 - documents.length)
       : batch.length;
-    if (plan === 'free' && remainingSlots <= 0) {
+    if (isMonetizationEnabled && plan === 'free' && remainingSlots <= 0) {
       openPaywall('limit_documents');
       return;
     }
-    const cappedBatch = plan === 'free' ? batch.slice(0, remainingSlots) : batch;
-    if (plan === 'free' && cappedBatch.length < batch.length) {
+    const cappedBatch = isMonetizationEnabled && plan === 'free' ? batch.slice(0, remainingSlots) : batch;
+    if (isMonetizationEnabled && plan === 'free' && cappedBatch.length < batch.length) {
       showToast(`Free plán: spracujem ${cappedBatch.length} z ${batch.length} (limit 5 výpovedí).`);
     }
     if (cappedBatch.length === 0) {
@@ -774,8 +767,8 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       let slotsLeft = remainingDocSlots();
       const pageConcurrency = isMobile ? 1 : PDF_ANALYZE_CONCURRENCY;
       // Free plán: sériovo kvôli presnému počítaniu slotov (PDF = N dokumentov).
-      const fileConcStart = (plan === 'free' || plan === undefined) ? 1 : 2;
-      const fileConcMax = (plan === 'free' || plan === undefined) ? 1 : (isMobile ? 2 : 4);
+      const fileConcStart = (isMonetizationEnabled && (plan === 'free' || plan === undefined)) ? 1 : 2;
+      const fileConcMax = (isMonetizationEnabled && (plan === 'free' || plan === undefined)) ? 1 : (isMobile ? 2 : 4);
 
       let localOnlyCount = 0;
       let cloudCount = 0;
@@ -1169,19 +1162,11 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
   }, []);
 
   const handleExport = async () => {
-    if (isMonetizationEnabled && plan === 'free') {
-      openPaywall('pro_feature');
-      return;
-    }
     setPdfExportScope('selected');
     setPdfExportOpen(true);
   };
 
   const handleExportAll = async () => {
-    if (isMonetizationEnabled && plan === 'free') {
-      openPaywall('pro_feature');
-      return;
-    }
     setPdfExportScope('all');
     setPdfExportOpen(true);
   };
@@ -1301,10 +1286,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
       onOpenMobileMenu={() => setMobileMenuOpen(true)}
       onOpenSearch={() => setSearchOpen(true)}
       onOpenIntro={() => setIntroOpen(true)}
-      onOpenPricing={isMonetizationEnabled ? () => setPricingModalOpen(true) : undefined}
+      onOpenPricing={undefined}
       onOpenTrust={() => setTrustOpen(true)}
       onOpenAudit={() => setAuditOpen(true)}
-      onOpenReferral={isMonetizationEnabled ? () => setReferralOpen(true) : undefined}
+      onOpenReferral={undefined}
       onNavigateIdentity={() => setActiveView('identity')}
       sharedBy={sharedBy}
     />
@@ -1415,9 +1400,9 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
               onClose={() => setMobileMenuOpen(false)}
               onLogout={handleLogout}
               onOpenIntro={() => setIntroOpen(true)}
-              onOpenPricing={isMonetizationEnabled ? () => setPricingModalOpen(true) : undefined}
+              onOpenPricing={undefined}
               onOpenTrust={() => setTrustOpen(true)}
-              onOpenReferral={isMonetizationEnabled ? () => setReferralOpen(true) : undefined}
+              onOpenReferral={undefined}
               onOpenAudit={() => setAuditOpen(true)}
               plan={plan}
               alertCount={redFlags.length + contradictions.length}
@@ -1690,32 +1675,10 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         onClose={() => setIntroOpen(false)}
       />
 
-      {isMonetizationEnabled && (
-      <PricingModal
-        isOpen={pricingModalOpen}
-        onClose={() => setPricingModalOpen(false)}
-      />
-      )}
-
-      {isMonetizationEnabled && (
-      <PaywallGate
-        isOpen={!!paywallReason}
-        onClose={() => setPricingModalOpen(false, null)}
-        reason={paywallReason || 'limit_cases'}
-      />
-      )}
-
       <TrustPackModal
         isOpen={trustOpen}
         onClose={() => setTrustOpen(false)}
       />
-
-      {isMonetizationEnabled && (
-      <ReferralModal
-        isOpen={referralOpen}
-        onClose={() => setReferralOpen(false)}
-      />
-      )}
 
       <AuditLogViewer
         isOpen={auditOpen}

@@ -24,7 +24,7 @@ describe('Production Readiness & Legal P0 Checklist Test Suite', () => {
     assert.match(content, /http-equiv="Content-Security-Policy"/, 'Musí obsahovať CSP hlavičku');
     assert.match(content, /default-src 'self'/, 'CSP musí povoliť self');
     assert.match(content, /https:\/\/eu\.i\.posthog\.com/, 'CSP musí povoliť PostHog');
-    assert.match(content, /https:\/\/js\.stripe\.com/, 'CSP musí povoliť Stripe.js');
+    assert.doesNotMatch(content, /https:\/\/js\.stripe\.com/, 'CSP nesmie vyžadovať Stripe.js (monetizácia paused)');
     assert.match(content, /https:\/\/vercel\.live/, 'CSP musí povoliť Vercel Live');
 
     // Mobile Web App Meta

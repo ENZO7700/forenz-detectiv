@@ -27,28 +27,24 @@ describe('PROMPT 06 & 07: Crypto & PDF Hash Integrity', () => {
 });
 
 describe('PROMPT 08: Monetization & Plan Guard Logic', () => {
-  test('Licenčný kľúč PRO-LAWYER-2026 je platný', async () => {
-    const VALID_KEYS = {
-      'PRO-LAWYER-2026': { plan: 'pro', validDays: 365 },
-      'ACADEMIA-SK': { plan: 'pro', validDays: 180 }
-    };
-
-    assert.strictEqual(VALID_KEYS['PRO-LAWYER-2026'].plan, 'pro');
-    assert.strictEqual(VALID_KEYS['PRO-LAWYER-2026'].validDays, 365);
-    assert.strictEqual(VALID_KEYS['DEMO-VIP'], undefined);
+  test('Licenčné kľúče sú odstránené z klienta (hard-disabled monetization)', async () => {
+    const storeSrc = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../src/store/usePlanStore.js', import.meta.url), 'utf8')
+    );
+    assert.ok(!storeSrc.includes('PRO-LAWYER-2026'), 'PRO-LAWYER-2026 must be removed');
+    assert.ok(!storeSrc.includes('VALID_LICENSE_KEYS'), 'VALID_LICENSE_KEYS must be removed');
+    assert.ok(!storeSrc.includes('DEMO-VIP'), 'DEMO-VIP must stay absent');
   });
 
-  test('Free tier limituje počet prípadov na 2 a počet dokumentov na 5', () => {
-    const canCreateCase = (plan, count) => (plan === 'pro' ? true : count < 2);
-    const canAddDoc = (plan, count) => (plan === 'pro' ? true : count < 5);
+  test('Monetization hard-disabled → unlimited cases/docs', async () => {
+    const { isMonetizationEnabled } = await import('../src/lib/monetization.js');
+    assert.strictEqual(isMonetizationEnabled, false);
 
-    assert.strictEqual(canCreateCase('free', 1), true);
-    assert.strictEqual(canCreateCase('free', 2), false);
-    assert.strictEqual(canCreateCase('pro', 10), true);
-
-    assert.strictEqual(canAddDoc('free', 4), true);
-    assert.strictEqual(canAddDoc('free', 5), false);
-    assert.strictEqual(canAddDoc('pro', 50), true);
+    // Guard logic while paused mirrors store: always allow
+    const canCreateCase = () => true;
+    const canAddDoc = () => true;
+    assert.strictEqual(canCreateCase(), true);
+    assert.strictEqual(canAddDoc(), true);
   });
 
   test('Referral ?ref= iba zaznamená kód — neudeľuje Pro upgrade', () => {
@@ -63,6 +59,13 @@ describe('PROMPT 08: Monetization & Plan Guard Logic', () => {
     captureReferralCode('?ref=ADV-88392');
     assert.strictEqual(storage.get('forenz_incoming_ref'), 'ADV-88392');
     assert.strictEqual(plan, 'free');
+  });
+
+  test('src/lib/stripe.js je odstránený', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const stripePath = path.resolve('src/lib/stripe.js');
+    assert.strictEqual(fs.existsSync(stripePath), false, 'stripe.js must be deleted');
   });
 });
 

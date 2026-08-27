@@ -1,20 +1,16 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, dismissQuickTipIfPresent, openPricingModal } from '../helpers.js';
+import { gotoApp, dismissQuickTipIfPresent } from '../helpers.js';
 
-test.describe('S10 — Monetizácia, Paywall & licencia', () => {
-  test('Otvorenie cenníka a aktivácia PRO-LAWYER-2026', async ({ page }) => {
+test.describe('S10 — Monetizácia pozastavená (clean prod)', () => {
+  test('Pricing / license UI nie je dostupné', async ({ page }) => {
     await gotoApp(page);
     await dismissQuickTipIfPresent(page);
-    await openPricingModal(page);
 
-    const promo = page.getByPlaceholder(/PRO-LAWYER/i);
-    await expect(promo).toBeVisible({ timeout: 10_000 });
-    await promo.fill('PRO-LAWYER-2026');
-    await page.getByRole('button', { name: /Uplatniť/i }).click();
-    await expect(page.getByText(/aktivovan|Licencia|PRO|365/i).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByPlaceholder(/PRO-LAWYER/i)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Referral$/i })).toHaveCount(0);
   });
 
-  test('Free tier case limit helper je v localStorage API', async ({ page }) => {
+  test('case_count localStorage ostáva čitateľný (analytics)', async ({ page }) => {
     await gotoApp(page);
     await page.evaluate(() => {
       localStorage.setItem('forenz_case_count', '2');
