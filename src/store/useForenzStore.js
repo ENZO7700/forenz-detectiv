@@ -4,6 +4,7 @@ import { saveCaseOffline, getCaseOffline, sanitizeCasePayload, purgeInvalidOffli
 import { trackContradictionDetected } from '../lib/analytics.js';
 import { mergeCloudCaseWithLocal } from '../lib/bulkUploadSync.js';
 import { hasAuthToken } from '../lib/guestMode.js';
+import { rehydrateMissingEntities } from '../lib/clientOcrPipeline.js';
 import { resolveEntityArrayUpdate, makeEntityArraySetter } from './entityArraySetter.js';
 
 export { resolveEntityArrayUpdate } from './entityArraySetter.js';
@@ -137,7 +138,11 @@ export const useForenzStore = create((set, get) => ({
         safe.events.length > 0 ||
         safe.claims.length > 0;
       if (!hasData) return false;
-      set({ ...safe, loading: false });
+      const rehydrated = sanitizeCasePayload(rehydrateMissingEntities(safe));
+      set({ ...rehydrated, loading: false });
+      if (rehydrated !== safe) {
+        saveCaseOffline('current', rehydrated);
+      }
       if (toastMessage) get().showToast(toastMessage);
       return true;
     };
@@ -222,7 +227,9 @@ export const useForenzStore = create((set, get) => ({
 
       const inMemory = sanitizeCasePayload(get());
       const mergedData = sanitizeCasePayload(
-        mergeCloudCaseWithLocal(freshData, inMemory)
+        rehydrateMissingEntities(
+          mergeCloudCaseWithLocal(freshData, inMemory)
+        )
       );
 
       set({
