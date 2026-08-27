@@ -1,6 +1,7 @@
 # Remaining backlog — po PROMPT-01..12 (100 %)
 
-Stav: **produkčný frontend je hotový pre hosťovský/offline režim** na [forenz-detectiv.vercel.app](https://forenz-detectiv.vercel.app). Všetky položky nižšie v sekcii „Vyžaduje vlastníka" sú **mimo kódu** (billing, secrets, custom doména, growth ops).
+Stav (2026-08-27): **guest/offline produkcia na [forenz-detectiv.vercel.app](https://forenz-detectiv.vercel.app) je LIVE a smoke-overená.**  
+Live Vercel volá Base44 appId `6a7ed366df1f1138ad653044` (entity API **200**). Cloud `analyzeDocument` (Mistral/Pixtral) stále vyžaduje owner `MISTRAL_API_KEY` + function deploy. Stripe/TWA/Ads ostávajú deferred.
 
 **Zámerné rozhodnutia (neotvárať znova):**
 
@@ -11,25 +12,25 @@ Stav: **produkčný frontend je hotový pre hosťovský/offline režim** na [for
 
 **Ako použiť:** každý ticket nižšie skopíruj do GitHub Issue. `gh` CLI môže vyžadovať `gh auth login`.
 
-**Pipeline (hotové):** upload → validate ≤50 MB → PDF page-chunking (`pdf_container` + `pdf_page`, max 40 strán) → `analyzeDocument` → contradictions. Polia `parent_document_id` / `page_number` / `page_count` / `source_kind` sú v `Document.jsonc` a **`base44 entities push` prebehlo** (PROMPT-OPS-01).
+**Pipeline (hotové v kóde):** upload → validate ≤50 MB → PDF page-chunking (`pdf_container` + `pdf_page`, max 40 strán) → `analyzeDocument` → contradictions. Polia `parent_document_id` / `page_number` / `page_count` / `source_kind` sú v `Document.jsonc` a **`base44 entities push` prebehlo** (PROMPT-OPS-01).
 
 ---
 
-## ✅ Hotové (100 % — kód + produkčný guest/offline)
+## ✅ Hotové (kód + produkčný guest/offline smoke)
 
 | Oblasť | Stav |
 |--------|------|
 | Frontend deploy (Vercel) | [forenz-detectiv.vercel.app](https://forenz-detectiv.vercel.app) + alias `forenzdetectiv.vercel.app` |
-| Upload PNG / TXT / PDF, client OCR, offline IndexedDB | ✅ |
+| Upload PNG / TXT / PDF, client OCR, offline IndexedDB | ✅ (live smoke TXT PASS) |
 | PDF page-chunking + progress / cancel / retry UI | ✅ |
 | Demo/synthetic case odstránený | ✅ |
-| Stripe / paywall hard-disabled | ✅ |
-| PostHog wiring (8 eventov, RB-03 contradiction_detected) | ✅ kód; live key → RB-02 |
+| Stripe / paywall hard-disabled | ✅ (UI bez Cenník) |
+| PostHog wiring (8 eventov, RB-03) | ✅ kód + `disable_session_recording`; live key → **RB-02** |
 | Master E2E (Playwright S01–S12) | ✅ |
 | Lokálny CI gate (`npm test && lint && typecheck && build`) | ✅ |
 | TWA scaffolding + PNG + docs | ✅ fingerprint → RB-06 |
-| Audit `logAction`, PdfExport, i18n shell, onboarding | ✅ |
-| OG/Twitter metadata, sitemap, robots.txt | ✅ forenz-detectiv.vercel.app |
+| OG/Twitter metadata | ✅ forenz-detectiv.vercel.app |
+| PROD smoke (PROMPT-PROD-SMOKE-01) | ✅ empty home, TXT, tabs, Air 420×912, dashboard back |
 
 ---
 
@@ -37,13 +38,13 @@ Stav: **produkčný frontend je hotový pre hosťovský/offline režim** na [for
 
 | ID | Oblasť | Čo treba |
 |----|--------|----------|
+| **RB-AI** | Mistral + functions | `base44 secret set MISTRAL_API_KEY` + deploy functions pre live appId `6a7ed366…`; overiť auth origins |
 | **RB-01** | GitHub Actions CI | Vyriešiť billing lock → re-enable workflow na `push` |
-| **RB-02** | PostHog EU | Nastaviť `VITE_POSTHOG_KEY` (+ host) vo Vercel / Base44 |
+| **RB-02** | PostHog EU | `VITE_POSTHOG_KEY` (+ host) vo Vercel Production + redeploy |
 | **RB-04** | Looker Studio | Dashboard po RB-02 |
-| **RB-05** | Stripe monetizácia | Obnoviť client + secrets + `isMonetizationEnabled` |
-| **RB-06** | TWA / Play | Keystore SHA-256 → `assetlinks.json`; custom doména voliteľná |
-| **RB-07** | Beta 100 + Ads | Growth ops, UTM kampane |
-| **—** | Base44 backend | `base44 login`, `MISTRAL_API_KEY`, publish app, auth origins |
+| **RB-05** | Stripe monetizácia | Obnoviť client + secrets + `isMonetizationEnabled` (**po** ostrom AI teste) |
+| **RB-06** | TWA / Play | Keystore SHA-256 → `assetlinks.json` |
+| **RB-07** | Beta 100 + Ads | Growth ops |
 | **—** | Custom doména | `forenzdetectiv.sk` — DNS + Vercel; aktuálne `.vercel.app` |
 
 ---
@@ -63,25 +64,47 @@ Stav: **produkčný frontend je hotový pre hosťovský/offline režim** na [for
 | Stripe fail-closed + `createCheckoutSession` | Paused | Client removed; backend kept → **RB-05** |
 | Looker / Ads **docs** | Done | live dashboard → RB-04 / RB-07 |
 | PDF page-chunking + Document schema push | Done | **PROMPT-OPS-01** |
-| PDF chunk progress UI / cancel / per-page retry | Done | **PROMPT-PROD-01** (`DocumentList`, `pdfPageChunker`, AbortController) |
+| PDF chunk progress UI / cancel / per-page retry | Done | **PROMPT-PROD-01** |
 | Demo production gate (`VITE_ENABLE_DEMO`) | Removed | Hard-delete demo case + CTA |
 | Master E2E (Playwright S01–S12) | Done | upload-first (no demo bootstrap) |
 | Lokálny CI gate | Done | focused + lint/typecheck/build |
 | `trackContradictionDetected` mimo demo | Done | **RB-03** |
-| Stripe `createCheckoutSession` | Paused | **RB-05** — restore client + live keys when re-enabling monetization |
+| Live guest smoke na Vercel | Done | **PROMPT-PROD-SMOKE-01** |
+| Cloud AI (Pixtral) ostro | Remaining | **RB-AI** — Mistral secret + functions |
 | GitHub Actions zelený | Remaining | billing lock → **RB-01** |
 | PostHog EU prod key | Remaining | **RB-02** |
 | Looker North Star chart | Remaining | **RB-04** |
+| Stripe `createCheckoutSession` | Paused | **RB-05** |
 | assetlinks SHA-256 z keystore | Remaining | **RB-06** |
 | Beta 100 + Ads ops | Remaining | **RB-07** |
 
 ```mermaid
 flowchart TD
+  AI[RB_AI_Mistral_Functions] --> Smoke[Live_AI_Smoke]
   T1[RB01_GitHub_Billing_CI] --> T2[RB02_PostHog_Live]
   T2 --> T4[RB04_Looker_Dashboard]
   T5[RB05_Stripe_Checkout_Function] --> T6[RB06_TWA_Fingerprint]
   T4 --> T7[RB07_Beta_Ads]
 ```
+
+---
+
+## RB-AI — Mistral + functions deploy (blocks cloud AI ostro)
+
+**Title:** `ops: set MISTRAL_API_KEY and deploy analyzeDocument for live appId`
+
+**Why:** Live Vercel → Base44 entities already 200 for `6a7ed366df1f1138ad653044`, ale Pixtral pipeline bez server secretu/functions nebeží end-to-end.
+
+**Acceptance:**
+
+- [ ] `npx base44 secret set MISTRAL_API_KEY …` na live appId
+- [ ] Functions deployed (`analyzeDocument`, `sherlockChat`, …)
+- [ ] Auth origins: `https://forenz-detectiv.vercel.app`, `https://forenzdetectiv.vercel.app`
+- [ ] Ostrý upload PDF/PNG → analyzing → done s osobami/rozpormi (nie len client OCR)
+
+**Owner hint:** Base44 dashboard / CLI. Nikdy `VITE_` prefix pre Mistral.
+
+**Depends on:** owner secrets (requested via environment setup)
 
 ---
 
