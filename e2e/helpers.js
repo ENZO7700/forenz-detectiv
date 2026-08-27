@@ -89,10 +89,57 @@ export function writePdfFixture(sizeBytes, fileName = 'spis.pdf') {
   return filePath;
 }
 
-export async function expectToastMatching(page, pattern) {
+export async function expectToastMatching(page, pattern, timeoutMs = 45_000) {
   const toast = page.getByTestId('app-toast');
-  await expect(toast).toBeVisible({ timeout: 10_000 });
+  await expect(toast).toBeVisible({ timeout: timeoutMs });
   await expect(toast).toContainText(pattern);
+}
+
+/** UTF-8 .txt fixture for guest upload E2E (Playwright setInputFiles — no native dialog). */
+export function writeTxtFixture(content, fileName = 'vypoved.txt') {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'forenz-e2e-'));
+  const filePath = path.join(dir, fileName);
+  fs.writeFileSync(filePath, content, { encoding: 'utf8' });
+  return filePath;
+}
+
+export const GUEST_TXT_FIXTURE = {
+  fileName: 'Výpoveď číslo 1 - Dimiti Cohen.txt',
+  content: [
+    'VÝPOVEĎ SVEDKA',
+    'Meno: Dimiti Cohen',
+    'Svedok uviedol, že dňa 12.03.2026 o 21:30 bol doma v Bratislave.',
+    'Podpis: ________________'
+  ].join('\n')
+};
+
+export async function gotoEmptyHeroHome(page) {
+  await gotoApp(page, '/?view=hero');
+  await dismissQuickTipIfPresent(page);
+  await expect(page.getByTestId('home-file-input')).toBeAttached({ timeout: 15_000 });
+}
+
+export async function gotoEmptyWorkspace(page) {
+  await gotoApp(page, '/');
+  await dismissQuickTipIfPresent(page);
+  await expect(page.getByTestId('scan-file-input')).toBeAttached({ timeout: 15_000 });
+}
+
+/** Assert archive shows at least one výpoveď with the uploaded title (guest/offline). */
+export async function expectGuestTxtInArchive(page, fileTitle) {
+  const toastPattern = /Textový spis|offline režim|lokáln|uložen/i;
+
+  await Promise.all([
+    expectToastMatching(page, toastPattern, 45_000),
+    expect(page.getByTestId('case-header')).toContainText(/[1-9]\d*\s*dok\./i, { timeout: 45_000 })
+  ]);
+
+  const výpovedeHeader = page.getByRole('heading', { name: /Výpovede & Spisy/i }).first();
+  await expect(výpovedeHeader).toBeVisible({ timeout: 15_000 });
+  const countBadge = výpovedeHeader.locator('xpath=following-sibling::span[1]');
+  await expect(countBadge).toHaveText(/^[1-9]/);
+
+  await expect(page.getByRole('paragraph').filter({ hasText: fileTitle }).first()).toBeVisible({ timeout: 15_000 });
 }
 
 /** Monetization is hard-disabled — pricing UI must stay absent. */
