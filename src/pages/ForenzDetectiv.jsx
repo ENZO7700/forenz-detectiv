@@ -7,7 +7,9 @@ import {
   runOcrWithFallback,
   buildOcrAnalysisPayload,
   buildOcrDocumentPatch,
-  mergeClientOcrIntoCase
+  mergeClientOcrIntoCase,
+  replaceDocumentEntitiesInCase,
+  ocrShapeFromExtractedText
 } from '@/lib/clientOcrPipeline';
 import {
   MAX_FILE_SIZE_BYTES,
@@ -380,29 +382,28 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
     return res;
   };
 
-  const applyClientOcrAnalysis = async (doc, ocrResult) => {
+  const applyClientOcrAnalysis = async (doc, ocrResult, { replace = false } = {}) => {
     if (!doc?.id || !ocrResult?.ok) return;
     const payload = buildOcrAnalysisPayload(ocrResult, doc.id, doc.title);
     await cacheAnalysisOffline(doc.id, payload);
 
     const state = useForenzStore.getState();
-    const merged = mergeClientOcrIntoCase(
-      {
-        documents: state.documents,
-        persons: state.persons,
-        relationships: state.relationships,
-        redFlags: state.redFlags,
-        flaggedPassages: state.flaggedPassages,
-        claims: state.claims,
-        events: state.events,
-        locations: state.locations,
-        vehicles: state.vehicles,
-        contradictions: state.contradictions,
-        overrides: state.overrides
-      },
-      payload,
-      doc.id
-    );
+    const caseBase = {
+      documents: state.documents,
+      persons: state.persons,
+      relationships: state.relationships,
+      redFlags: state.redFlags,
+      flaggedPassages: state.flaggedPassages,
+      claims: state.claims,
+      events: state.events,
+      locations: state.locations,
+      vehicles: state.vehicles,
+      contradictions: state.contradictions,
+      overrides: state.overrides
+    };
+    const merged = replace
+      ? replaceDocumentEntitiesInCase(caseBase, doc.id, payload.entities, payload.documentPatch)
+      : mergeClientOcrIntoCase(caseBase, payload, doc.id);
     useForenzStore.setState(merged);
     await saveCaseOffline('current', sanitizeCasePayload(merged));
 
@@ -413,6 +414,13 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         console.warn('[OCR] Cloud document patch skipped:', err);
       }
     }
+  };
+
+  const reextractFromStoredText = async (doc) => {
+    const ocrShape = ocrShapeFromExtractedText(doc);
+    if (!ocrShape?.text) return false;
+    await applyClientOcrAnalysis(doc, ocrShape, { replace: true });
+    return true;
   };
 
   const analyzeWithClientFallback = async (doc, title, imageSource, controller) => {
@@ -943,22 +951,52 @@ export default function ForenzDetectiv({ readOnly = false, scope = null, sharedB
         percent: 50,
         statusText: `Znovu analyzujem stranu: ${doc.title}...`
       });
+
+      const finishWithReextract = async () => {
+        if (await reextractFromStoredText(doc)) {
+          setBulkProgress(null);
+          showToast(`Extrakcia obnovená: ${doc.title}`);
+          return true;
+        }
+        return false;
+      };
+
+      if (doc.__localOnly || isGuestOfflineSession()) {
+        if (await finishWithReextract()) return;
+        const offlineBlob = await getFileBlobOffline(doc.id);
+        const blobSource = offlineBlob?.blob || null;
+        if (blobSource) {
+          const fallback = await runOcrWithFallback(blobSource);
+          if (fallback?.ok) {
+            await applyClientOcrAnalysis(doc, fallback, { replace: true });
+            setBulkProgress(null);
+            showToast(`Retry cez OCR (offline): ${doc.title}`);
+            return;
+          }
+        }
+        setBulkProgress(null);
+        showToast('Retry zlyhal: chýba uložený text aj súbor');
+        return;
+      }
+
       try {
         const res = await invokeAnalyze(doc, doc.title);
         setBulkProgress(null);
         if (res?.data && !res.data.ok) {
+          if (await finishWithReextract()) return;
           showToast('Analýza opäť zlyhala: ' + (res.data.error || ''));
         } else {
           showToast(`Analýza úspešne dokončená: ${doc.title}`);
         }
       } catch (err) {
         setBulkProgress(null);
+        if (await finishWithReextract()) return;
         const offlineBlob = await getFileBlobOffline(doc.id);
         const blobSource = offlineBlob?.blob || null;
         if (blobSource) {
           const fallback = await runOcrWithFallback(blobSource);
           if (fallback?.ok) {
-            await applyClientOcrAnalysis(doc, fallback);
+            await applyClientOcrAnalysis(doc, fallback, { replace: true });
             showToast(`Retry cez OCR (offline): ${doc.title}`);
             await fetchData();
             return;
